@@ -41,7 +41,7 @@ type IMemoryReader =
 
     /// The current address to read from
     abstract member Address : Address
-    /// Determines whether <see cref="Address"/> is at or past the end of the memory.
+    /// Determines whether the address of this reader is at or past the end of the memory.
     abstract member AtEndOfMemory : bool
 
 type Memory private (stream : Stream) =
