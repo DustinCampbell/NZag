@@ -18,6 +18,9 @@ type Address =
     /// A string address is a packed address that specifies where a string begins in high memory.
     | StringAddress of uint16
 
+    /// A raw, translated address anywhere in memory
+    | RawAddress of int
+
 type Memory private (stream : Stream) =
 
     // We split memory into 64k chunks to avoid creating very large arrays.
@@ -74,6 +77,7 @@ type Memory private (stream : Stream) =
         | WordAddress(a)    -> int a * 2
         | RoutineAddress(a) -> (int a * packedMultiplier) + routinesOffset
         | StringAddress(a)  -> (int a * packedMultiplier) + stringsOffset
+        | RawAddress(a)     -> a
 
     let chunks =
         do stream.Seek(0L, SeekOrigin.Begin) |> ignore

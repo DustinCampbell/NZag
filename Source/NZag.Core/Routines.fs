@@ -1,6 +1,7 @@
 ﻿namespace NZag.Core
 
 open System
+open NZag.Extensions
 
 type OpcodeKind =
     | TwoOp  = 0
@@ -235,3 +236,99 @@ module OpcodeTables =
 
     let getTable (version : byte) =
         opcodeTables.[int version - 1]
+
+type Variable = 
+    | StackVariable
+    | LocalVariable of byte
+    | GlobalVariable of byte
+
+    static member FromByte value =
+        if value = 0uy then
+            StackVariable
+        elif value >= 1uy && value <= 15uy then
+            LocalVariable(value - 1uy)
+        else
+            GlobalVariable(value - 16uy)
+
+    member x.ToByte() =
+        match x with
+        | StackVariable     -> 0uy
+        | LocalVariable(v)  -> v + 1uy
+        | GlobalVariable(v) -> v + 16uy
+
+    override x.ToString() =
+        match x with
+        | StackVariable     -> "SP"
+        | LocalVariable(v)  -> sprintf "L%02x" v
+        | GlobalVariable(v) -> sprintf "G%02x" v
+
+type Operand =
+    | LargeConstantOperand of uint16
+    | SmallConstantOperand of byte
+    | VariableOperand of Variable
+
+    member x.Value =
+        match x with
+        | LargeConstantOperand(v) -> v
+        | SmallConstantOperand(v) -> uint16 v
+        | VariableOperand(v)      -> uint16 (v.ToByte())
+
+    override x.ToString() =
+        match x with
+        | LargeConstantOperand(v) -> sprintf "%04x" v
+        | SmallConstantOperand(v) -> sprintf "%02x" v
+        | VariableOperand(v)      -> v.ToString()
+
+type Branch =
+    | RTrueBranch of bool
+    | RFalseBranch of bool
+    | OffsetBranch of bool * int16
+
+    member x.Condition =
+        match x with
+        | RTrueBranch(c)    -> c
+        | RFalseBranch(c)   -> c
+        | OffsetBranch(c,_) -> c
+
+    override x.ToString() =
+        match x with
+        | RTrueBranch(c)    -> sprintf "[%b] rtrue" c
+        | RFalseBranch(c)   -> sprintf "[%b] rfalse" c
+        | OffsetBranch(c,o) -> sprintf "[%b] %x" c o
+
+type Instruction(address : Address, length : int, opcode : Opcode, operands: list<Operand>,
+                 storeVariable : option<Variable>, branch : option<Branch>, text : option<string>) =
+
+    member x.Address = address
+    member x.Length = length
+    member x.Opcode = opcode
+    member x.Operands = operands
+    member x.StoreVariable = storeVariable
+    member x.Branch = branch
+    member x.Text = text
+
+    override x.ToString() =
+        let builder = StringBuilder.create()
+        builder |> StringBuilder.appendString opcode.Name
+
+        operands
+            |> List.map (fun op -> " " + op.ToString())
+            |> List.iter (fun s -> builder |> StringBuilder.appendString s)
+
+        match storeVariable with
+        | Some(v) -> builder |> StringBuilder.appendString " -> "
+                     builder |> StringBuilder.appendString (v.ToString())
+        | None    -> ()
+
+        match branch with
+        | Some(b) -> builder |> StringBuilder.appendChar ' '
+                     builder |> StringBuilder.appendString (b.ToString())
+        | None    -> ()
+
+        match text with
+        | Some(t) -> builder |> StringBuilder.appendString " \""
+                     builder |> StringBuilder.appendString (t.Replace("\n", "\\n"))
+                     builder |> StringBuilder.appendChar '"'
+        | None    -> ()
+
+        builder.ToString()

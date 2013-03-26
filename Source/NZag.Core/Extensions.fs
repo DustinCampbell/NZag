@@ -1,6 +1,25 @@
 ﻿namespace NZag.Extensions
 
 open System.IO
+open System.Text
+
+[<RequireQualifiedAccess>]
+module StringBuilder =
+
+    let create() =
+        new StringBuilder()
+
+    let appendChar (ch : char) (builder : StringBuilder) =
+        builder.Append(ch) |> ignore
+
+    let appendFormat format (builder : StringBuilder) =
+        Printf.ksprintf (fun s -> builder.Append(s) |> ignore) format
+
+    let appendString(s : string) (builder : StringBuilder) =
+        builder.Append(s) |> ignore
+
+    let appendLineBreak (builder : StringBuilder) =
+        builder.AppendLine() |> ignore
 
 [<AutoOpen>]
 module Extensions =
