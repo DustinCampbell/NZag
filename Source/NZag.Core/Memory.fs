@@ -4,7 +4,13 @@ open System
 open System.IO
 open NZag.Extensions
 
-type Memory(stream : Stream) =
+type Address =
+    | ByteAddress of uint16
+    | WordAddress of uint16
+    | RoutineAddress of uint16
+    | StringAddress of uint16
+
+type Memory private (stream : Stream) =
 
     // We split memory into 64k chunks to avoid creating very large arrays.
     [<Literal>]
@@ -32,6 +38,34 @@ type Memory(stream : Stream) =
         | 4 | 5     -> packedSize * 4
         | 6 | 7 | 8 -> packedSize * 8
         | _ -> raise <| InvalidOperationException()
+
+    let packedMultiplier =
+        match version with
+        | 1 | 2 | 3 -> 2
+        | 4 | 5 | 6 | 7 -> 4
+        | 8 -> 8
+        | _ -> raise <| InvalidOperationException()
+
+    let routinesOffset =
+        do stream.Seek(0x28L, SeekOrigin.Begin) |> ignore
+
+        match stream.NextWord() with
+        | Some(w) -> int w * 8
+        | None    -> raise <| InvalidOperationException("Could not read routines offset")
+
+    let stringsOffset =
+        do stream.Seek(0x2AL, SeekOrigin.Begin) |> ignore
+
+        match stream.NextWord() with
+        | Some(w) -> int w * 8
+        | None    -> raise <| InvalidOperationException("Could not read static strings offset")
+
+    let translate address =
+        match address with
+        | ByteAddress(a)    -> int a
+        | WordAddress(a)    -> int a * 2
+        | RoutineAddress(a) -> (int a * packedMultiplier) + routinesOffset
+        | StringAddress(a)  -> (int a * packedMultiplier) + stringsOffset
 
     let chunks =
         do stream.Seek(0L, SeekOrigin.Begin) |> ignore
@@ -94,89 +128,101 @@ type Memory(stream : Stream) =
         currentChunk.[address - currentChunkStart] <- value
 
     member x.ReadByte address =
-        if address > size - 1 then
+        let address' = translate address
+        if address' > size - 1 then
             raise <| ArgumentOutOfRangeException("address")
 
-        readByte address
+        readByte address'
 
     member x.ReadWord address =
-        if address > size - 2 then
+        let address' = translate address
+        if address' > size - 2 then
             raise <| ArgumentOutOfRangeException("address")
 
         // We take a faster path if the entire word can be read from the current chunk
-        if address >= currentChunkStart && address < currentChunkEnd - 2 then
+        if address' >= currentChunkStart && address' < currentChunkEnd - 2 then
             let chunk = currentChunk
-            let chunkAddress = address - currentChunkStart
+            let chunkAddress = address' - currentChunkStart
 
-            ((uint16 chunk.[address]) <<< 8) |||
-             (uint16 chunk.[address+1])
+            ((uint16 chunk.[address']) <<< 8) |||
+             (uint16 chunk.[address'+1])
         else
-            let b1 = readByte address
-            let b2 = readByte (address+1)
+            let b1 = readByte  address'
+            let b2 = readByte (address'+1)
 
             (uint16 b1 <<< 8) ||| uint16 b2
 
     member x.ReadDWord address =
-        if address > size - 4 then
+        let address' = translate address
+        if address' > size - 4 then
             raise <| ArgumentOutOfRangeException("address")
 
         // We take a faster path if the entire dword can be read from the current chunk
-        if address >= currentChunkStart && address < currentChunkEnd - 4 then
+        if address' >= currentChunkStart && address' < currentChunkEnd - 4 then
             let chunk = currentChunk
-            let chunkAddress = address - currentChunkStart
+            let chunkAddress = address' - currentChunkStart
 
-            ((uint32 chunk.[address]) <<< 24) |||
-            ((uint32 chunk.[address+1]) <<< 16) |||
-            ((uint32 chunk.[address+2]) <<< 8) |||
-             (uint32 chunk.[address+3])
+            ((uint32 chunk.[address']) <<< 24) |||
+            ((uint32 chunk.[address'+1]) <<< 16) |||
+            ((uint32 chunk.[address'+2]) <<< 8) |||
+             (uint32 chunk.[address'+3])
         else
-            let b1 = readByte address
-            let b2 = readByte (address+1)
-            let b3 = readByte (address+2)
-            let b4 = readByte (address+3)
+            let b1 = readByte  address'
+            let b2 = readByte (address'+1)
+            let b3 = readByte (address'+2)
+            let b4 = readByte (address'+3)
 
             (uint32 b1 <<< 24) ||| (uint32 b1 <<< 16) ||| (uint32 b1 <<< 8) ||| uint32 b4
 
     member x.WriteByte address value =
-        if address > size - 1 then
+        let address' = translate address
+        if address' > size - 1 then
             raise <| ArgumentOutOfRangeException("address")
 
-        writeByte address value
+        writeByte address' value
 
     member x.WriteWord address (value : uint16) =
-        if address > size - 2 then
+        let address' = translate address
+        if address' > size - 2 then
             raise <| ArgumentOutOfRangeException("address")
 
         // We take a faster path if the entire word can be written to the current chunk
-        if address >= currentChunkStart && address < currentChunkEnd - 2 then
+        if address' >= currentChunkStart && address' < currentChunkEnd - 2 then
             let chunk = currentChunk
-            let chunkAddress = address - currentChunkStart
+            let chunkAddress = address' - currentChunkStart
 
             chunk.[chunkAddress]   <- byte (value >>> 8)
             chunk.[chunkAddress+1] <- byte (value &&& 0xffus)
         else
-            byte (value >>> 8)      |> writeByte address
-            byte (value &&& 0xffus) |> writeByte (address+1)
+            byte (value >>> 8)      |> writeByte  address'
+            byte (value &&& 0xffus) |> writeByte (address'+1)
 
     member x.WriteDWord address (value : uint32) =
-        if address > size - 4 then
+        let address' = translate address
+        if address' > size - 4 then
             raise <| ArgumentOutOfRangeException("address")
 
         // We take a faster path if the entire dword can be written to the current chunk
-        if address >= currentChunkStart && address < currentChunkEnd - 4 then
+        if address' >= currentChunkStart && address' < currentChunkEnd - 4 then
             let chunk = currentChunk
-            let chunkAddress = address - currentChunkStart
+            let chunkAddress = address' - currentChunkStart
 
             chunk.[chunkAddress]   <- byte (value >>> 24)
             chunk.[chunkAddress+1] <- byte (value >>> 16)
             chunk.[chunkAddress+2] <- byte (value >>> 8)
             chunk.[chunkAddress+3] <- byte (value &&& 0xffu)
         else
-            byte (value >>> 24)    |> writeByte address
-            byte (value >>> 16)    |> writeByte (address+1)
-            byte (value >>> 8)     |> writeByte (address+2)
-            byte (value &&& 0xffu) |> writeByte (address+3)
+            byte (value >>> 24)    |> writeByte  address'
+            byte (value >>> 16)    |> writeByte (address'+1)
+            byte (value >>> 8)     |> writeByte (address'+2)
+            byte (value &&& 0xffu) |> writeByte (address'+3)
 
     member x.Size = size
     member x.Version = version
 
+    static member CreateFrom(stream : Stream) =
+        let position = stream.Position
+        let memory = new Memory(stream)
+        stream.Position <- position
+
+        memory
