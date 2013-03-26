@@ -1,7 +1,17 @@
-﻿namespace NZag.Extensions
+﻿namespace NZag.Utilities
 
+open System
 open System.IO
 open System.Text
+
+[<AutoOpen>]
+module Exceptions =
+
+    let invalidOperation message =
+        Printf.ksprintf (fun s -> raise <| InvalidOperationException(s)) message
+
+    let argumentOutOfRange paramName message =
+        Printf.ksprintf (fun s -> raise <| ArgumentOutOfRangeException(paramName, s)) message
 
 [<RequireQualifiedAccess>]
 module StringBuilder =

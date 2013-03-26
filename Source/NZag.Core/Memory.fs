@@ -2,7 +2,7 @@
 
 open System
 open System.IO
-open NZag.Extensions
+open NZag.Utilities
 
 type Address =
     /// A byte address specifies a byte in memory in the range 0 up to the last byte of static memory.
@@ -55,9 +55,9 @@ type Memory private (stream : Stream) =
 
         match stream.NextByte() with
         | Some(b) -> if b >= 1uy && b <= 8uy then int b
-                     else raise <| InvalidOperationException(sprintf "Invalid version number: %d" b)
+                     else invalidOperation "Invalid version number: %d" b
 
-        | None    -> raise <| InvalidOperationException("Could not read version")
+        | None    -> invalidOperation "Could not read version"
 
     let size =
         do stream.Seek(0x1AL, SeekOrigin.Begin) |> ignore
@@ -65,34 +65,34 @@ type Memory private (stream : Stream) =
         let packedSize =
             match stream.NextWord() with
             | Some(w) -> int w
-            | None    -> raise <| InvalidOperationException("Could not read size")
+            | None    -> invalidOperation "Could not read size"
 
         match version with
         | 1 | 2 | 3 -> packedSize * 2
         | 4 | 5     -> packedSize * 4
         | 6 | 7 | 8 -> packedSize * 8
-        | _ -> raise <| InvalidOperationException()
+        | v -> invalidOperation "Invalid version number: %d" v
 
     let packedMultiplier =
         match version with
         | 1 | 2 | 3 -> 2
         | 4 | 5 | 6 | 7 -> 4
         | 8 -> 8
-        | _ -> raise <| InvalidOperationException()
+        | v -> invalidOperation "Invalid version number: %d" v
 
     let routinesOffset =
         do stream.Seek(0x28L, SeekOrigin.Begin) |> ignore
 
         match stream.NextWord() with
         | Some(w) -> int w * 8
-        | None    -> raise <| InvalidOperationException("Could not read routines offset")
+        | None    -> invalidOperation "Could not read routines offset"
 
     let stringsOffset =
         do stream.Seek(0x2AL, SeekOrigin.Begin) |> ignore
 
         match stream.NextWord() with
         | Some(w) -> int w * 8
-        | None    -> raise <| InvalidOperationException("Could not read static strings offset")
+        | None    -> invalidOperation "Could not read static strings offset"
 
     let translate address =
         match address with
@@ -165,14 +165,14 @@ type Memory private (stream : Stream) =
     member x.ReadByte address =
         let address' = translate address
         if address' > size - 1 then
-            raise <| ArgumentOutOfRangeException("address")
+            argumentOutOfRange "address" "Expected address to be in range 0 to %d" (size - 1)
 
         readByte address'
 
     member x.ReadWord address =
         let address' = translate address
         if address' > size - 2 then
-            raise <| ArgumentOutOfRangeException("address")
+            argumentOutOfRange "address" "Expected address to be in range 0 to %d" (size - 2)
 
         // We take a faster path if the entire word can be read from the current chunk
         if address' >= currentChunkStart && address' < currentChunkEnd - 2 then
@@ -190,7 +190,7 @@ type Memory private (stream : Stream) =
     member x.ReadDWord address =
         let address' = translate address
         if address' > size - 4 then
-            raise <| ArgumentOutOfRangeException("address")
+            argumentOutOfRange "address" "Expected address to be in range 0 to %d" (size - 4)
 
         // We take a faster path if the entire dword can be read from the current chunk
         if address' >= currentChunkStart && address' < currentChunkEnd - 4 then
@@ -212,14 +212,14 @@ type Memory private (stream : Stream) =
     member x.WriteByte address value =
         let address' = translate address
         if address' > size - 1 then
-            raise <| ArgumentOutOfRangeException("address")
+            argumentOutOfRange "address" "Expected address to be in range 0 to %d" (size - 1)
 
         writeByte address' value
 
     member x.WriteWord address (value : uint16) =
         let address' = translate address
         if address' > size - 2 then
-            raise <| ArgumentOutOfRangeException("address")
+            argumentOutOfRange "address" "Expected address to be in range 0 to %d" (size - 2)
 
         // We take a faster path if the entire word can be written to the current chunk
         if address' >= currentChunkStart && address' < currentChunkEnd - 2 then
@@ -235,7 +235,7 @@ type Memory private (stream : Stream) =
     member x.WriteDWord address (value : uint32) =
         let address' = translate address
         if address' > size - 4 then
-            raise <| ArgumentOutOfRangeException("address")
+            argumentOutOfRange "address" "Expected argument to be in range 0 to %d" (size - 4)
 
         // We take a faster path if the entire dword can be written to the current chunk
         if address' >= currentChunkStart && address' < currentChunkEnd - 4 then
@@ -260,10 +260,13 @@ type Memory private (stream : Stream) =
         let readerChunk = ref None
         let readerChunkOffset = ref 0
 
+        let readPastEndOfMemory() =
+            invalidOperation "Attempted to read past end of memory."
+
         let getChunk() =
             match !readerChunk with
             | Some(chunk) -> chunk
-            | None -> raise <| InvalidOperationException("Attempted to read past end of memory.")
+            | None -> readPastEndOfMemory()
 
         let selectChunk() =
             let readerAddress' = !readerAddress
@@ -284,7 +287,7 @@ type Memory private (stream : Stream) =
             | Some(chunk) -> let result = chunk.[!readerChunkOffset]
                              increment 1
                              result
-            | None        -> raise <| InvalidOperationException("Attempted to read past end of memory.")
+            | None        -> readPastEndOfMemory()
 
         let peek f =
             let oldReaderAddress = !readerAddress
@@ -311,13 +314,13 @@ type Memory private (stream : Stream) =
 
             member x.NextByte() =
                 if !readerAddress > size - 1 then
-                    raise <| InvalidOperationException("Attempted to read past end of memory.")
+                    readPastEndOfMemory()
 
                 readNextByte()
 
             member x.NextWord() =
                 if !readerAddress > size - 2 then
-                    raise <| InvalidOperationException("Attempted to read past end of memory.")
+                    readPastEndOfMemory()
 
                 // We take a faster path if the entire word can be written to the current chunk
                 let readerChunkOffset' = !readerChunkOffset
@@ -336,7 +339,7 @@ type Memory private (stream : Stream) =
 
             member x.NextDWord() =
                 if !readerAddress > size - 4 then
-                    raise <| InvalidOperationException("Attempted to read past end of memory.")
+                    readPastEndOfMemory()
 
                 // We take a faster path if the entire dword can be written to the current chunk
                 let readerChunkOffset' = !readerChunkOffset
@@ -359,7 +362,7 @@ type Memory private (stream : Stream) =
 
             member x.SkipBytes count =
                 if count < 0 then
-                    raise <| ArgumentOutOfRangeException("count")
+                    argumentOutOfRange "count" "count was less than 0."
                 if count > 0 then
                     increment count
 

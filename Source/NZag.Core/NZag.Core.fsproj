@@ -17,7 +17,7 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Extensions.fs" />
+    <Compile Include="Utilities.fs" />
     <Compile Include="Memory.fs" />
     <Compile Include="Routines.fs" />
   </ItemGroup>

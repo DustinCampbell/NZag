@@ -1,7 +1,7 @@
 ﻿namespace NZag.Core
 
 open System
-open NZag.Extensions
+open NZag.Utilities
 
 type OpcodeKind =
     | TwoOp  = 0
