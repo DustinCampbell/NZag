@@ -21,6 +21,29 @@ type Address =
     /// A raw, translated address anywhere in memory
     | RawAddress of int
 
+type IMemoryReader =
+    /// Read the next byte without incrementing the address
+    abstract member PeekByte : unit -> byte
+    /// Read the next word without incrementing the address
+    abstract member PeekWord : unit -> uint16
+    /// Read the next dword without incrementing the address
+    abstract member PeekDWord : unit -> uint32
+
+    /// Read the next byte
+    abstract member NextByte : unit -> byte
+    /// Read the next word
+    abstract member NextWord : unit -> uint16
+    /// Read the next dword
+    abstract member NextDWord : unit -> uint32
+
+    /// Increment the address by a given number of positive bytes
+    abstract member SkipBytes : int -> unit
+
+    /// The current address to read from
+    abstract member Address : Address
+    /// Determines whether <see cref="Address"/> is at or past the end of the memory.
+    abstract member AtEndOfMemory : bool
+
 type Memory private (stream : Stream) =
 
     // We split memory into 64k chunks to avoid creating very large arrays.
@@ -231,6 +254,118 @@ type Memory private (stream : Stream) =
 
     member x.Size = size
     member x.Version = version
+
+    member x.CreateMemoryReader address =
+        let readerAddress = ref (translate address)
+        let readerChunk = ref None
+        let readerChunkOffset = ref 0
+
+        let getChunk() =
+            match !readerChunk with
+            | Some(chunk) -> chunk
+            | None -> raise <| InvalidOperationException("Attempted to read past end of memory.")
+
+        let selectChunk() =
+            let readerAddress' = !readerAddress
+            let chunkIndex = readerAddress' / ChunkSize
+            readerChunkOffset := readerAddress' % ChunkSize
+            readerChunk := if chunkIndex < chunks.Length then Some(chunks.[chunkIndex]) else None
+
+        let increment count =
+            readerAddress := !readerAddress + count
+            let readerChunkOffset' = !readerChunkOffset + count
+            if readerChunkOffset' < ChunkSize then
+                readerChunkOffset := readerChunkOffset'
+            else
+                selectChunk()
+
+        let readNextByte() =
+            match !readerChunk with
+            | Some(chunk) -> let result = chunk.[!readerChunkOffset]
+                             increment 1
+                             result
+            | None        -> raise <| InvalidOperationException("Attempted to read past end of memory.")
+
+        let peek f =
+            let oldReaderAddress = !readerAddress
+            let oldReaderChunk = !readerChunk
+            let oldReaderChunkOffset = !readerChunkOffset
+
+            let result = f()
+
+            readerAddress := oldReaderAddress
+            readerChunk := oldReaderChunk
+            readerChunkOffset := oldReaderChunkOffset
+
+            result
+
+        selectChunk()
+
+        { new IMemoryReader with
+            member x.PeekByte() =
+                peek (fun () -> x.NextByte())
+            member x.PeekWord() =
+                peek (fun () -> x.NextWord())
+            member x.PeekDWord() =
+                peek (fun () -> x.NextDWord())
+
+            member x.NextByte() =
+                if !readerAddress > size - 1 then
+                    raise <| InvalidOperationException("Attempted to read past end of memory.")
+
+                readNextByte()
+
+            member x.NextWord() =
+                if !readerAddress > size - 2 then
+                    raise <| InvalidOperationException("Attempted to read past end of memory.")
+
+                // We take a faster path if the entire word can be written to the current chunk
+                let readerChunkOffset' = !readerChunkOffset
+                if readerChunkOffset' <= ChunkSize - 2 then
+                    let chunk = getChunk()
+                    let result = ((uint16 chunk.[readerChunkOffset']) <<< 8) |||
+                                  (uint16 chunk.[readerChunkOffset'+1])
+
+                    increment 2
+                    result
+                else
+                    let b1 = readNextByte()
+                    let b2 = readNextByte()
+
+                    (uint16 b1 <<< 8) ||| uint16 b2
+
+            member x.NextDWord() =
+                if !readerAddress > size - 4 then
+                    raise <| InvalidOperationException("Attempted to read past end of memory.")
+
+                // We take a faster path if the entire dword can be written to the current chunk
+                let readerChunkOffset' = !readerChunkOffset
+                if readerChunkOffset' <= ChunkSize - 4 then
+                    let chunk = getChunk()
+                    let result = ((uint32 chunk.[readerChunkOffset']) <<< 24) |||
+                                 ((uint32 chunk.[readerChunkOffset'+1]) <<< 16) |||
+                                 ((uint32 chunk.[readerChunkOffset'+2]) <<< 8) |||
+                                  (uint32 chunk.[readerChunkOffset'+3])
+
+                    increment 4
+                    result
+                else
+                    let b1 = readNextByte()
+                    let b2 = readNextByte()
+                    let b3 = readNextByte()
+                    let b4 = readNextByte()
+
+                    (uint32 b1 <<< 24) ||| (uint32 b2 <<< 16) ||| (uint32 b3 <<< 8) ||| uint32 b4
+
+            member x.SkipBytes count =
+                if count < 0 then
+                    raise <| ArgumentOutOfRangeException("count")
+                if count > 0 then
+                    increment count
+
+            member x.Address = RawAddress(!readerAddress)
+            member x.AtEndOfMemory = !readerAddress >= size
+        }
 
     static member CreateFrom(stream : Stream) =
         let position = stream.Position

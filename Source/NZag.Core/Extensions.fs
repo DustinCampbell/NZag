@@ -15,7 +15,7 @@ module StringBuilder =
     let appendFormat format (builder : StringBuilder) =
         Printf.ksprintf (fun s -> builder.Append(s) |> ignore) format
 
-    let appendString(s : string) (builder : StringBuilder) =
+    let appendString (s : string) (builder : StringBuilder) =
         builder.Append(s) |> ignore
 
     let appendLineBreak (builder : StringBuilder) =
