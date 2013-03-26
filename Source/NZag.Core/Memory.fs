@@ -5,9 +5,17 @@ open System.IO
 open NZag.Extensions
 
 type Address =
+    /// A byte address specifies a byte in memory in the range 0 up to the last byte of static memory.
     | ByteAddress of uint16
+
+    /// A word address specifies an even address in the bottom 128K of memory (by giving the address
+    /// divided by 2). (Word addresses are used only in the abbreviations table.)
     | WordAddress of uint16
+
+    /// A routine address is a packed address that specifies where a routine begins in high memory.
     | RoutineAddress of uint16
+
+    /// A string address is a packed address that specifies where a string begins in high memory.
     | StringAddress of uint16
 
 type Memory private (stream : Stream) =
@@ -191,8 +199,8 @@ type Memory private (stream : Stream) =
             let chunk = currentChunk
             let chunkAddress = address' - currentChunkStart
 
-            chunk.[chunkAddress]   <- byte (value >>> 8)
-            chunk.[chunkAddress+1] <- byte (value &&& 0xffus)
+            chunk.[chunkAddress]    <- byte (value >>> 8)
+            chunk.[chunkAddress+1]  <- byte (value &&& 0xffus)
         else
             byte (value >>> 8)      |> writeByte  address'
             byte (value &&& 0xffus) |> writeByte (address'+1)
