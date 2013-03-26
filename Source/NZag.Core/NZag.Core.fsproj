@@ -19,6 +19,7 @@
   <ItemGroup>
     <Compile Include="Extensions.fs" />
     <Compile Include="Memory.fs" />
+    <Compile Include="Routines.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
