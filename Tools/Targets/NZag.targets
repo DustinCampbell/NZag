@@ -49,6 +49,12 @@
     <StartWorkingDirectory>$(OutDir)</StartWorkingDirectory>
   </PropertyGroup>
 
+  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+    <Reference Include="xunit">
+      <HintPath>$(NZagToolsPath)\xUnit\xunit.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
   <PropertyGroup Condition="'$(ProjectLanguage)' == 'VB'">
     <OptionExplicit>On</OptionExplicit>
     <OptionCompare>Binary</OptionCompare>
