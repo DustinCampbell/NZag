@@ -179,8 +179,8 @@ type Memory private (stream : Stream) =
             let chunk = currentChunk
             let chunkAddress = address' - currentChunkStart
 
-            ((uint16 chunk.[address']) <<< 8) |||
-             (uint16 chunk.[address'+1])
+            ((uint16 chunk.[chunkAddress]) <<< 8) |||
+             (uint16 chunk.[chunkAddress+1])
         else
             let b1 = readByte  address'
             let b2 = readByte (address'+1)
@@ -197,10 +197,10 @@ type Memory private (stream : Stream) =
             let chunk = currentChunk
             let chunkAddress = address' - currentChunkStart
 
-            ((uint32 chunk.[address']) <<< 24) |||
-            ((uint32 chunk.[address'+1]) <<< 16) |||
-            ((uint32 chunk.[address'+2]) <<< 8) |||
-             (uint32 chunk.[address'+3])
+            ((uint32 chunk.[chunkAddress]) <<< 24) |||
+            ((uint32 chunk.[chunkAddress+1]) <<< 16) |||
+            ((uint32 chunk.[chunkAddress+2]) <<< 8) |||
+             (uint32 chunk.[chunkAddress+3])
         else
             let b1 = readByte  address'
             let b2 = readByte (address'+1)

@@ -10,6 +10,13 @@
     <NZagReferencesPath>$(NZagPath)\References</NZagReferencesPath>
     <NZagToolsPath>$(NZagPath)\Tools</NZagToolsPath>
   </PropertyGroup>
+  
+  <!--Language settings -->
+  <PropertyGroup>
+    <ProjectLanguage Condition="'$(ProjectLanguage)' == '' And '$(MSBuildProjectExtension)' == '.csproj'">CSharp</ProjectLanguage>
+    <ProjectLanguage Condition="'$(ProjectLanguage)' == '' And '$(MSBuildProjectExtension)' == '.fsproj'">FSharp</ProjectLanguage>
+    <ProjectLanguage Condition="'$(ProjectLanguage)' == '' And '$(MSBuildProjectExtension)' == '.vbproj'">VB</ProjectLanguage>
+  </PropertyGroup>
 
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
@@ -35,28 +42,53 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+    <StartAction>Program</StartAction>
+    <StartProgram>$(NZagToolsPath)\xUnit\xunit.gui.clr4.x86.exe</StartProgram>
+    <StartArguments>$(AssemblyName).dll</StartArguments>
+    <StartWorkingDirectory>$(OutDir)</StartWorkingDirectory>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ProjectLanguage)' == 'VB'">
+    <OptionExplicit>On</OptionExplicit>
+    <OptionCompare>Binary</OptionCompare>
+    <OptionStrict>Off</OptionStrict>
+    <OptionInfer>On</OptionInfer>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug' And '$(ProjectLanguage)' == 'FSharp'">
     <Tailcalls>false</Tailcalls>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug' And '$(ProjectLanguage)' == 'VB'">
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' And '$(ProjectLanguage)' == 'VB'">
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' And '$(ProjectLanguage)' == 'FSharp'">
     <Tailcalls>true</Tailcalls>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
-    <StartAction>Program</StartAction>
-    <StartProgram>$(NGlulxToolsPath)\NUnit\nunit-x86.exe</StartProgram>
-    <StartArguments>$(AssemblyName).dll</StartArguments>
-    <StartWorkingDirectory>$(OutDir)</StartWorkingDirectory>
-  </PropertyGroup>
-  
 </Project>
