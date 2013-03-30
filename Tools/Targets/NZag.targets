@@ -55,6 +55,10 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup Condition="'$(IsTestProject)' == 'true' And '$(ProjectLanguage)' == 'VB'">
+    <Import Include="Xunit" />
+  </ItemGroup>
+
   <PropertyGroup Condition="'$(ProjectLanguage)' == 'VB'">
     <OptionExplicit>On</OptionExplicit>
     <OptionCompare>Binary</OptionCompare>

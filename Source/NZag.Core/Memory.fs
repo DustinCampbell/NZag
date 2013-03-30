@@ -169,6 +169,30 @@ type Memory private (stream : Stream) =
 
         readByte address'
 
+    member x.ReadBytes address count =
+        if count > size then
+            argumentOutOfRange "count" "count is larger than the Memory size"
+
+        let address' = translate address
+        if address' > size - count then
+            argumentOutOfRange "address" "Expected address to be in range 0 to %d" (size - count)
+
+        let buffer = Array.zeroCreate count
+        let mutable readSoFar = 0
+
+        while readSoFar < count do
+            let chunkIndex = (address' + readSoFar) / ChunkSize
+            let chunk = chunks.[chunkIndex]
+            let chunkStart = chunkIndex * ChunkSize
+            let chunkEnd = chunkStart + ChunkSize
+            let offset = (address' + readSoFar) - chunkStart
+            let amountToRead = min (count - readSoFar) (chunkEnd - (chunkStart + offset))
+
+            Array.blit chunk offset buffer readSoFar amountToRead
+            readSoFar <- readSoFar + amountToRead
+
+        buffer
+
     member x.ReadWord address =
         let address' = translate address
         if address' > size - 2 then
