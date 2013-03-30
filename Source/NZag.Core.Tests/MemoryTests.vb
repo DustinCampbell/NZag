@@ -24,18 +24,39 @@ Public Module MemoryTests
     End Sub
 
     <Fact>
-    Sub WriteAndReadWords()
+    Sub WriteAndReadBytesWithMemoryReader()
         Dim memory = CreateMemory(8, &H30000)
         Assert.NotNull(memory)
 
         ' Write bytes
+        Const length As Integer = &H30000 - &H64
+        For i = 0 To length - 1
+            Dim a = Address.NewRawAddress(&H64 + i)
+            memory.WriteByte(a, i Mod Byte.MaxValue)
+        Next
+
+        ' Read bytes
+        Dim reader = memory.CreateMemoryReader(Address.NewRawAddress(&H64))
+        For i = 0 To length - 1
+            Dim b = i Mod Byte.MaxValue
+            Dim v = reader.NextByte()
+            Assert.Equal(b, v)
+        Next
+    End Sub
+
+    <Fact>
+    Sub WriteAndReadWords()
+        Dim memory = CreateMemory(8, &H30000)
+        Assert.NotNull(memory)
+
+        ' Write words
         Const length As Integer = &H30000 - &H64
         For i = 0 To (length - 1) / 2 Step 2
             Dim a = Address.NewRawAddress(&H64 + i)
             memory.WriteWord(a, i Mod UShort.MaxValue)
         Next
 
-        ' Read bytes
+        ' Read words
         For i = 0 To (length - 1) / 2 Step 2
             Dim a = Address.NewRawAddress(&H64 + i)
             Dim w = i Mod UShort.MaxValue
@@ -45,22 +66,64 @@ Public Module MemoryTests
     End Sub
 
     <Fact>
+    Sub WriteAndReadWordsWithMemoryReader()
+        Dim memory = CreateMemory(8, &H30000)
+        Assert.NotNull(memory)
+
+        ' Write words
+        Const length As Integer = &H30000 - &H64
+        For i = 0 To (length - 1) / 2 Step 2
+            Dim a = Address.NewRawAddress(&H64 + i)
+            memory.WriteWord(a, i Mod UShort.MaxValue)
+        Next
+
+        ' Read words
+        Dim reader = memory.CreateMemoryReader(Address.NewRawAddress(&H64))
+        For i = 0 To (length - 1) / 2 Step 2
+            Dim w = i Mod UShort.MaxValue
+            Dim v = reader.NextWord()
+            Assert.Equal(w, v)
+        Next
+    End Sub
+
+    <Fact>
     Sub WriteAndReadDWords()
         Dim memory = CreateMemory(8, &H30000)
         Assert.NotNull(memory)
 
-        ' Write bytes
+        ' Write dwords
         Const length As Integer = &H30000 - &H64
         For i = 0 To (length - 1) / 4 Step 4
             Dim a = Address.NewRawAddress(&H64 + i)
             memory.WriteDWord(a, i Mod UInteger.MaxValue)
         Next
 
-        ' Read bytes
+        ' Read dwords
         For i = 0 To (length - 1) / 4 Step 4
             Dim a = Address.NewRawAddress(&H64 + i)
             Dim dw = i Mod UInteger.MaxValue
             Dim v = memory.ReadDWord(a)
+            Assert.Equal(dw, v)
+        Next
+    End Sub
+
+    <Fact>
+    Sub WriteAndReadDWordsWithMemoryReader()
+        Dim memory = CreateMemory(8, &H30000)
+        Assert.NotNull(memory)
+
+        ' Write dwords
+        Const length As Integer = &H30000 - &H64
+        For i = 0 To (length - 1) / 4 Step 4
+            Dim a = Address.NewRawAddress(&H64 + i)
+            memory.WriteDWord(a, i Mod UInteger.MaxValue)
+        Next
+
+        ' Read dwords
+        Dim reader = memory.CreateMemoryReader(Address.NewRawAddress(&H64))
+        For i = 0 To (length - 1) / 4 Step 4
+            Dim dw = i Mod UInteger.MaxValue
+            Dim v = reader.NextDWord()
             Assert.Equal(dw, v)
         Next
     End Sub
