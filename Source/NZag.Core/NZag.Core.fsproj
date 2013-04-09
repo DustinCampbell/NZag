@@ -19,6 +19,7 @@
   <ItemGroup>
     <Compile Include="Utilities.fs" />
     <Compile Include="Memory.fs" />
+    <Compile Include="Text.fs" />
     <Compile Include="Routines.fs" />
   </ItemGroup>
   <PropertyGroup>

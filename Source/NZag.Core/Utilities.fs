@@ -13,6 +13,15 @@ module Exceptions =
     let argumentOutOfRange paramName message =
         Printf.ksprintf (fun s -> raise <| ArgumentOutOfRangeException(paramName, s)) message
 
+    let argumentNull paramName message =
+        Printf.ksprintf (fun s -> raise <| ArgumentNullException(paramName, s)) message
+
+[<RequireQualifiedAccess>]
+module String =
+
+    let toCharArray (s : string) =
+        s.ToCharArray()
+
 [<RequireQualifiedAccess>]
 module StringBuilder =
 

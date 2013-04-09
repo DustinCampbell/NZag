@@ -21,6 +21,31 @@
     End Sub
 
     <Fact>
+    Sub Read()
+        Dim memory = CreateMemory(8, &H30000)
+
+        ' Write bytes
+        Const length As Integer = &H30000 - &H40
+        For i = 0 To length - 1
+            Dim a = Address.NewRawAddress(&H40 + i)
+            memory.WriteByte(a, i Mod Byte.MaxValue)
+        Next
+
+        'Read bytes
+        Dim bytes = New Byte(length - 1) {} ' minus one because VB adds extra array element
+        memory.Read(bytes, 0, length, Address.NewRawAddress(&H40))
+
+        Assert.NotNull(bytes)
+        Assert.Equal(length, bytes.Length)
+
+        For i = 0 To length - 1
+            Dim b = i Mod Byte.MaxValue
+            Dim v = bytes(i)
+            Assert.Equal(b, v)
+        Next
+    End Sub
+
+    <Fact>
     Sub ReadBytes()
         Dim memory = CreateMemory(8, &H30000)
 

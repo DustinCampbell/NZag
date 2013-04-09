@@ -21,6 +21,42 @@ type Address =
     /// A raw, translated address anywhere in memory
     | RawAddress of int
 
+    override x.ToString() =
+        match x with
+        | ByteAddress(a)    -> sprintf "byte: %04x" a
+        | WordAddress(a)    -> sprintf "word: %04x" a
+        | RoutineAddress(a) -> sprintf "routine: %04x" a
+        | StringAddress(a)  -> sprintf "string: %04x" a
+        | RawAddress(a)     -> sprintf "raw: %08x" a
+
+    member x.IsZero =
+        match x with
+        | ByteAddress(a)    -> a = 0us
+        | WordAddress(a)    -> a = 0us
+        | RoutineAddress(a) -> a = 0us
+        | StringAddress(a)  -> a = 0us
+        | RawAddress(a)     -> a = 0
+
+    static member (+) (x, y) =
+        let add_uint16 x y =
+            let result = (int x) + y
+            if result < 0 || result > int UInt16.MaxValue then
+                Exceptions.invalidOperation "Operation caused address overflow"
+            uint16 result
+
+        let add_int32 x y =
+            let result = int64 x + int64 y
+            if result < 0L || result > int64 Int32.MaxValue then
+                Exceptions.invalidOperation "Operation caused address overflow"
+            int result
+
+        match x with
+        | ByteAddress(a)    -> ByteAddress(add_uint16 a y)
+        | WordAddress(a)    -> WordAddress(add_uint16 a y)
+        | RoutineAddress(a) -> RoutineAddress(add_uint16 a y)
+        | StringAddress(a)  -> StringAddress(add_uint16 a y)
+        | RawAddress(a)     -> RawAddress(add_int32 a y)
+
 type IMemoryReader =
     /// Read the next byte without incrementing the address
     abstract member PeekByte : unit -> byte
@@ -161,6 +197,35 @@ type Memory private (stream : Stream) =
             selectChunk address
 
         currentChunk.[address - currentChunkStart] <- value
+
+    member x.Read (buffer : byte[]) offset count address =
+        if buffer = null then
+            argumentNull "buffer" "buffer is null"
+        if offset < 0 then
+            argumentOutOfRange "offset" "offset is less than zero"
+        if count < 0 then
+            argumentOutOfRange "count" "count is less than zero"
+        if offset + count > buffer.Length then
+            argumentOutOfRange "count" "count is larger than buffer size"
+        if count > size then
+            argumentOutOfRange "count" "count is larger than the Memory size"
+
+        let address' = translate address
+        if address' > size - count then
+            argumentOutOfRange "address" "Expected address to be in range 0 to %d" (size - count)
+
+        let mutable readSoFar = offset
+
+        while readSoFar < count do
+            let chunkIndex = (address' + readSoFar) / ChunkSize
+            let chunk = chunks.[chunkIndex]
+            let chunkStart = chunkIndex * ChunkSize
+            let chunkEnd = chunkStart + ChunkSize
+            let chunkOffset = (address' + readSoFar) - chunkStart
+            let amountToRead = min (count - readSoFar) (chunkEnd - (chunkStart + chunkOffset))
+
+            Array.blit chunk chunkOffset buffer readSoFar amountToRead
+            readSoFar <- readSoFar + amountToRead
 
     member x.ReadByte address =
         let address' = translate address
@@ -400,3 +465,10 @@ type Memory private (stream : Stream) =
         stream.Position <- position
 
         memory
+
+module Header =
+
+    let private alphabetTableAddress = ByteAddress(0x34us)
+
+    let readAlphabetTableAddress (memory : Memory) =
+        alphabetTableAddress |> memory.ReadWord |> ByteAddress
