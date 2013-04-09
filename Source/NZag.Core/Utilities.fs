@@ -1,6 +1,7 @@
 ﻿namespace NZag.Utilities
 
 open System
+open System.Collections.Generic
 open System.IO
 open System.Text
 
@@ -40,8 +41,48 @@ module StringBuilder =
     let appendLineBreak (builder : StringBuilder) =
         builder.AppendLine() |> ignore
 
+[<RequireQualifiedAccess>]
+module Enumerable =
+
+    let getEnumerator (e : seq<_>) =
+        e.GetEnumerator()
+
+[<RequireQualifiedAccess>]
+module Enumerator =
+
+    let next (e : IEnumerator<_>) =
+        if e.MoveNext() then Some(e.Current)
+        else None
+
+[<RequireQualifiedAccess>]
+module Dictionary =
+
+    let create() =
+        new Dictionary<_,_>() :> IDictionary<_,_>
+
+    let tryGetValue key (d : IDictionary<_,_>) =
+        match d.TryGetValue(key) with
+        | (true, v) -> Some(v)
+        | (false,_) -> None
+
+[<AutoOpen>]
+module Functions =
+
+    let memoize f =
+        let map = Dictionary.create()
+        fun k ->
+            match map |> Dictionary.tryGetValue k with
+            | Some(v) -> v
+            | None -> let v = f k
+                      map.[k] <- v
+                      v
+
 [<AutoOpen>]
 module Extensions =
+
+    type IEnumerator<'a> with
+        member x.Next() =
+            Enumerator.next x
 
     type Stream with
         member x.NextByte() =

@@ -468,7 +468,11 @@ type Memory private (stream : Stream) =
 
 module Header =
 
-    let private alphabetTableAddress = ByteAddress(0x34us)
+    let private offset_abbreviationTableAddress = ByteAddress(0x18us)
+    let private offset_alphabetTableAddress = ByteAddress(0x34us)
+
+    let readAbbreviationTableAddress (memory : Memory) =
+        offset_abbreviationTableAddress |> memory.ReadWord |> ByteAddress
 
     let readAlphabetTableAddress (memory : Memory) =
-        alphabetTableAddress |> memory.ReadWord |> ByteAddress
+        offset_alphabetTableAddress |> memory.ReadWord |> ByteAddress

@@ -1,6 +1,16 @@
 ﻿Imports System.IO
+Imports System.Reflection
 
 Module Helpers
+
+    Public Const Zork1 = "zork1.z3"
+
+    Function GameMemory(name As String) As Memory
+        Dim asm = Assembly.GetExecutingAssembly()
+        Using stream = asm.GetManifestResourceStream(asm.GetName().Name + "." + Zork1)
+            Return Memory.CreateFrom(stream)
+        End Using
+    End Function
 
     Function CreateMemory(version As Byte, bytes As Byte()) As Memory
         Dim size As UInteger = &H40 + bytes.Length
