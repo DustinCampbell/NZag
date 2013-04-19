@@ -1,7 +1,7 @@
 ﻿Public Module TextTests
 
     <Fact>
-    Sub InstructionText()
+    Sub Zork1_4ED1()
         Dim memory = GameMemory(Zork1)
         Dim reader = New ZTextReader(memory)
         Dim s = reader.ReadString(Address.NewRawAddress(&H4ED1))
@@ -9,7 +9,7 @@
     End Sub
 
     <Fact>
-    Sub StaticText()
+    Sub Zork1_1154A()
         Dim memory = GameMemory(Zork1)
         Dim reader = New ZTextReader(memory)
         Dim s = reader.ReadString(Address.NewRawAddress(&H1154A))

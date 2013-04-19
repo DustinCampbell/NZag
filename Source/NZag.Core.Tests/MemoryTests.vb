@@ -8,7 +8,7 @@
         Const length As Integer = &H30000 - &H40
         For i = 0 To length - 1
             Dim a = Address.NewRawAddress(&H40 + i)
-            memory.WriteByte(a, i Mod Byte.MaxValue)
+            memory.WriteByte(a, CByte(i Mod Byte.MaxValue))
         Next
 
         ' Read bytes
@@ -28,7 +28,7 @@
         Const length As Integer = &H30000 - &H40
         For i = 0 To length - 1
             Dim a = Address.NewRawAddress(&H40 + i)
-            memory.WriteByte(a, i Mod Byte.MaxValue)
+            memory.WriteByte(a, CByte(i Mod Byte.MaxValue))
         Next
 
         'Read bytes
@@ -53,7 +53,7 @@
         Const length As Integer = &H30000 - &H40
         For i = 0 To length - 1
             Dim a = Address.NewRawAddress(&H40 + i)
-            memory.WriteByte(a, i Mod Byte.MaxValue)
+            memory.WriteByte(a, CByte(i Mod Byte.MaxValue))
         Next
 
         'Read bytes
@@ -75,13 +75,13 @@
 
         ' Write words
         Const length As Integer = &H30000 - &H40
-        For i = 0 To (length - 1) / 2 Step 2
+        For i = 0 To (length - 1) \ 2 Step 2
             Dim a = Address.NewRawAddress(&H40 + i)
-            memory.WriteWord(a, i Mod UShort.MaxValue)
+            memory.WriteWord(a, CUShort(i Mod UShort.MaxValue))
         Next
 
         ' Read words
-        For i = 0 To (length - 1) / 2 Step 2
+        For i = 0 To (length - 1) \ 2 Step 2
             Dim a = Address.NewRawAddress(&H40 + i)
             Dim w = i Mod UShort.MaxValue
             Dim v = memory.ReadWord(a)
@@ -95,13 +95,13 @@
 
         ' Write dwords
         Const length As Integer = &H30000 - &H40
-        For i = 0 To (length - 1) / 4 Step 4
+        For i = 0 To (length - 1) \ 4 Step 4
             Dim a = Address.NewRawAddress(&H40 + i)
-            memory.WriteDWord(a, i Mod UInteger.MaxValue)
+            memory.WriteDWord(a, CUInt(i Mod UInteger.MaxValue))
         Next
 
         ' Read dwords
-        For i = 0 To (length - 1) / 4 Step 4
+        For i = 0 To (length - 1) \ 4 Step 4
             Dim a = Address.NewRawAddress(&H40 + i)
             Dim dw = i Mod UInteger.MaxValue
             Dim v = memory.ReadDWord(a)
@@ -117,7 +117,7 @@
         Const length As Integer = &H30000 - &H40
         For i = 0 To length - 1
             Dim a = Address.NewRawAddress(&H40 + i)
-            memory.WriteByte(a, i Mod Byte.MaxValue)
+            memory.WriteByte(a, CByte(i Mod Byte.MaxValue))
         Next
 
         ' Read bytes
@@ -135,14 +135,14 @@
 
         ' Write words
         Const length As Integer = &H30000 - &H40
-        For i = 0 To (length - 1) / 2 Step 2
+        For i = 0 To (length - 1) \ 2 Step 2
             Dim a = Address.NewRawAddress(&H40 + i)
-            memory.WriteWord(a, i Mod UShort.MaxValue)
+            memory.WriteWord(a, CUShort(i Mod UShort.MaxValue))
         Next
 
         ' Read words
         Dim reader = memory.CreateMemoryReader(Address.NewRawAddress(&H40))
-        For i = 0 To (length - 1) / 2 Step 2
+        For i = 0 To (length - 1) \ 2 Step 2
             Dim w = i Mod UShort.MaxValue
             Dim v = reader.NextWord()
             Assert.Equal(w, v)
@@ -155,14 +155,14 @@
 
         ' Write dwords
         Const length As Integer = &H30000 - &H40
-        For i = 0 To (length - 1) / 4 Step 4
+        For i = 0 To (length - 1) \ 4 Step 4
             Dim a = Address.NewRawAddress(&H40 + i)
-            memory.WriteDWord(a, i Mod UInteger.MaxValue)
+            memory.WriteDWord(a, CUInt(i Mod UInteger.MaxValue))
         Next
 
         ' Read dwords
         Dim reader = memory.CreateMemoryReader(Address.NewRawAddress(&H40))
-        For i = 0 To (length - 1) / 4 Step 4
+        For i = 0 To (length - 1) \ 4 Step 4
             Dim dw = i Mod UInteger.MaxValue
             Dim v = reader.NextDWord()
             Assert.Equal(dw, v)
@@ -176,7 +176,7 @@
                 CreateMemory(0, {})
             End Sub)
 
-        For i = 1 To 8
+        For i As Byte = 1 To 8
             Dim v = i
             Assert.DoesNotThrow(
                 Sub()

@@ -13,7 +13,7 @@ Module Helpers
     End Function
 
     Function CreateMemory(version As Byte, bytes As Byte()) As Memory
-        Dim size As UInteger = &H40 + bytes.Length
+        Dim size As UInteger = CUInt(&H40 + bytes.Length)
 
         Dim multiplier As Integer
         If version >= 1 AndAlso version <= 3 Then
@@ -24,20 +24,20 @@ Module Helpers
             multiplier = 8
         End If
 
-        Dim packedSize As UShort = size / multiplier
+        Dim packedSize As UShort = CUShort(size \ multiplier)
         If size Mod multiplier > 0 Then
-            packedSize += 1
+            packedSize = CUShort(packedSize + 1)
         End If
 
-        Using stream = New MemoryStream(size)
+        Using stream = New MemoryStream(CInt(size))
             ' Write version
             stream.Seek(0, SeekOrigin.Begin)
             stream.WriteByte(version)
 
             ' Write size
             stream.Seek(&H1A, SeekOrigin.Begin)
-            stream.WriteByte(packedSize >> 8)
-            stream.WriteByte(packedSize And &HFF)
+            stream.WriteByte(CByte(packedSize >> 8))
+            stream.WriteByte(CByte(packedSize And &HFF))
 
             ' Write data
             stream.Seek(&H40, SeekOrigin.Begin)

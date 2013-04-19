@@ -84,6 +84,12 @@ module private ZText =
                 stop := last || reader.AtEndOfMemory }
         |> Enumerable.getEnumerator
 
+    let skipZChars (reader : IMemoryReader) =
+        let mutable stop = false
+        while not stop && not reader.AtEndOfMemory do
+            let zword = reader.NextWord()
+            stop <- (zword &&& 0x8000us) = 0x8000us
+
     let readString (reader : IMemoryReader) (charProcessor : ICharProcessor) =
         let builder = StringBuilder.create()
         let zcharEnum = readZChars reader
@@ -198,6 +204,9 @@ type ZTextReader (memory : Memory) =
 
     let charProcessor = new CharProcessor(memory, new AbbreviationReader(memory))
 
+    member x.ReadString (reader : IMemoryReader) =
+        ZText.readString reader charProcessor
+
     member x.ReadString address =
         let reader = address |> memory.CreateMemoryReader
-        ZText.readString reader charProcessor
+        x.ReadString reader

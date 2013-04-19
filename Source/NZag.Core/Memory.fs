@@ -37,6 +37,14 @@ type Address =
         | StringAddress(a)  -> a = 0us
         | RawAddress(a)     -> a = 0
 
+    member x.IntValue =
+        match x with
+        | ByteAddress(a)    -> int a
+        | WordAddress(a)    -> int a
+        | RoutineAddress(a) -> int a
+        | StringAddress(a)  -> int a
+        | RawAddress(a)     -> a
+
     static member (+) (x, y) =
         let add_uint16 x y =
             let result = (int x) + y

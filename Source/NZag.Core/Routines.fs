@@ -332,3 +332,190 @@ type Instruction(address : Address, length : int, opcode : Opcode, operands: lis
         | None    -> ()
 
         builder.ToString()
+
+type InstructionReader (memory : Memory) =
+
+    let textReader = new ZTextReader(memory)
+    let opcodeTable = OpcodeTables.getTable (byte memory.Version)
+
+    [<Literal>]
+    let LargeConstantOp = 0uy
+    [<Literal>]
+    let SmallConstantOp = 1uy
+    [<Literal>]
+    let VariableOp = 2uy
+    [<Literal>]
+    let OmittedOp = 3uy
+
+    let longForm opByte =
+        byte (opByte &&& 0x1F)
+
+    let shortForm opByte =
+        byte (opByte &&& 0x0F)
+
+    let varForm opByte =
+        byte (opByte &&& 0x1F)
+
+    // Fast lookup for first instruction byte. In cases where
+    // the opcode is not VarOp or Ext, the operand kinds are
+    // precomputed.
+    let lookupTable =
+        let arr = Array.zeroCreate 256
+
+        let operandKinds = [SmallConstantOp; SmallConstantOp]
+        for i = 0x00 to 0x1F do
+            arr.[i] <- (OpcodeKind.TwoOp, longForm i, operandKinds)
+
+        let operandKinds = [SmallConstantOp; VariableOp]
+        for i = 0x20 to 0x3F do
+            arr.[i] <- (OpcodeKind.TwoOp, longForm i, operandKinds)
+
+        let operandKinds = [VariableOp; SmallConstantOp]
+        for i = 0x40 to 0x5F do
+            arr.[i] <- (OpcodeKind.TwoOp, longForm i, operandKinds)
+
+        let operandKinds = [VariableOp; VariableOp]
+        for i = 0x60 to 0x7F do
+            arr.[i] <- (OpcodeKind.TwoOp, longForm i, operandKinds)
+
+        let operandKinds = [LargeConstantOp]
+        for i = 0x80 to 0x8F do
+            arr.[i] <- (OpcodeKind.OneOp, shortForm i, operandKinds)
+
+        let operandKinds = [SmallConstantOp]
+        for i = 0x90 to 0x9F do
+            arr.[i] <- (OpcodeKind.OneOp, shortForm i, operandKinds)
+
+        let operandKinds = [VariableOp]
+        for i = 0xA0 to 0xAF do
+            arr.[i] <- (OpcodeKind.OneOp, shortForm i, operandKinds)
+
+        let operandKinds = []
+        for i = 0xB0 to 0xBF do
+            arr.[i] <- (OpcodeKind.ZeroOp, shortForm i, operandKinds)
+
+        // Actually, 0xBE should be Ext
+        arr.[0xBE] <- (OpcodeKind.Ext, 0uy, operandKinds)
+
+        // For the rest, the operand kinds will be calculated by checking the
+        // next bytes of the instruction
+        for i = 0xC0 to 0xDF do
+            arr.[i] <- (OpcodeKind.TwoOp, varForm i, operandKinds)
+
+        for i = 0xE0 to 0xFF do
+            arr.[i] <- (OpcodeKind.VarOp, varForm i, operandKinds)
+
+        arr
+
+    let readOperandKinds (reader : IMemoryReader) =
+      [ let b = reader.NextByte()
+        let shift = ref 6
+        let stop = ref false
+        while !shift >= 0 && not (!stop) do
+            let kind = (b >>> !shift) &&& 0x03uy
+            if kind <> OmittedOp then
+                yield kind
+                shift := !shift - 2
+            else
+                stop := true ]
+
+    let readDoubleOperandKinds (reader : IMemoryReader) =
+      [ let w = reader.NextWord()
+        let shift = ref 14
+        let stop = ref false
+        while !shift >= 0 && not (!stop) do
+            let kind = byte (w >>> !shift) &&& 0x03uy
+            if kind <> OmittedOp then
+                yield kind
+                shift := !shift - 2
+            else
+                stop := true ]
+
+    let readOperand kind (reader : IMemoryReader) =
+        match kind with
+        | LargeConstantOp -> LargeConstantOperand(reader.NextWord())
+        | SmallConstantOp -> SmallConstantOperand(reader.NextByte())
+        | VariableOp      -> VariableOperand(reader.NextByte() |> Variable.FromByte)
+        | k               -> Exceptions.invalidOperation "Unexpected operand kind: %d" k
+
+    let readStoreVariable (reader : IMemoryReader) =
+        reader.NextByte() |> Variable.FromByte
+
+    let readBranch (reader : IMemoryReader) =
+        let b1 = reader.NextByte()
+
+        let condition = (b1 &&& 0x80uy) = 0x80uy
+
+        let offset =
+            if (b1 &&& 0x40uy) = 0x40uy then // single byte
+                int16 (b1 &&& 0x3fuy) // bottom 6 bits
+            else
+                // OR bottom 7 bits with the next byte
+                let b1 = byte (b1 &&& 0x3fuy)
+                let b2 = reader.NextByte()
+                let temp = (uint16 b1 <<< 8) ||| uint16 b2
+
+                // if bit 13, set bits 14 and 15 as well to produce a proper signed value
+                let temp' =
+                    if (temp &&& 0x2000us) = 0x2000us then
+                        uint16 (temp ||| 0xc000us)
+                    else
+                        temp
+
+                int16 temp'
+
+        match offset with
+        | 0s  -> RFalseBranch(condition)
+        | 1s  -> RTrueBranch(condition)
+        | ofs -> OffsetBranch(condition, ofs)
+
+    let readText (reader : IMemoryReader) =
+        reader |> textReader.ReadString
+
+    member x.ReadInstruction (reader : IMemoryReader) =
+        let address = reader.Address
+        let opcodeByte1 = reader.NextByte()
+
+        let (kind,number,operandKinds) = lookupTable.[int opcodeByte1]
+
+        let opcode =
+            if kind <> OpcodeKind.Ext then
+                opcodeTable.[kind, number]
+            else
+                opcodeTable.[kind, reader.NextByte()]
+
+        let operandKinds =
+            if opcodeByte1 <= 0xBFuy && opcodeByte1 <> 0xBEuy then
+                operandKinds
+            elif not opcode.IsDoubleVar then
+                reader |> readOperandKinds
+            else
+                reader |> readDoubleOperandKinds
+
+        let operands = operandKinds |> List.map (fun k -> reader |> readOperand k)
+
+        let storeVariable =
+            if opcode.HasStoreVariable then
+                Some(reader |> readStoreVariable)
+            else
+                None
+
+        let branch =
+            if opcode.HasBranch then
+                Some(reader |> readBranch)
+            else
+                None
+
+        let text =
+            if opcode.HasText then
+                Some(reader |> readText)
+            else
+                None
+
+        let length = reader.Address.IntValue - address.IntValue
+
+        new Instruction(address, length, opcode, operands, storeVariable, branch, text)
+
+    member x.ReadInstruction address =
+        let reader = address |> memory.CreateMemoryReader
+        x.ReadInstruction reader
