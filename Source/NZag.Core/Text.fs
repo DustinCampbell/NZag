@@ -205,6 +205,9 @@ type ZTextReader (memory : Memory) =
     let charProcessor = new CharProcessor(memory, new AbbreviationReader(memory))
 
     member x.ReadString (reader : IMemoryReader) =
+        if reader.Memory <> memory then
+            Exceptions.invalidOperation "Expected IMemoryReader from same memory"
+
         ZText.readString reader charProcessor
 
     member x.ReadString address =

@@ -49,13 +49,13 @@ type Address =
         let add_uint16 x y =
             let result = (int x) + y
             if result < 0 || result > int UInt16.MaxValue then
-                Exceptions.invalidOperation "Operation caused address overflow"
+                invalidOperation "Operation caused address overflow"
             uint16 result
 
         let add_int32 x y =
             let result = int64 x + int64 y
             if result < 0L || result > int64 Int32.MaxValue then
-                Exceptions.invalidOperation "Operation caused address overflow"
+                invalidOperation "Operation caused address overflow"
             int result
 
         match x with
@@ -64,6 +64,26 @@ type Address =
         | RoutineAddress(a) -> RoutineAddress(add_uint16 a y)
         | StringAddress(a)  -> StringAddress(add_uint16 a y)
         | RawAddress(a)     -> RawAddress(add_int32 a y)
+
+    static member (-) (x, y) =
+        let subtract_uint16 x y =
+            let result = (int x) - y
+            if result < 0 || result > int UInt16.MaxValue then
+                invalidOperation "Operation caused address overflow"
+            uint16 result
+
+        let subtract_int32 x y =
+            let result = int64 x - int64 y
+            if result < 0L || result > int64 Int32.MaxValue then
+                invalidOperation "Operation caused address overflow"
+            int result
+
+        match x with
+        | ByteAddress(a)    -> ByteAddress(subtract_uint16 a y)
+        | WordAddress(a)    -> WordAddress(subtract_uint16 a y)
+        | RoutineAddress(a) -> RoutineAddress(subtract_uint16 a y)
+        | StringAddress(a)  -> StringAddress(subtract_uint16 a y)
+        | RawAddress(a)     -> RawAddress(subtract_int32 a y)
 
 type IMemoryReader =
     /// Read the next byte without incrementing the address
@@ -80,6 +100,11 @@ type IMemoryReader =
     /// Read the next dword
     abstract member NextDWord : unit -> uint32
 
+    /// Read a byte array of the given count
+    abstract member NextBytes : int -> byte[]
+    /// Read a word array of the given count
+    abstract member NextWords : int -> uint16[]
+
     /// Increment the address by a given number of positive bytes
     abstract member SkipBytes : int -> unit
 
@@ -88,7 +113,10 @@ type IMemoryReader =
     /// Determines whether the address of this reader is at or past the end of the memory.
     abstract member AtEndOfMemory : bool
 
-type Memory private (stream : Stream) =
+    /// The memory this reader was created from
+    abstract member Memory : Memory
+
+and Memory private (stream : Stream) =
 
     // We split memory into 64k chunks to avoid creating very large arrays.
     [<Literal>]
@@ -206,6 +234,20 @@ type Memory private (stream : Stream) =
 
         currentChunk.[address - currentChunkStart] <- value
 
+    let readWord address =
+        // We take a faster path if the entire word can be read from the current chunk
+        if address >= currentChunkStart && address < currentChunkEnd - 2 then
+            let chunk = currentChunk
+            let chunkAddress = address - currentChunkStart
+
+            ((uint16 chunk.[chunkAddress]) <<< 8) |||
+             (uint16 chunk.[chunkAddress+1])
+        else
+            let b1 = readByte  address
+            let b2 = readByte (address+1)
+
+            (uint16 b1 <<< 8) ||| uint16 b2
+
     member x.Read (buffer : byte[]) offset count address =
         if buffer = null then
             argumentNull "buffer" "buffer is null"
@@ -271,18 +313,21 @@ type Memory private (stream : Stream) =
         if address' > size - 2 then
             argumentOutOfRange "address" "Expected address to be in range 0 to %d" (size - 2)
 
-        // We take a faster path if the entire word can be read from the current chunk
-        if address' >= currentChunkStart && address' < currentChunkEnd - 2 then
-            let chunk = currentChunk
-            let chunkAddress = address' - currentChunkStart
+        readWord address'
 
-            ((uint16 chunk.[chunkAddress]) <<< 8) |||
-             (uint16 chunk.[chunkAddress+1])
-        else
-            let b1 = readByte  address'
-            let b2 = readByte (address'+1)
+    member x.ReadWords address count =
+        if (count * 2) > size then
+            argumentOutOfRange "count" "count is larger than the Memory size"
 
-            (uint16 b1 <<< 8) ||| uint16 b2
+        let address' = translate address
+        if address' > size - (count * 2) then
+            argumentOutOfRange "address" "Expected address to be in range 0 to % d" (size - count)
+
+        let buffer = Array.zeroCreate count
+        for i = 0 to count - 1 do
+            buffer.[i] <- readWord (address' + (i * 2))
+
+        buffer
 
     member x.ReadDWord address =
         let address' = translate address
@@ -381,10 +426,32 @@ type Memory private (stream : Stream) =
 
         let readNextByte() =
             match !readerChunk with
-            | Some(chunk) -> let result = chunk.[!readerChunkOffset]
-                             increment 1
-                             result
-            | None        -> readPastEndOfMemory()
+            | Some(chunk) ->
+                let result = chunk.[!readerChunkOffset]
+                increment 1
+                result
+            | None ->
+                readPastEndOfMemory()
+
+        let readNextWord() =
+            match !readerChunk with
+            | Some(chunk) ->
+                // We take a faster path if the entire word can be written to the current chunk
+                let readerChunkOffset' = !readerChunkOffset
+                if readerChunkOffset' <= ChunkSize - 2 then
+                    let chunk = getChunk()
+                    let result = ((uint16 chunk.[readerChunkOffset']) <<< 8) |||
+                                  (uint16 chunk.[readerChunkOffset'+1])
+
+                    increment 2
+                    result
+                else
+                    let b1 = readNextByte()
+                    let b2 = readNextByte()
+
+                    (uint16 b1 <<< 8) ||| uint16 b2
+            | None ->
+                readPastEndOfMemory()
 
         let peek f =
             let oldReaderAddress = !readerAddress
@@ -402,39 +469,26 @@ type Memory private (stream : Stream) =
         selectChunk()
 
         { new IMemoryReader with
-            member x.PeekByte() =
-                peek (fun () -> x.NextByte())
-            member x.PeekWord() =
-                peek (fun () -> x.NextWord())
-            member x.PeekDWord() =
-                peek (fun () -> x.NextDWord())
+            member y.PeekByte() =
+                peek (fun () -> y.NextByte())
+            member y.PeekWord() =
+                peek (fun () -> y.NextWord())
+            member y.PeekDWord() =
+                peek (fun () -> y.NextDWord())
 
-            member x.NextByte() =
+            member y.NextByte() =
                 if !readerAddress > size - 1 then
                     readPastEndOfMemory()
 
                 readNextByte()
 
-            member x.NextWord() =
+            member y.NextWord() =
                 if !readerAddress > size - 2 then
                     readPastEndOfMemory()
 
-                // We take a faster path if the entire word can be written to the current chunk
-                let readerChunkOffset' = !readerChunkOffset
-                if readerChunkOffset' <= ChunkSize - 2 then
-                    let chunk = getChunk()
-                    let result = ((uint16 chunk.[readerChunkOffset']) <<< 8) |||
-                                  (uint16 chunk.[readerChunkOffset'+1])
+                readNextWord()
 
-                    increment 2
-                    result
-                else
-                    let b1 = readNextByte()
-                    let b2 = readNextByte()
-
-                    (uint16 b1 <<< 8) ||| uint16 b2
-
-            member x.NextDWord() =
+            member y.NextDWord() =
                 if !readerAddress > size - 4 then
                     readPastEndOfMemory()
 
@@ -457,14 +511,36 @@ type Memory private (stream : Stream) =
 
                     (uint32 b1 <<< 24) ||| (uint32 b2 <<< 16) ||| (uint32 b3 <<< 8) ||| uint32 b4
 
-            member x.SkipBytes count =
+            member y.NextBytes count =
+                if !readerAddress > size - count then
+                    readPastEndOfMemory()
+
+                let buffer = Array.zeroCreate count
+                for i = 0 to count - 1 do
+                    buffer.[i] <- readNextByte()
+
+                buffer
+
+            member y.NextWords count =
+                if !readerAddress > size - (count * 2) then
+                    readPastEndOfMemory()
+
+                let buffer = Array.zeroCreate count
+                for i = 0 to count - 1 do
+                    buffer.[i] <- readNextWord()
+
+                buffer
+
+            member y.SkipBytes count =
                 if count < 0 then
                     argumentOutOfRange "count" "count was less than 0."
                 if count > 0 then
                     increment count
 
-            member x.Address = RawAddress(!readerAddress)
-            member x.AtEndOfMemory = !readerAddress >= size
+            member y.Address = RawAddress(!readerAddress)
+            member y.AtEndOfMemory = !readerAddress >= size
+
+            member y.Memory = x
         }
 
     static member CreateFrom(stream : Stream) =

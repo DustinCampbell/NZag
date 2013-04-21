@@ -307,6 +307,22 @@ type Instruction(address : Address, length : int, opcode : Opcode, operands: lis
     member x.Branch = branch
     member x.Text = text
 
+    member x.JumpAddress =
+        if not opcode.IsJump then
+            invalidOperation "Not a jump instruction"
+
+        let jumpOffset =
+            match operands with
+            | [LargeConstantOperand(v)] -> int16 v
+            | _ -> invalidOperation "Expected single large constant operand"
+
+        address + (length + int jumpOffset - 2)
+
+    member x.BranchAddress =
+        match branch with
+        | Some(OffsetBranch(_,o)) -> Some(address + (length + int o - 2))
+        | _ -> None
+
     override x.ToString() =
         let builder = StringBuilder.create()
         builder |> StringBuilder.appendString opcode.Name
@@ -436,7 +452,7 @@ type InstructionReader (memory : Memory) =
         | LargeConstantOp -> LargeConstantOperand(reader.NextWord())
         | SmallConstantOp -> SmallConstantOperand(reader.NextByte())
         | VariableOp      -> VariableOperand(reader.NextByte() |> Variable.FromByte)
-        | k               -> Exceptions.invalidOperation "Unexpected operand kind: %d" k
+        | k               -> invalidOperation "Unexpected operand kind: %d" k
 
     let readStoreVariable (reader : IMemoryReader) =
         reader.NextByte() |> Variable.FromByte
@@ -473,6 +489,9 @@ type InstructionReader (memory : Memory) =
         reader |> textReader.ReadString
 
     member x.ReadInstruction (reader : IMemoryReader) =
+        if reader.Memory <> memory then
+            invalidOperation "Expected IMemoryReader from same memory"
+
         let address = reader.Address
         let opcodeByte1 = reader.NextByte()
 
@@ -519,3 +538,58 @@ type InstructionReader (memory : Memory) =
     member x.ReadInstruction address =
         let reader = address |> memory.CreateMemoryReader
         x.ReadInstruction reader
+
+type Routine (address : Address, instructions : list<Instruction>, locals : list<uint16>) =
+    member x.Address = address
+    member x.Instructions = instructions
+    member x.Locals = locals
+
+type RoutineReader (memory : Memory) =
+
+    let readLocals (reader : IMemoryReader) =
+        let localCount = int (reader.NextByte())
+        if memory.Version <= 4 then
+            reader.NextWords localCount
+        else
+            Array.zeroCreate localCount
+
+    let readInstructions (reader : IMemoryReader) =
+        let instructionReader = new InstructionReader(memory)
+        let result = new ResizeArray<_>()
+
+        let mutable lastKnownAddress = reader.Address
+        let mutable stop = false
+        while not stop do
+            let i = reader |> instructionReader.ReadInstruction
+            result.Add(i)
+
+            if reader.Address > lastKnownAddress && (i.Opcode.IsReturn || i.Opcode.IsQuit) then
+                stop <- true
+            elif i.Opcode.IsJump then
+                let jumpAddress = i.JumpAddress
+                if jumpAddress > lastKnownAddress then
+                    lastKnownAddress <- jumpAddress
+                if reader.Address > lastKnownAddress then
+                    stop <- true
+            else
+                match i.BranchAddress with
+                | Some(a) ->
+                    if a > lastKnownAddress then
+                        lastKnownAddress <- a
+                | None -> ()
+
+        result |> List.ofSeq
+
+    member x.ReadRoutine (reader : IMemoryReader) =
+        if reader.Memory <> memory then
+            invalidOperation "Expected IMemoryReader from same memory"
+
+        let address = reader.Address
+        let locals = reader |> readLocals |> List.ofArray
+        let instructions = reader |> readInstructions
+
+        new Routine(address, instructions, locals)
+
+    member x.ReadRoutine address =
+        let reader = address |> memory.CreateMemoryReader
+        x.ReadRoutine reader
