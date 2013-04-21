@@ -21,6 +21,7 @@
     <Compile Include="Memory.fs" />
     <Compile Include="Text.fs" />
     <Compile Include="Routines.fs" />
+    <Compile Include="Binder.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
