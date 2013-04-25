@@ -1,5 +1,8 @@
 ﻿namespace NZag.Core
 
+open System.Text
+open NZag.Utilities
+
 type Constant =
     | Byte of byte
     | Word of uint16
@@ -112,4 +115,97 @@ module Visitors =
             | AssignTempStmt(_,e)
             | StackPushStmt(e) ->
                 visitExpr(e)
+
+type BoundNodeDumper (?builder : StringBuilder) =
+
+    let builder =
+        match builder with
+        | Some(b) -> b
+        | None -> StringBuilder.create()
+
+    let indentLevel = ref 0
+    let atLineStart = ref true
+
+    let indent() = incr indentLevel
+    let unindent() = decr indentLevel
+
+    let indentIfNeeded() =
+        if !atLineStart then
+            let indentText = " " |> String.replicate (4 * !indentLevel)
+            builder |> StringBuilder.appendString indentText
+            atLineStart := false
+
+    let append s =
+        builder |> StringBuilder.appendString s
+
+    let appendf format =
+        builder |> StringBuilder.appendFormat format
+
+    let newLine() =
+        builder |> StringBuilder.appendLineBreak
+        atLineStart := true
+
+    let dumpConstant = function
+        | Byte(v)  -> appendf "%02x" v
+        | Word(v)  -> appendf "%04x" v
+        | Int32(v) -> appendf "%x" v
+        | Text(v)  -> appendf "\"%s\"" v
+
+    let dumpUnaryOperationKind = function
+        | UnaryOperationKind.Negate -> append "-"
+        | UnaryOperationKind.Not    -> append "!"
+        | x -> Exceptions.invalidOperation "Unknown unary operator kind: %A" x
+
+    let dumpBinaryOperationKind = function
+        | BinaryOperationKind.Add         -> append " + "
+        | BinaryOperationKind.Subtract    -> append " - "
+        | BinaryOperationKind.Multiply    -> append " * "
+        | BinaryOperationKind.Divide      -> append " / "
+        | BinaryOperationKind.Remainder   -> append " % "
+        | BinaryOperationKind.And         -> append " & "
+        | BinaryOperationKind.Or          -> append " | "
+        | BinaryOperationKind.ShiftLeft   -> append " << "
+        | BinaryOperationKind.ShiftRight  -> append " >> "
+        | BinaryOperationKind.Equal       -> append " == "
+        | BinaryOperationKind.NotEqual    -> append " != "
+        | BinaryOperationKind.LessThan    -> append " < "
+        | BinaryOperationKind.GreaterThan -> append " > "
+        | BinaryOperationKind.AtMost      -> append " <= "
+        | BinaryOperationKind.AtLeast     -> append " >= "
+        | x -> Exceptions.invalidOperation "Unknown binary operator kind: %A" x
+
+    let rec dumpExpression = function
+        | ConstantExpr(c) ->
+            dumpConstant c
+        | TempExpr(i) ->
+            appendf "temp%02x" i
+        | UnaryOperationExpr(k,e) ->
+            dumpUnaryOperationKind k
+            dumpExpression e
+        | BinaryOperationExpr(k,l,r) ->
+            append "("
+            dumpExpression l
+            dumpBinaryOperationKind  k
+            dumpExpression r
+            append ")"
+        | CallExpr(a,args) ->
+            append "call "
+            dumpExpression a
+            append " ("
+            args |> List.iteri (fun i v -> if i > 0 then append ", "
+                                           dumpExpression v)
+            append ")"
+
+    let rec dumpStatement s =
+        newLine()
+
+        match s with
+        | DeclareTempStmt(i) ->
+            appendf "declare temp%02x" i
+        | AssignTempStmt(i,e) ->
+            appendf "temp%02x <- " i
+            dumpExpression e
+        | StackPushStmt(e) ->
+            append "push-SP: "
+            dumpExpression e
 
