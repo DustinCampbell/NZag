@@ -540,9 +540,42 @@ type InstructionReader (memory : Memory) =
         x.ReadInstruction reader
 
 type Routine (address : Address, instructions : list<Instruction>, locals : list<uint16>) =
+
+    let jumpTargets =
+        let targets = SortedSet.create()
+
+        let mutable current = instructions.Head
+        let mutable rest = instructions.Tail
+
+        targets |> SortedSet.add current.Address
+
+        let mutable stop = false
+        while not stop do
+            if current.BranchAddress.IsSome then
+                // conditional branch
+                targets |> SortedSet.add current.BranchAddress.Value
+
+                // add "else" portion of conditional (i.e. the next instruction).
+                match rest with
+                | (next::_) -> targets |> SortedSet.add next.Address
+                | _ -> ()
+
+            elif current.Opcode.IsJump then
+                // unconditional branch
+                targets |> SortedSet.add current.JumpAddress
+
+            if not rest.IsEmpty then
+                current <- rest.Head
+                rest <- rest.Tail
+            else
+                stop <- true
+
+        targets :> seq<_>
+
     member x.Address = address
     member x.Instructions = instructions
     member x.Locals = locals
+    member x.JumpTargets = jumpTargets
 
 type RoutineReader (memory : Memory) =
 

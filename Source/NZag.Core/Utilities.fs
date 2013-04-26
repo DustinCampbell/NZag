@@ -65,6 +65,18 @@ module Dictionary =
         | (true, v) -> Some(v)
         | (false,_) -> None
 
+    let add k v (s : IDictionary<_,_>) =
+        s.Add(k, v)
+
+[<RequireQualifiedAccess>]
+module SortedSet =
+
+    let create() =
+        new SortedSet<_>()
+
+    let add v (s : SortedSet<_>) =
+        s.Add(v) |> ignore
+
 [<AutoOpen>]
 module Functions =
 

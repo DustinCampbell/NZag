@@ -61,6 +61,9 @@ type Expression =
 
 type Statement =
 
+    /// Declares a new label with the specified index
+    | LabelStmt of int
+
     /// Declares a new temp with the specified index
     | DeclareTempStmt of int
 
@@ -75,6 +78,9 @@ type Statement =
 
     /// Pushes the given statement onto the evaluation stack
     | StackPushStmt of Expression
+
+type BoundTree =
+  { Statements : list<Statement> }
 
 module BoundNodeConstruction =
 
@@ -146,6 +152,8 @@ module BoundNodeVisitors =
         let rewriteExpr = rewriteExpression fexpr
 
         match stmt with
+        | LabelStmt(i) ->
+            fstmt (LabelStmt(i))
         | DeclareTempStmt(i) ->
             fstmt (DeclareTempStmt(i))
         | AssignTempStmt(i,e) ->
@@ -184,6 +192,7 @@ module BoundNodeVisitors =
 
         if fstmt stmt then
             match stmt with
+            | LabelStmt(_)
             | DeclareTempStmt(_) ->
                 ()
             | AssignTempStmt(_,e)
@@ -201,7 +210,7 @@ type BoundNodeDumper (?builder : StringBuilder) =
         | Some(b) -> b
         | None -> StringBuilder.create()
 
-    let indentLevel = ref 0
+    let indentLevel = ref 1
     let atLineStart = ref true
 
     let indent() = incr indentLevel
@@ -220,8 +229,9 @@ type BoundNodeDumper (?builder : StringBuilder) =
         builder |> StringBuilder.appendFormat format
 
     let newLine() =
-        builder |> StringBuilder.appendLineBreak
-        atLineStart := true
+        if builder.Length > 0 then
+            builder |> StringBuilder.appendLineBreak
+            atLineStart := true
 
     let dumpConstant = function
         | Byte(v)  -> appendf "%02x" v
@@ -288,6 +298,10 @@ type BoundNodeDumper (?builder : StringBuilder) =
         newLine()
 
         match s with
+        | LabelStmt(i) ->
+            unindent()
+            appendf "LABEL %02x" i
+            indent()
         | DeclareTempStmt(i) ->
             appendf "declare temp%02x" i
         | AssignTempStmt(i,e) ->
@@ -308,14 +322,30 @@ type BoundNodeDumper (?builder : StringBuilder) =
             dumpExpression e
 
 open BoundNodeConstruction
+open BoundNodeVisitors
 
-type Binder (routine : Routine) =
+type Binder private (routine : Routine) =
 
     let statements = new ResizeArray<_>()
+
+    let labelMap =
+        let targets = routine.JumpTargets
+        let labels = targets |> Seq.mapi (fun i v -> i)
+        Seq.zip targets labels |> Map.ofSeq
+
+    let tempCount = ref 0
 
     let bindOperand = function
         | LargeConstantOperand(v) -> wordConst v
         | SmallConstantOperand(v) -> byteConst v
         | VariableOperand(v)      -> readVar v
 
-    let tempCount = ref 0
+    let bindInstruction (i : Instruction) =
+        ()
+
+    member x.Statements =
+        statements |> List.ofSeq
+
+    static member BindRoutine (routine : Routine) =
+        let binder = new Binder(routine)
+        { Statements = binder.Statements }
