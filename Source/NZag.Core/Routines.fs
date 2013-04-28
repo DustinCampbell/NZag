@@ -279,6 +279,15 @@ type Operand =
         | SmallConstantOperand(v) -> sprintf "%02x" v
         | VariableOperand(v)      -> v.ToString()
 
+module OperandPatterns =
+
+    let (|NoOps|_|) = function [] -> Some() | _ -> None
+    let (|OpAndList|_|) = function op::ops -> Some(op, ops) | _ -> None
+    let (|Op1|_|) = function op1::[] -> Some(op1) | _ -> None
+    let (|Op2|_|) = function op1::op2::[] -> Some(op1, op2) | _ -> None
+    let (|Op3|_|) = function op1::op2::op3::[] -> Some(op1, op2, op3) | _ -> None
+    let (|Op4|_|) = function op1::op2::op3::op4::[] -> Some(op1, op2, op3, op4) | _ -> None
+
 type Branch =
     | RTrueBranch of bool
     | RFalseBranch of bool

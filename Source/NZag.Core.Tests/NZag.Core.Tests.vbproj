@@ -40,6 +40,7 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BinderTests.vb" />
     <Compile Include="Helpers.vb" />
     <Compile Include="InstructionTests.vb" />
     <Compile Include="MemoryTests.vb" />

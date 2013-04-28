@@ -6,6 +6,16 @@ open System.IO
 open System.Text
 
 [<AutoOpen>]
+module Patterns =
+
+    let (|Any|_|) value = Some()
+    let (|LessThan|_|) upper value = if value < upper then Some() else None
+    let (|AtMost|_|) upper value = if value <= upper then Some() else None
+    let (|GreaterThan|_|) lower value = if value > lower then Some() else None
+    let (|AtLeast|_|) lower value = if value >= lower then Some() else None
+    let (|Is|_|) comparand value = if value = comparand then Some() else None
+
+[<AutoOpen>]
 module Exceptions =
 
     let invalidOperation message =
@@ -60,7 +70,10 @@ module Dictionary =
     let create() =
         new Dictionary<_,_>() :> IDictionary<_,_>
 
-    let tryGetValue key (d : IDictionary<_,_>) =
+    let find key (d : IDictionary<_,_>) =
+        d.[key]
+
+    let tryFind key (d : IDictionary<_,_>) =
         match d.TryGetValue(key) with
         | (true, v) -> Some(v)
         | (false,_) -> None
@@ -83,7 +96,7 @@ module Functions =
     let memoize f =
         let map = Dictionary.create()
         fun k ->
-            match map |> Dictionary.tryGetValue k with
+            match map |> Dictionary.tryFind k with
             | Some(v) -> v
             | None -> let v = f k
                       map.[k] <- v
