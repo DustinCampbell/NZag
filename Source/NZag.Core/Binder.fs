@@ -472,88 +472,83 @@ type BoundTreeBuilder (routine : Routine) =
 
     let statements = new ResizeArray<_>()
     let mutable tempCount = 0
-
-    member x.AddStatement(statement : Statement) =
-        statements.Add(statement)
-
-    member x.NewTemp() =
-        let index = tempCount
-        tempCount <- tempCount + 1
-        index
-
-    member x.Statements = statements |> List.ofSeq
-    member x.TempCount = tempCount
-
-type InstructionBinder (memory : Memory, routine : Routine, builder : BoundTreeBuilder) =
-
-    let mutable nextLabelIndex = 0
+    let mutable labelCount = 0
 
     let newLabel() =
-        let index = nextLabelIndex
-        nextLabelIndex <- nextLabelIndex + 1
-        index
+        let newLabel = labelCount
+        labelCount <- labelCount + 1
+        newLabel
 
-    let labelMap =
+    let jumpTargetMap =
         let d = Dictionary.create()
         for a in routine.JumpTargets do
             d.Add(a, newLabel())
         d
 
-    let addLabel address =
-        let index = newLabel()
-        labelMap.Add(address, index)
-        index
+    member x.AddStatement(statement : Statement) =
+        statements.Add(statement)
 
-    let tryFindLabel address =
-        labelMap |> Dictionary.tryFind address
+    member x.NewTemp() =
+        let newTemp = tempCount
+        tempCount <- tempCount + 1
+        newTemp
 
-    let findLabel address =
-        labelMap |> Dictionary.find address
+    member x.NewLabel() =
+        newLabel()
 
-    let newTemp() =
-        builder.NewTemp()
+    member x.MarkLabel label =
+        let label = LabelStmt(label)
+        x.AddStatement(label)
+
+    member x.IsJumpTarget address =
+        jumpTargetMap.ContainsKey(address)
+
+    member x.GetJumpTargetLabel address =
+        jumpTargetMap.[address]
+
+    member x.Statements = statements |> List.ofSeq
+    member x.TempCount = tempCount
+
+type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
 
     let addStatement s =
         builder.AddStatement(s)
 
-    let bindOperand = function
-        | LargeConstantOperand(v) -> wordConst v
-        | SmallConstantOperand(v) -> byteConst v
-        | VariableOperand(v)      -> readVar v
+    let jumpTo label =
+        JumpStmt(label) |> addStatement
 
     let ret expression =
         ReturnStmt(expression) |> addStatement
 
-    let jumpTo label =
-        JumpStmt(label) |> addStatement
-
     let branchTo condition label =
         BranchStmt(false, condition, JumpStmt(label)) |> addStatement
-
-    let mark label =
-        LabelStmt(label) |> addStatement
 
     let assignTemp t v =
         WriteTempStmt(t, v) |> addStatement
 
     let initTemp expression =
-        let t = newTemp()
+        let t = builder.NewTemp()
         assignTemp t expression
         TempExpr(t)
 
     let ifThenElse condition whenTrue whenFalse =
-        let elseLabel = newLabel()
-        let doneLabel = newLabel()
+        let elseLabel = builder.NewLabel()
+        let doneLabel = builder.NewLabel()
 
         branchTo condition elseLabel
 
         whenTrue()
         jumpTo doneLabel
 
-        mark elseLabel
+        builder.MarkLabel(elseLabel)
         whenFalse()
 
-        mark doneLabel
+        builder.MarkLabel(doneLabel)
+
+    let bindOperand = function
+        | LargeConstantOperand(v) -> wordConst v
+        | SmallConstantOperand(v) -> byteConst v
+        | VariableOperand(v)      -> readVar v
 
     member x.BindInstruction (instruction : Instruction) =
 
@@ -567,7 +562,7 @@ type InstructionBinder (memory : Memory, routine : Routine, builder : BoundTreeB
                 match branch with
                 | RTrueBranch(_) -> ReturnStmt(one)
                 | RFalseBranch(_) -> ReturnStmt(zero)
-                | OffsetBranch(_,_) -> JumpStmt(findLabel instruction.BranchAddress.Value)
+                | OffsetBranch(_,_) -> JumpStmt(builder.GetJumpTargetLabel(instruction.BranchAddress.Value))
 
             BranchStmt(branch.Condition, expression, statement) |> addStatement
 
@@ -579,10 +574,10 @@ type InstructionBinder (memory : Memory, routine : Routine, builder : BoundTreeB
 
             storeVar |> writeVar expression |> addStatement
 
-        // Add a label statement if necessary
-        match tryFindLabel instruction.Address with
-        | Some(l) -> mark l
-        | None -> ()
+        // If this instruction is a jump target, mark its label
+        if builder.IsJumpTarget(instruction.Address) then
+            let label = builder.GetJumpTargetLabel(instruction.Address)
+            builder.MarkLabel(label)
 
         // Create temps for all operands
         let operandValues = instruction.Operands |> List.map bindOperand
@@ -660,7 +655,7 @@ type RoutineBinder (memory : Memory) =
     member x.BindRoutine (routine : Routine) =
 
         let builder = new BoundTreeBuilder(routine)
-        let binder = new InstructionBinder(memory, routine, builder)
+        let binder = new InstructionBinder(memory, builder)
 
         for i in routine.Instructions do
             binder.BindInstruction(i)
