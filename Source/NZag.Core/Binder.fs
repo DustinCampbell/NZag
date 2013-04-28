@@ -85,11 +85,8 @@ type Statement =
     /// Executes the specified statement if the given expression evaluates to the given condition
     | BranchStmt of bool * Expression * Statement
 
-    /// Declares a new temp with the specified index
-    | DeclareTempStmt of int
-
-    /// Assigns the temp with the specified index to the value of the given expression
-    | AssignTempStmt of int * Expression
+    /// Writes the given value to the temp at the specified index
+    | WriteTempStmt of int * Expression
 
     /// Writes the given value to the local variable at the specified index
     | WriteLocalStmt of Expression * Expression
@@ -110,7 +107,8 @@ type Statement =
     | RuntimeExceptionStmt of string
 
 type BoundTree =
-  { Statements : list<Statement> }
+  { Statements : list<Statement>
+    TempCount : int }
 
 module BoundNodeConstruction =
 
@@ -211,10 +209,8 @@ module BoundNodeVisitors =
             fstmt (JumpStmt(i))
         | BranchStmt(b,e,s) ->
             fstmt (BranchStmt(b, rewriteExpr e, rewriteStmt s))
-        | DeclareTempStmt(i) ->
-            fstmt (DeclareTempStmt(i))
-        | AssignTempStmt(i,e) ->
-            fstmt (AssignTempStmt(i, rewriteExpr e))
+        | WriteTempStmt(i,e) ->
+            fstmt (WriteTempStmt(i, rewriteExpr e))
         | WriteLocalStmt(i,e) ->
             fstmt (WriteLocalStmt(rewriteExpr i, rewriteExpr e))
         | WriteGlobalStmt(i,e) ->
@@ -228,10 +224,11 @@ module BoundNodeVisitors =
         | RuntimeExceptionStmt(s) ->
             fstmt (RuntimeExceptionStmt(s))
 
-    let rec rewriteTree fstmt fexpr tree =
+    let rec rewriteTree fstmt fexpr tree : BoundTree =
         let rewriteStmt = rewriteStatement fstmt fexpr
+        let newStatements = tree.Statements |> List.map rewriteStmt
 
-        { Statements = tree.Statements |> List.map rewriteStmt }
+        { Statements = newStatements; TempCount = tree.TempCount }
 
     let rec visitExpression fexpr expr =
         let visitExpr = visitExpression fexpr
@@ -265,11 +262,10 @@ module BoundNodeVisitors =
             match stmt with
             | LabelStmt(_)
             | JumpStmt(_)
-            | DeclareTempStmt(_)
             | RuntimeExceptionStmt(_) ->
                 ()
             | ReturnStmt(e)
-            | AssignTempStmt(_,e)
+            | WriteTempStmt(_,e)
             | StackPushStmt(e)
             | PrintTextStmt(e)
             | SetRandomNumberSeedStmt(e) ->
@@ -298,7 +294,7 @@ module BoundNodeVisitors =
 
 type BoundNodeDumper (builder : StringBuilder) =
 
-    let indentLevel = ref 1
+    let indentLevel = ref 0
     let atLineStart = ref true
 
     let indent() = incr indentLevel
@@ -434,9 +430,7 @@ type BoundNodeDumper (builder : StringBuilder) =
             indent()
             dumpStatement s
             unindent()
-        | DeclareTempStmt(i) ->
-            appendf "declare temp%02x" i
-        | AssignTempStmt(i,e) ->
+        | WriteTempStmt(i,e) ->
             appendf "temp%02x <- " i
             dumpExpression e
         | WriteLocalStmt(i,e) ->
@@ -463,6 +457,10 @@ type BoundNodeDumper (builder : StringBuilder) =
             appendf "RUNTIME EXCEPTION: %s" s
 
     member x.Dump tree =
+        appendf "# temps: %d" tree.TempCount
+        newLine()
+
+        indent()
         for s in tree.Statements do
             dumpStatement s
 
@@ -470,7 +468,23 @@ open BoundNodeConstruction
 open BoundNodeVisitors
 open OperandPatterns
 
-type InstructionBinder (memory : Memory, routine : Routine, statements : ResizeArray<_>) =
+type BoundTreeBuilder (routine : Routine) =
+
+    let statements = new ResizeArray<_>()
+    let mutable tempCount = 0
+
+    member x.AddStatement(statement : Statement) =
+        statements.Add(statement)
+
+    member x.NewTemp() =
+        let index = tempCount
+        tempCount <- tempCount + 1
+        index
+
+    member x.Statements = statements |> List.ofSeq
+    member x.TempCount = tempCount
+
+type InstructionBinder (memory : Memory, routine : Routine, builder : BoundTreeBuilder) =
 
     let mutable nextLabelIndex = 0
 
@@ -496,15 +510,11 @@ type InstructionBinder (memory : Memory, routine : Routine, statements : ResizeA
     let findLabel address =
         labelMap |> Dictionary.find address
 
-    let mutable tempCount = 0
-
     let newTemp() =
-        let index = tempCount
-        tempCount <- tempCount + 1
-        index
+        builder.NewTemp()
 
     let addStatement s =
-        statements.Add(s)
+        builder.AddStatement(s)
 
     let bindOperand = function
         | LargeConstantOperand(v) -> wordConst v
@@ -523,15 +533,11 @@ type InstructionBinder (memory : Memory, routine : Routine, statements : ResizeA
     let mark label =
         LabelStmt(label) |> addStatement
 
-    let declareTemp t = 
-        DeclareTempStmt(t) |> addStatement
-
     let assignTemp t v =
-        AssignTempStmt(t, v) |> addStatement
+        WriteTempStmt(t, v) |> addStatement
 
     let initTemp expression =
         let t = newTemp()
-        declareTemp(t)
         assignTemp t expression
         TempExpr(t)
 
@@ -579,21 +585,12 @@ type InstructionBinder (memory : Memory, routine : Routine, statements : ResizeA
         | None -> ()
 
         // Create temps for all operands
-        let operands = instruction.Operands
-        let operandTemps = operands |> List.map (fun _ -> newTemp())
-        let operandTempExprs = operandTemps |> List.map (fun t -> TempExpr(t))
-        let operandValues = operands |> List.map bindOperand
+        let operandValues = instruction.Operands |> List.map bindOperand
+        let operandTemps = operandValues |> List.map (fun v -> initTemp v)
         let operandMap = List.zip operandTemps operandValues |> Map.ofList
 
-        List.iter2
-            (fun t v ->
-                declareTemp t
-                assignTemp t v)
-            operandTemps
-            operandValues
-
         // Bind the instruction
-        match (instruction.Opcode.Name, instruction.Opcode.Version, operandTempExprs) with
+        match (instruction.Opcode.Name, instruction.Opcode.Version, operandTemps) with
         | "jg", Any, Op2(left, right) ->
             let left = initTemp (left |> toInt16)
             let right = initTemp (right |> toInt16)
@@ -662,11 +659,11 @@ type RoutineBinder (memory : Memory) =
 
     member x.BindRoutine (routine : Routine) =
 
-        let statements = new ResizeArray<_>()
-        let binder = new InstructionBinder(memory, routine, statements)
+        let builder = new BoundTreeBuilder(routine)
+        let binder = new InstructionBinder(memory, routine, builder)
 
         for i in routine.Instructions do
             binder.BindInstruction(i)
 
-        { Statements = statements |> List.ofSeq }
+        { Statements = builder.Statements; TempCount = builder.TempCount }
             |> sortLabels

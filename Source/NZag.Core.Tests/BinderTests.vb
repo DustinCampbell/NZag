@@ -10,9 +10,10 @@ Public Module BinderTests
 
         Dim expected =
 <![CDATA[
+# temps: 1
+
 LABEL 00
     print: "a "
-    declare temp00
     temp00 <- L00
     print: obj-name(temp00)
     return 1
@@ -33,15 +34,14 @@ LABEL 00
 
         Dim expected =
 <![CDATA[
+# temps: 13
+
 LABEL 00
-    declare temp00
     temp00 <- G3c
     if (temp00 = 0) is true then
         jump-to: LABEL 04
 LABEL 01
-    declare temp01
     temp01 <- 64
-    declare temp02
     temp02 <- int16(temp01)
     if (temp02 > 0) is false then
         jump-to: LABEL 02
@@ -51,21 +51,15 @@ LABEL 02
     randomize(temp02)
     push-SP: 0
 LABEL 03
-    declare temp03
     temp03 <- L00
-    declare temp04
     temp04 <- pop-SP
-    declare temp05
     temp05 <- int16(temp03)
-    declare temp06
     temp06 <- int16(temp04)
     if (temp05 > temp06) is true then
         return 1
     return 0
 LABEL 04
-    declare temp07
     temp07 <- 012c
-    declare temp08
     temp08 <- int16(temp07)
     if (temp08 > 0) is false then
         jump-to: LABEL 05
@@ -75,13 +69,9 @@ LABEL 05
     randomize(temp08)
     push-SP: 0
 LABEL 06
-    declare temp09
     temp09 <- L00
-    declare temp0a
     temp0a <- pop-SP
-    declare temp0b
     temp0b <- int16(temp09)
-    declare temp0c
     temp0c <- int16(temp0a)
     if (temp0b > temp0c) is true then
         return 1
