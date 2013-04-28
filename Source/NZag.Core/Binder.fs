@@ -506,6 +506,25 @@ type BoundTreeBuilder (routine : Routine) =
     member x.GetJumpTargetLabel address =
         jumpTargetMap.[address]
 
+    member x.JumpTo label =
+        let jump = JumpStmt(label)
+        x.AddStatement(jump)
+
+    member x.BranchIf condition expression label =
+        let jump = JumpStmt(label)
+        let branch = BranchStmt(condition, expression, jump)
+        x.AddStatement(branch)
+
+    member x.BranchIfFalse expression label =
+        label |> x.BranchIf false expression
+
+    member x.BranchIfTrue expression label =
+        label |> x.BranchIf true expression
+
+    member x.Return expression =
+        let ret = ReturnStmt(expression)
+        x.AddStatement(ret)
+
     member x.Statements = statements |> List.ofSeq
     member x.TempCount = tempCount
 
@@ -514,14 +533,8 @@ type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
     let addStatement s =
         builder.AddStatement(s)
 
-    let jumpTo label =
-        JumpStmt(label) |> addStatement
-
     let ret expression =
-        ReturnStmt(expression) |> addStatement
-
-    let branchTo condition label =
-        BranchStmt(false, condition, JumpStmt(label)) |> addStatement
+        builder.Return(expression)
 
     let assignTemp t v =
         WriteTempStmt(t, v) |> addStatement
@@ -535,10 +548,10 @@ type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
         let elseLabel = builder.NewLabel()
         let doneLabel = builder.NewLabel()
 
-        branchTo condition elseLabel
+        elseLabel |> builder.BranchIfFalse condition
 
         whenTrue()
-        jumpTo doneLabel
+        builder.JumpTo(doneLabel)
 
         builder.MarkLabel(elseLabel)
         whenFalse()
@@ -564,7 +577,8 @@ type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
                 | RFalseBranch(_) -> ReturnStmt(zero)
                 | OffsetBranch(_,_) -> JumpStmt(builder.GetJumpTargetLabel(instruction.BranchAddress.Value))
 
-            BranchStmt(branch.Condition, expression, statement) |> addStatement
+            BranchStmt(branch.Condition, expression, statement)
+                |> builder.AddStatement
 
         let store expression =
             let storeVar =
