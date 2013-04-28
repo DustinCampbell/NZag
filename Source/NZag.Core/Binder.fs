@@ -76,8 +76,11 @@ type Expression =
     /// Reads a word from game memory at the specified address
     | ReadMemoryWordExpr of Expression
 
-    /// Reads name of the object with the number represented by the given expression
+    /// Reads name of the object whose number is represented by the given expression
     | ReadObjectNameExpr of Expression
+
+    /// Reads the specified attribute of the object whose number is represented by the given expression
+    | ReadObjectAttributeExpr of Expression * Expression
 
     /// Generates a random number using the given range expression
     | GenerateRandomNumberExpr of Expression
@@ -231,6 +234,8 @@ module BoundNodeVisitors =
             fexpr (ReadMemoryWordExpr(rewriteExpr e))
         | ReadObjectNameExpr(e) ->
             fexpr (ReadObjectNameExpr(rewriteExpr e))
+        | ReadObjectAttributeExpr(e1, e2) ->
+            fexpr (ReadObjectAttributeExpr(rewriteExpr e1, rewriteExpr e2))
         | GenerateRandomNumberExpr(e) ->
             fexpr (GenerateRandomNumberExpr(rewriteExpr e))
 
@@ -296,7 +301,8 @@ module BoundNodeVisitors =
             | ReadObjectNameExpr(e)
             | GenerateRandomNumberExpr(e) ->
                 visitExpr e
-            | BinaryOperationExpr(_,e1,e2) ->
+            | BinaryOperationExpr(_,e1,e2)
+            | ReadObjectAttributeExpr(e1, e2) ->
                 visitExpr e1
                 visitExpr e2
             | CallExpr(e,elist) ->
@@ -390,7 +396,7 @@ type BoundNodeDumper (builder : StringBuilder) =
         | Byte(v)  -> appendf "%02x" v
         | Word(v)  -> appendf "%04x" v
         | Int32(v) -> appendf "%x" v
-        | Text(v)  -> appendf "\"%s\"" v
+        | Text(v)  -> append (sprintf "\"%s\"" v |> String.replace "\n" "\\n")
 
     let dumpUnaryOperationKind = function
         | UnaryOperationKind.Negate -> append "-"
@@ -469,6 +475,12 @@ type BoundNodeDumper (builder : StringBuilder) =
             append "obj-name"
             parenthesize (fun () ->
                 dumpExpression e)
+        | ReadObjectAttributeExpr(o,a) ->
+            append "obj-attribute"
+            parenthesize (fun () ->
+                dumpExpression o
+                append ", "
+                dumpExpression a)
         | GenerateRandomNumberExpr(e) ->
             append "random"
             parenthesize (fun () ->
@@ -745,7 +757,7 @@ type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
                         if memory.Version = 6 || memory.Version = 7 then
                             initTemp (baseAddress .+. routinesOffset)
                         else
-                            address
+                            baseAddress
 
                     store (CallExpr(address, args)))
 
@@ -789,6 +801,10 @@ type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
 
             branchIf (left .<. right)
 
+        | "jump", Any, Op1(_) ->
+            let label = builder.GetJumpTargetLabel(instruction.JumpAddress)
+            builder.JumpTo(label)
+
         | "jz", Any, Op1(left) ->
             branchIf (left .=. zero)
 
@@ -815,11 +831,14 @@ type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
 
             store (left .*. right)
 
+        | "new_line", Any, NoOps ->
+            textConst "\n" |> printText |> addStatement
+
         | "print", Any, NoOps ->
             textConst instruction.Text.Value |> printText |> addStatement
 
-        | "print_obj", Any, Op1(objNum) ->
-            objectName objNum |> printText |> addStatement
+        | "print_obj", Any, Op1(obj) ->
+            objectName obj |> printText |> addStatement
 
         | "random", Any, Op1(range) ->
             let range = initTemp (range |> toInt16)
@@ -864,6 +883,11 @@ type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
             let right = initTemp (right |> toInt16)
 
             store (left .-. right)
+
+        | "test_attr", Any, Op2(obj, attribute) ->
+            let attributeValue = initTemp (ReadObjectAttributeExpr(obj, attribute))
+
+            branchIf (attributeValue .=. one)
 
         | (n,k,ops) ->
             runtimeException "Unsupported opcode: %s (v.%d) with %d operands" n k ops.Length |> addStatement
