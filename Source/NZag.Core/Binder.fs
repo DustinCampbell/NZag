@@ -228,6 +228,11 @@ module BoundNodeVisitors =
         | RuntimeExceptionStmt(s) ->
             fstmt (RuntimeExceptionStmt(s))
 
+    let rec rewriteTree fstmt fexpr tree =
+        let rewriteStmt = rewriteStatement fstmt fexpr
+
+        { Statements = tree.Statements |> List.map rewriteStmt }
+
     let rec visitExpression fexpr expr =
         let visitExpr = visitExpression fexpr
 
@@ -276,6 +281,20 @@ module BoundNodeVisitors =
             | WriteGlobalStmt(e1,e2) ->
                 visitExpr e1
                 visitExpr e2
+
+    let visitTree fstmt fexpr tree =
+        let visitStmt = visitStatement fstmt fexpr
+        tree.Statements |> List.iter visitStmt
+
+    let walkExpression fexpr expr =
+        expr |> visitExpression (fun e -> fexpr e; true)
+
+    let walkStatement fstmt fexpr stmt =
+        stmt |> visitStatement (fun s -> fstmt s; true) (fun e -> fexpr e; true)
+
+    let walkTree fstmt fexpr tree =
+        let walkStmt = walkStatement fstmt fexpr
+        tree.Statements |> List.iter walkStmt
 
 type BoundNodeDumper (builder : StringBuilder) =
 
@@ -406,7 +425,7 @@ type BoundNodeDumper (builder : StringBuilder) =
             append "return "
             dumpExpression e
         | JumpStmt(i) ->
-            appendf "jump-to LABEL %02x" i
+            appendf "jump-to: LABEL %02x" i
         | BranchStmt(b,e,s) ->
             append "if "
             parenthesize (fun () ->
@@ -434,7 +453,7 @@ type BoundNodeDumper (builder : StringBuilder) =
             append "push-SP: "
             dumpExpression e
         | PrintTextStmt(e) ->
-            append "print "
+            append "print: "
             dumpExpression e
         | SetRandomNumberSeedStmt(e) ->
             append "randomize"
@@ -617,8 +636,29 @@ type InstructionBinder (memory : Memory, routine : Routine, statements : ResizeA
 
 type RoutineBinder (memory : Memory) =
 
-    let normalizeLabels tree =
-        tree
+    let sortLabels tree =
+        let nextLabelIndex = ref 0
+        let labels = Dictionary.create()
+
+        // First, collect the existing labels and create new ones
+        tree |> walkTree
+            (fun s ->
+                match s with
+                | LabelStmt(l) ->
+                    let newLabel = !nextLabelIndex
+                    labels.Add(l, newLabel)
+                    incr nextLabelIndex
+                | _ -> ())
+            (fun e -> ())
+
+        // Next, rewrite the tree, replacing the old labels with new ones
+        tree |> rewriteTree
+            (fun s -> 
+                match s with
+                | LabelStmt(l) -> LabelStmt(labels.[l])
+                | JumpStmt(l) -> JumpStmt(labels.[l])
+                | s -> s)
+            (fun e -> e)
 
     member x.BindRoutine (routine : Routine) =
 
@@ -629,3 +669,4 @@ type RoutineBinder (memory : Memory) =
             binder.BindInstruction(i)
 
         { Statements = statements |> List.ofSeq }
+            |> sortLabels
