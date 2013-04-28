@@ -553,10 +553,18 @@ and Memory private (stream : Stream) =
 module Header =
 
     let private offset_abbreviationTableAddress = ByteAddress(0x18us)
+    let private offset_routinesOffset = ByteAddress(0x28us)
+    let private offset_stringsOffset = ByteAddress(0x2aus)
     let private offset_alphabetTableAddress = ByteAddress(0x34us)
 
     let readAbbreviationTableAddress (memory : Memory) =
         offset_abbreviationTableAddress |> memory.ReadWord |> ByteAddress
+
+    let readRoutinesOffset (memory : Memory) =
+        offset_routinesOffset |> memory.ReadWord |> ByteAddress
+
+    let readStringOffset (memory : Memory) =
+        offset_routinesOffset |> memory.ReadWord |> ByteAddress
 
     let readAlphabetTableAddress (memory : Memory) =
         offset_alphabetTableAddress |> memory.ReadWord |> ByteAddress

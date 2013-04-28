@@ -53,6 +53,11 @@ type Expression =
     /// Returns the top value on the VM stack without popping it.
     | StackPeekExpr
 
+    /// Reads the given value to the variable whose index is computed by the specified
+    /// expression. Note that computed variables are always read indirectly. That is, stack
+    /// writes are peeks rather than pops.
+    | ReadComputedVarExpr of Expression
+
     /// Performs the specified unary operation on the given expression
     | UnaryOperationExpr of UnaryOperationKind * Expression
 
@@ -64,6 +69,12 @@ type Expression =
 
     /// Calls the routine at the specified address with the list of given arguments
     | CallExpr of Expression * list<Expression>
+
+    /// Reads a byte from game memory at the specified address
+    | ReadMemoryByteExpr of Expression
+
+    /// Reads a word from game memory at the specified address
+    | ReadMemoryWordExpr of Expression
 
     /// Reads name of the object with the number represented by the given expression
     | ReadObjectNameExpr of Expression
@@ -94,8 +105,22 @@ type Statement =
     /// Writes the given value to the global variable at the specified index
     | WriteGlobalStmt of Expression * Expression
 
-    /// Pushes the given statement onto the evaluation stack
+    /// Pushes the given expression onto the evaluation stack
     | StackPushStmt of Expression
+
+    /// Replaces the top value on the evaluation stack with the given expression
+    | StackUpdateStmt of Expression
+
+    /// Writer the given value to the variable whose index is computed by the specified
+    /// expression. Note that computed variables are always write indirectly. That is, stack
+    /// writes are updates rather than pushes.
+    | WriteComputedVarStmt of Expression * Expression
+
+    /// Writes a byte from game memory at the specified address
+    | WriteMemoryByteStmt of Expression * Expression
+
+    /// Writes a word from game memory at the specified address
+    | WriteMemoryWordStmt of Expression * Expression
 
     /// Prints the text represented by the given expression
     | PrintTextStmt of Expression
@@ -140,6 +165,13 @@ module BoundNodeConstruction =
 
     let zero = int32Const 0
     let one = int32Const 1
+    let two = int32Const 2
+    let three = int32Const 3
+    let four = int32Const 4
+    let five = int32Const 5
+    let six = int32Const 6
+    let seven = int32Const 7
+    let eight = int32Const 8
 
     let toInt16 v = ConversionExpr(ConversionKind.ToInt16, v)
 
@@ -183,6 +215,8 @@ module BoundNodeVisitors =
             fexpr StackPopExpr
         | StackPeekExpr ->
             fexpr StackPeekExpr
+        | ReadComputedVarExpr(e) ->
+            fexpr (ReadComputedVarExpr(rewriteExpr e))
         | UnaryOperationExpr(k,e) ->
             fexpr (UnaryOperationExpr(k, rewriteExpr e))
         | BinaryOperationExpr(k,e1,e2) ->
@@ -191,6 +225,10 @@ module BoundNodeVisitors =
             fexpr (ConversionExpr(k, rewriteExpr e))
         | CallExpr(e,elist) ->
             fexpr (CallExpr(rewriteExpr e, elist |> List.map rewriteExpr))
+        | ReadMemoryByteExpr(e) ->
+            fexpr (ReadMemoryByteExpr(rewriteExpr e))
+        | ReadMemoryWordExpr(e) ->
+            fexpr (ReadMemoryWordExpr(rewriteExpr e))
         | ReadObjectNameExpr(e) ->
             fexpr (ReadObjectNameExpr(rewriteExpr e))
         | GenerateRandomNumberExpr(e) ->
@@ -217,6 +255,14 @@ module BoundNodeVisitors =
             fstmt (WriteGlobalStmt(rewriteExpr i, rewriteExpr e))
         | StackPushStmt(e) ->
             fstmt (StackPushStmt(rewriteExpr e))
+        | StackUpdateStmt(e) ->
+            fstmt (StackUpdateStmt(rewriteExpr e))
+        | WriteComputedVarStmt(i,e) ->
+            fstmt (WriteComputedVarStmt(rewriteExpr i, rewriteExpr e))
+        | WriteMemoryByteStmt(e1,e2) ->
+            fstmt (WriteMemoryByteStmt(rewriteExpr e1, rewriteExpr e2))
+        | WriteMemoryWordStmt(e1,e2) ->
+            fstmt (WriteMemoryWordStmt(rewriteExpr e1, rewriteExpr e2))
         | PrintTextStmt(e) ->
             fstmt (PrintTextStmt(rewriteExpr e))
         | SetRandomNumberSeedStmt(e) ->
@@ -242,8 +288,11 @@ module BoundNodeVisitors =
                 ()
             | ReadLocalExpr(e)
             | ReadGlobalExpr(e)
+            | ReadComputedVarExpr(e)
             | UnaryOperationExpr(_,e)
             | ConversionExpr(_,e)
+            | ReadMemoryByteExpr(e)
+            | ReadMemoryWordExpr(e)
             | ReadObjectNameExpr(e)
             | GenerateRandomNumberExpr(e) ->
                 visitExpr e
@@ -267,6 +316,7 @@ module BoundNodeVisitors =
             | ReturnStmt(e)
             | WriteTempStmt(_,e)
             | StackPushStmt(e)
+            | StackUpdateStmt(e)
             | PrintTextStmt(e)
             | SetRandomNumberSeedStmt(e) ->
                 visitExpr e
@@ -274,7 +324,10 @@ module BoundNodeVisitors =
                 visitExpr e
                 visitStmt s
             | WriteLocalStmt(e1,e2)
-            | WriteGlobalStmt(e1,e2) ->
+            | WriteGlobalStmt(e1,e2)
+            | WriteComputedVarStmt(e1,e2)
+            | WriteMemoryByteStmt(e1,e2)
+            | WriteMemoryWordStmt(e1,e2) ->
                 visitExpr e1
                 visitExpr e2
 
@@ -381,6 +434,10 @@ type BoundNodeDumper (builder : StringBuilder) =
             append "pop-SP"
         | StackPeekExpr ->
             append "peek-SP"
+        | ReadComputedVarExpr(e) ->
+            append "["
+            dumpExpression e
+            append "]"
         | UnaryOperationExpr(k,e) ->
             dumpUnaryOperationKind k
             dumpExpression e
@@ -400,6 +457,14 @@ type BoundNodeDumper (builder : StringBuilder) =
             parenthesize (fun () ->
                 args |> List.iteri (fun i v -> if i > 0 then append ", "
                                                dumpExpression v))
+        | ReadMemoryByteExpr(e) ->
+            append "read-byte"
+            parenthesize (fun () ->
+                dumpExpression e)
+        | ReadMemoryWordExpr(e) ->
+            append "read-byte"
+            parenthesize (fun () ->
+                dumpExpression e)
         | ReadObjectNameExpr(e) ->
             append "obj-name"
             parenthesize (fun () ->
@@ -418,7 +483,7 @@ type BoundNodeDumper (builder : StringBuilder) =
             appendf "LABEL %02x" i
             indent()
         | ReturnStmt(e) ->
-            append "return "
+            append "return: "
             dumpExpression e
         | JumpStmt(i) ->
             appendf "jump-to: LABEL %02x" i
@@ -430,22 +495,42 @@ type BoundNodeDumper (builder : StringBuilder) =
             indent()
             dumpStatement s
             unindent()
-        | WriteTempStmt(i,e) ->
+        | WriteTempStmt(i,v) ->
             appendf "temp%02x <- " i
-            dumpExpression e
-        | WriteLocalStmt(i,e) ->
+            dumpExpression v
+        | WriteLocalStmt(i,v) ->
             append "L"
             dumpExpression i
             append " <- "
-            dumpExpression e
-        | WriteGlobalStmt(i,e) ->
+            dumpExpression v
+        | WriteGlobalStmt(i,v) ->
             append "G"
             dumpExpression i
             append " <- "
-            dumpExpression e
+            dumpExpression v
         | StackPushStmt(e) ->
             append "push-SP: "
             dumpExpression e
+        | StackUpdateStmt(e) ->
+            append "update-SP: "
+            dumpExpression e
+        | WriteComputedVarStmt(i,v) ->
+            append "["
+            dumpExpression i
+            append "] <- "
+            dumpExpression v
+        | WriteMemoryByteStmt(a,v) ->
+            append "write-byte"
+            parenthesize (fun () ->
+                dumpExpression a)
+            append " <- "
+            dumpExpression v
+        | WriteMemoryWordStmt(a,v) ->
+            append "write-word"
+            parenthesize (fun () ->
+                dumpExpression a)
+            append " <- "
+            dumpExpression v
         | PrintTextStmt(e) ->
             append "print: "
             dumpExpression e
@@ -530,6 +615,16 @@ type BoundTreeBuilder (routine : Routine) =
 
 type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
 
+    let packedMultiplier =
+        match memory.Version with
+        | 1 | 2 | 3 -> two
+        | 4 | 5 | 6 | 7 -> four
+        | 8 -> eight
+        | v -> invalidOperation "Invalid version number: %d" v
+
+    let routinesOffset =
+        int32Const (memory |> Header.readRoutinesOffset).IntValue
+
     let addStatement s =
         builder.AddStatement(s)
 
@@ -598,8 +693,90 @@ type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
         let operandTemps = operandValues |> List.map (fun v -> initTemp v)
         let operandMap = List.zip operandTemps operandValues |> Map.ofList
 
+        let byRefVariable variableIndex =
+
+            let byRefVariableFromExpression expression =
+                initTemp (ReadComputedVarExpr(expression)), (fun v -> WriteComputedVarStmt(expression, v))
+
+            let byRefVariableFromValue value =
+                if value = 0uy then
+                    initTemp StackPeekExpr, (fun v -> StackUpdateStmt(v))
+                elif value < 16uy then
+                    let varIndex = byteConst (value - 1uy)
+                    initTemp (ReadLocalExpr(varIndex)), (fun v -> WriteLocalStmt(varIndex, v))
+                else
+                    let varIndex = byteConst (value - 16uy)
+                    initTemp (ReadGlobalExpr(varIndex)), (fun v -> WriteGlobalStmt(varIndex, v))
+
+            let byRefVariableFromOperandTemp temp =
+                match operandMap |> Map.tryFind temp with
+                | Some(ConstantExpr(Byte(b))) ->
+                    byRefVariableFromValue b
+                | Some(e) ->
+                    byRefVariableFromExpression e
+                | _ ->
+                    invalidOperation "Expected operand temp for by-ref variable index"
+
+            match variableIndex with
+            | ConstantExpr(Byte(b)) ->
+                byRefVariableFromValue b
+            | TempExpr(_) as t ->
+                byRefVariableFromOperandTemp t
+            | e ->
+                byRefVariableFromExpression e
+
         // Bind the instruction
         match (instruction.Opcode.Name, instruction.Opcode.Version, operandTemps) with
+        | "add", Any, Op2(left, right) ->
+            let left = initTemp (left |> toInt16)
+            let right = initTemp (right |> toInt16)
+
+            store (left .+. right)
+
+        | "call", Any, OpAndList(address, args)
+        | "call_vs", Any, OpAndList(address, args) ->
+
+            ifThenElse (address .=. zero)
+                (fun () ->
+                    store zero)
+                (fun () ->
+                    let baseAddress = initTemp (address .*. packedMultiplier)
+                    let address = 
+                        if memory.Version = 6 || memory.Version = 7 then
+                            initTemp (baseAddress .+. routinesOffset)
+                        else
+                            address
+
+                    store (CallExpr(address, args)))
+
+        | "dec", Any, Op1(varIndex) ->
+            let read, write = byRefVariable varIndex
+
+            let read = initTemp (read |> toInt16)
+            write (read .-. (one |> toInt16)) |> addStatement
+
+        | "div", Any, Op2(left, right) ->
+            let left = initTemp (left |> toInt16)
+            let right = initTemp (right |> toInt16)
+
+            store (left ./. right)
+
+        | "inc", Any, Op1(varIndex) ->
+            let read, write = byRefVariable varIndex
+
+            let read = initTemp (read |> toInt16)
+            write (read .+. (one |> toInt16)) |> addStatement
+
+        | "je", Any, OpAndList(left, values) ->
+            // je can have 2 to 4 operands to test for equality.
+            let conditions = values |> List.map (fun v -> initTemp (left .=. v))
+
+            branchIf
+                ((List.tail conditions)
+                |> List.fold
+                    (fun res c -> res .|. c)
+                    (List.head conditions))
+
         | "jg", Any, Op2(left, right) ->
             let left = initTemp (left |> toInt16)
             let right = initTemp (right |> toInt16)
@@ -614,6 +791,29 @@ type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
 
         | "jz", Any, Op1(left) ->
             branchIf (left .=. zero)
+
+        | "loadb", Any, Op2(address,offset) ->
+            let address = initTemp (address .+. offset)
+
+            store (ReadMemoryByteExpr(address))
+
+        | "loadw", Any, Op2(address,offset) ->
+            let offset = initTemp (offset .*. two)
+            let address = initTemp (address .+. offset)
+
+            store (ReadMemoryWordExpr(address))
+
+        | "mod", Any, Op2(left, right) ->
+            let left = initTemp (left |> toInt16)
+            let right = initTemp (right |> toInt16)
+
+            store (left .%. right)
+
+        | "mul", Any, Op2(left, right) ->
+            let left = initTemp (left |> toInt16)
+            let right = initTemp (right |> toInt16)
+
+            store (left .*. right)
 
         | "print", Any, NoOps ->
             textConst instruction.Text.Value |> printText |> addStatement
@@ -631,11 +831,39 @@ type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
                     randomize range |> addStatement
                     store zero)
 
+        | "ret", Any, Op1(value) ->
+            ret value
+
+        | "ret_popped", Any, NoOps ->
+            ret StackPopExpr
+
         | "rfalse", Any, NoOps ->
             ret zero
 
         | "rtrue", Any, NoOps ->
             ret one
+
+        | "store", Any, Op2(varIndex, value) ->
+            let read, write = byRefVariable varIndex
+
+            write value |> addStatement
+
+        | "storeb", Any, Op3(address, offset, value) ->
+            let address = initTemp (address .+. offset)
+
+            WriteMemoryByteStmt(address, value) |> addStatement
+
+        | "storew", Any, Op3(address, offset, value) ->
+            let offset = initTemp (offset .*. two)
+            let address = initTemp (address .+. offset)
+
+            WriteMemoryWordStmt(address, value) |> addStatement
+
+        | "sub", Any, Op2(left, right) ->
+            let left = initTemp (left |> toInt16)
+            let right = initTemp (right |> toInt16)
+
+            store (left .-. right)
 
         | (n,k,ops) ->
             runtimeException "Unsupported opcode: %s (v.%d) with %d operands" n k ops.Length |> addStatement
