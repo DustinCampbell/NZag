@@ -1,1 +1,1 @@
-<p>A Z-Machine intepreter and JIM compiler written in F# and C#.</p>
+<p>A Z-Machine intepreter and JIT compiler written in F# and C#.</p>
