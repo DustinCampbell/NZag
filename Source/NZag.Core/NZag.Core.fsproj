@@ -22,6 +22,7 @@
     <Compile Include="Text.fs" />
     <Compile Include="Routines.fs" />
     <Compile Include="BoundNodes.fs" />
+    <Compile Include="Analysis.fs" />
     <Compile Include="Binder.fs" />
   </ItemGroup>
   <PropertyGroup>

@@ -92,15 +92,17 @@ type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
         TempExpr(t)
 
     let ifThenElse condition whenTrue whenFalse =
-        let elseLabel = builder.NewLabel()
+        let whenTrueLabel = builder.NewLabel()
+        let whenFalseLabel = builder.NewLabel()
         let doneLabel = builder.NewLabel()
 
-        elseLabel |> builder.BranchIfFalse condition
+        whenFalseLabel |> builder.BranchIfFalse condition
 
+        builder.MarkLabel(whenTrueLabel)
         whenTrue()
         builder.JumpTo(doneLabel)
 
-        builder.MarkLabel(elseLabel)
+        builder.MarkLabel(whenFalseLabel)
         whenFalse()
 
         builder.MarkLabel(doneLabel)
