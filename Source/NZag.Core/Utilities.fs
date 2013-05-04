@@ -67,11 +67,25 @@ module Enumerator =
         if e.MoveNext() then Some(e.Current)
         else None
 
-[<RequireQualifiedAccess>]
+module Collection =
+
+    let length (c : ICollection<_>) = c.Count
+
+    let toArray (c : ICollection<_>) =
+        let res = Array.zeroCreate (length c)
+        let mutable i = 0
+        for v in c do
+            res.[i] <- v
+            i <- i + 1
+        res
+
 module Dictionary =
 
-    let create() =
-        new Dictionary<_,_>() :> IDictionary<_,_>
+    let create() = new Dictionary<_,_>() :> IDictionary<_,_>
+    let length (d : IDictionary<_,_>) = d.Count
+
+    let contains key (d : IDictionary<_,_>) =
+        d.ContainsKey(key)
 
     let find key (d : IDictionary<_,_>) =
         d.[key]
@@ -81,17 +95,56 @@ module Dictionary =
         | (true, v) -> Some(v)
         | (false,_) -> None
 
-    let add k v (s : IDictionary<_,_>) =
-        s.Add(k, v)
+    let add k v (d : IDictionary<_,_>) =
+        d.Add(k, v)
 
-[<RequireQualifiedAccess>]
+    let getOrAdd k f (d : IDictionary<_,_>) =
+        match d |> tryFind k with
+        | Some(v) -> v
+        | None ->
+            let v = f()
+            d.Add(k, v)
+            v
+
+    let toList (d : IDictionary<_,_>) =
+        let mutable res = []
+
+        let keys = d.Keys |> Collection.toArray
+        for i = length d - 1 downto 0 do
+            let key = keys.[i]
+            res <- (key, d.[key]) :: res
+        res
+
+module SortedList =
+
+    let create() =
+        new SortedList<_,_>() :> IDictionary<_,_>
+
+module ResizeArray =
+
+    let create() = new ResizeArray<_>()
+    let length (arr : ResizeArray<_>) = arr.Count
+
+    let add v (arr : ResizeArray<_>) =
+        arr.Add(v) |> ignore
+
+    let toList (arr : ResizeArray<_>) =
+        let mutable res = []
+        for i = length arr - 1 downto 0 do
+            res <- arr.[i] :: res
+        res
+
 module SortedSet =
 
     let create() =
         new SortedSet<_>()
+    let length (s : SortedSet<_>) = s.Count
 
     let add v (s : SortedSet<_>) =
         s.Add(v) |> ignore
+
+    let toList (s : SortedSet<_>) =
+        s |> List.ofSeq
 
 [<AutoOpen>]
 module Functions =
