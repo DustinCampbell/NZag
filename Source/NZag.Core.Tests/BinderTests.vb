@@ -39,42 +39,46 @@ LABEL 00
 LABEL 00
     temp00 <- G3c
     if (temp00 = 0) is true then
-        jump-to: LABEL 04
+        jump-to: LABEL 06
 LABEL 01
     temp01 <- 64
     temp02 <- int16(temp01)
     if (temp02 > 0) is false then
-        jump-to: LABEL 02
-    push-SP: random(temp02)
-    jump-to: LABEL 03
+        jump-to: LABEL 03
 LABEL 02
+    push-SP: random(temp02)
+    jump-to: LABEL 04
+LABEL 03
     randomize(temp02)
     push-SP: 0
-LABEL 03
+LABEL 04
     temp03 <- L00
     temp04 <- pop-SP
     temp05 <- int16(temp03)
     temp06 <- int16(temp04)
     if (temp05 > temp06) is true then
         return: 1
+LABEL 05
     return: 0
-LABEL 04
+LABEL 06
     temp07 <- 012c
     temp08 <- int16(temp07)
     if (temp08 > 0) is false then
-        jump-to: LABEL 05
+        jump-to: LABEL 08
+LABEL 07
     push-SP: random(temp08)
-    jump-to: LABEL 06
-LABEL 05
+    jump-to: LABEL 09
+LABEL 08
     randomize(temp08)
     push-SP: 0
-LABEL 06
+LABEL 09
     temp09 <- L00
     temp0a <- pop-SP
     temp0b <- int16(temp09)
     temp0c <- int16(temp0a)
     if (temp0b > temp0c) is true then
         return: 1
+LABEL 0a
     return: 0
 ]]>
 
@@ -101,13 +105,14 @@ LABEL 00
     temp04 <- pop-SP
     temp05 <- int16(temp04)
     if (temp05 > 0) is false then
-        jump-to: LABEL 01
-    push-SP: random(temp05)
-    jump-to: LABEL 02
+        jump-to: LABEL 02
 LABEL 01
+    push-SP: random(temp05)
+    jump-to: LABEL 03
+LABEL 02
     randomize(temp05)
     push-SP: 0
-LABEL 02
+LABEL 03
     temp06 <- L00
     temp07 <- pop-SP
     temp08 <- (temp07 * 2)
@@ -181,13 +186,14 @@ LABEL 00
     temp1b <- pop-SP
     temp1c <- int16(temp1b)
     if (temp1c > 0) is false then
-        jump-to: LABEL 01
-    L03 <- random(temp1c)
-    jump-to: LABEL 02
+        jump-to: LABEL 02
 LABEL 01
+    L03 <- random(temp1c)
+    jump-to: LABEL 03
+LABEL 02
     randomize(temp1c)
     L03 <- 0
-LABEL 02
+LABEL 03
     temp1d <- L05
     temp1e <- L03
     temp1f <- (temp1e * 2)
@@ -218,13 +224,13 @@ LABEL 02
     temp33 <- L01
     temp34 <- (temp32 = temp33)
     if (temp34) is false then
-        jump-to: LABEL 04
-LABEL 03
+        jump-to: LABEL 05
+LABEL 04
     temp35 <- 03
     temp36 <- 00
     temp37 <- L02
     L02 <- temp36
-LABEL 04
+LABEL 05
     temp38 <- L00
     temp39 <- 00
     temp3a <- L02
@@ -254,16 +260,18 @@ LABEL 00
     temp02 <- (temp00 = temp01)
     if (temp02) is false then
         return: 0
+LABEL 01
     temp03 <- 485d
     temp04 <- a3
     if (temp03 = 0) is false then
-        jump-to: LABEL 01
+        jump-to: LABEL 03
+LABEL 02
     push-SP: 0
-    jump-to: LABEL 02
-LABEL 01
+    jump-to: LABEL 04
+LABEL 03
     temp05 <- (temp03 * 2)
     push-SP: call temp05 (temp04)
-LABEL 02
+LABEL 04
     return: 0
 ]]>
 
@@ -290,7 +298,7 @@ LABEL 02
 LABEL 00
     temp00 <- G2e
     if (temp00 = 0) is true then
-        jump-to: LABEL 06
+        jump-to: LABEL 07
 LABEL 01
     temp01 <- ae
     temp02 <- 0b
@@ -306,15 +314,16 @@ LABEL 03
     temp05 <- 4a98
     temp06 <- ae
     if (temp05 = 0) is false then
-        jump-to: LABEL 04
-    push-SP: 0
-    jump-to: LABEL 05
+        jump-to: LABEL 05
 LABEL 04
+    push-SP: 0
+    jump-to: LABEL 06
+LABEL 05
     temp07 <- (temp05 * 2)
     push-SP: call temp07 (temp06)
-LABEL 05
-    return: 0
 LABEL 06
+    return: 0
+LABEL 07
     print: "You can't go that way."
     print: "\n"
     return: 0
@@ -341,24 +350,28 @@ LABEL 00
     temp02 <- (temp00 = temp01)
     if (temp02) is false then
         return: 0
+LABEL 01
     temp03 <- G78
     temp04 <- 45
     temp05 <- (temp03 = temp04)
     if (temp05) is false then
         return: 0
+LABEL 02
     temp06 <- G76
     if (temp06 = 0) is false then
         return: 0
+LABEL 03
     temp07 <- 8333
     temp08 <- 983b
     if (temp07 = 0) is false then
-        jump-to: LABEL 01
+        jump-to: LABEL 05
+LABEL 04
     push-SP: 0
-    jump-to: LABEL 02
-LABEL 01
+    jump-to: LABEL 06
+LABEL 05
     temp09 <- (temp07 * 2)
     push-SP: call temp09 (temp08)
-LABEL 02
+LABEL 06
     return: 1
 ]]>
 
@@ -412,13 +425,14 @@ LABEL 00
     temp01 <- 8010
     temp02 <- ffff
     if (temp00 = 0) is false then
-        jump-to: LABEL 01
-    push-SP: 0
-    jump-to: LABEL 02
+        jump-to: LABEL 02
 LABEL 01
+    push-SP: 0
+    jump-to: LABEL 03
+LABEL 02
     temp03 <- (temp00 * 2)
     push-SP: call temp03 (temp01, temp02)
-LABEL 02
+LABEL 03
     temp04 <- pop-SP
     temp05 <- 00
     temp06 <- 01
@@ -429,24 +443,26 @@ LABEL 02
     temp0a <- 807c
     temp0b <- ffff
     if (temp09 = 0) is false then
-        jump-to: LABEL 03
+        jump-to: LABEL 05
+LABEL 04
     push-SP: 0
-    jump-to: LABEL 04
-LABEL 03
+    jump-to: LABEL 06
+LABEL 05
     temp0c <- (temp09 * 2)
     push-SP: call temp0c (temp0a, temp0b)
-LABEL 04
+LABEL 06
     temp0d <- 2a39
     temp0e <- 80f0
     temp0f <- ffff
     if (temp0d = 0) is false then
-        jump-to: LABEL 05
+        jump-to: LABEL 08
+LABEL 07
     push-SP: 0
-    jump-to: LABEL 06
-LABEL 05
+    jump-to: LABEL 09
+LABEL 08
     temp10 <- (temp0d * 2)
     push-SP: call temp10 (temp0e, temp0f)
-LABEL 06
+LABEL 09
     temp11 <- pop-SP
     temp12 <- 00
     temp13 <- 01
@@ -457,24 +473,26 @@ LABEL 06
     temp17 <- 6f6a
     temp18 <- 28
     if (temp16 = 0) is false then
-        jump-to: LABEL 07
+        jump-to: LABEL 0b
+LABEL 0a
     push-SP: 0
-    jump-to: LABEL 08
-LABEL 07
+    jump-to: LABEL 0c
+LABEL 0b
     temp19 <- (temp16 * 2)
     push-SP: call temp19 (temp17, temp18)
-LABEL 08
+LABEL 0c
     temp1a <- 2a39
     temp1b <- 6f55
     temp1c <- c8
     if (temp1a = 0) is false then
-        jump-to: LABEL 09
+        jump-to: LABEL 0e
+LABEL 0d
     push-SP: 0
-    jump-to: LABEL 0a
-LABEL 09
+    jump-to: LABEL 0f
+LABEL 0e
     temp1d <- (temp1a * 2)
     push-SP: call temp1d (temp1b, temp1c)
-LABEL 0a
+LABEL 0f
     temp1e <- 9c
     temp1f <- 06
     temp20 <- 04
@@ -552,30 +570,32 @@ LABEL 0a
     temp5a <- 4a98
     temp5b <- a0
     if (temp5a = 0) is false then
-        jump-to: LABEL 0b
+        jump-to: LABEL 11
+LABEL 10
     push-SP: 0
-    jump-to: LABEL 0c
-LABEL 0b
+    jump-to: LABEL 12
+LABEL 11
     temp5c <- (temp5a * 2)
     push-SP: call temp5c (temp5b)
-LABEL 0c
+LABEL 12
     temp5d <- G00
     temp5e <- 03
     temp5f <- obj-attribute(temp5d, temp5e)
     if (temp5f = 1) is true then
-        jump-to: LABEL 10
-LABEL 0d
+        jump-to: LABEL 17
+LABEL 13
     temp60 <- 3770
     if (temp60 = 0) is false then
-        jump-to: LABEL 0e
+        jump-to: LABEL 15
+LABEL 14
     push-SP: 0
-    jump-to: LABEL 0f
-LABEL 0e
+    jump-to: LABEL 16
+LABEL 15
     temp61 <- (temp60 * 2)
     push-SP: call temp61 ()
-LABEL 0f
+LABEL 16
     print: "\n"
-LABEL 10
+LABEL 17
     temp62 <- 52
     temp63 <- 01
     temp64 <- G42
@@ -593,22 +613,24 @@ LABEL 10
     RUNTIME EXCEPTION: Unsupported opcode: insert_obj (v.3) with 2 operands
     temp6d <- 3f02
     if (temp6d = 0) is false then
-        jump-to: LABEL 11
+        jump-to: LABEL 19
+LABEL 18
     push-SP: 0
-    jump-to: LABEL 12
-LABEL 11
+    jump-to: LABEL 1a
+LABEL 19
     temp6e <- (temp6d * 2)
     push-SP: call temp6e ()
-LABEL 12
+LABEL 1a
     temp6f <- 2a95
     if (temp6f = 0) is false then
-        jump-to: LABEL 13
+        jump-to: LABEL 1c
+LABEL 1b
     push-SP: 0
-    jump-to: LABEL 14
-LABEL 13
+    jump-to: LABEL 1d
+LABEL 1c
     temp70 <- (temp6f * 2)
     push-SP: call temp70 ()
-LABEL 14
+LABEL 1d
     temp71 <- ff66
     jump-to: LABEL 00
 ]]>

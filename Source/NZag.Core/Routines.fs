@@ -560,9 +560,10 @@ type Routine (address : Address, instructions : list<Instruction>, locals : list
 
         let mutable stop = false
         while not stop do
-            if current.BranchAddress.IsSome then
-                // conditional branch
-                targets |> SortedSet.add current.BranchAddress.Value
+            if current.Branch.IsSome then
+                // conditional branch to address
+                if current.BranchAddress.IsSome then
+                    targets |> SortedSet.add current.BranchAddress.Value
 
                 // add "else" portion of conditional (i.e. the next instruction).
                 match rest with
