@@ -1,10 +1,12 @@
 ﻿namespace NZag.Core
 
 open NZag.Utilities
-open System.Collections.Generic
 open BoundNodeVisitors
 
 module Graphs =
+
+    let Entry = -1
+    let Exit = -2
 
     type Block<'T> =
       { ID : int
@@ -12,14 +14,12 @@ module Graphs =
         Predecessors : int list
         Successors : int list }
 
+        member x.IsEntry = x.ID = Entry
+        member x.IsExit = x.ID = Exit
+
     type Graph<'T> =
       { Tree : BoundTree
         Blocks : Block<'T> list }
-
-    [<Literal>]
-    let Entry = -1
-    [<Literal>]
-    let Exit = -2
 
     type Builder<'T> =
       { AddNode : int -> unit;
@@ -30,7 +30,15 @@ module Graphs =
 
     let computeBlocks (buildBlocks : Builder<'T> -> unit) (finalizeData : 'T option -> 'U) : Block<'U> list =
 
-        let map = Dictionary.create()
+        let compareIds x y = 
+            if x = y then 0
+            elif x = Entry then System.Int32.MinValue
+            elif x = Exit then System.Int32.MaxValue
+            elif y = Entry then System.Int32.MaxValue
+            elif y = Exit then System.Int32.MinValue
+            else compare x y
+
+        let map = SortedList.createWithCompare compareIds
 
         let get id =
             map |> Dictionary.find id

@@ -120,6 +120,13 @@ module SortedList =
     let create() =
         new SortedList<_,_>() :> IDictionary<_,_>
 
+    let createWithCompare compare =
+        let comparer = { new IComparer<'T> with
+            member this.Compare(x, y) =
+                compare x y }
+
+        new SortedList<_,_>(comparer) :> IDictionary<_,_>
+
 module ResizeArray =
 
     let create() = new ResizeArray<_>()

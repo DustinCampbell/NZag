@@ -13,8 +13,8 @@ Public Module AnalysisTests
         Dim expected =
             Graph(
                 Context(Graphs.Entry, NoEdges, Edges(0)),
-                Context(Graphs.Exit, Edges(0), NoEdges),
-                Context(0, Edges(Graphs.Entry), Edges(Graphs.Exit)))
+                Context(0, Edges(Graphs.Entry), Edges(Graphs.Exit)),
+                Context(Graphs.Exit, Edges(0), NoEdges))
 
         Test(Zork1, &H4E38, expected)
     End Sub
@@ -32,7 +32,6 @@ Public Module AnalysisTests
         Dim expected =
             Graph(
                 Context(Graphs.Entry, NoEdges, Edges(0)),
-                Context(Graphs.Exit, Edges(4, 5, 9, 10), NoEdges),
                 Context(0, Edges(Graphs.Entry), Edges(1, 6)),
                 Context(1, Edges(0), Edges(2, 3)),
                 Context(2, Edges(1), Edges(4)),
@@ -43,7 +42,8 @@ Public Module AnalysisTests
                 Context(7, Edges(6), Edges(9)),
                 Context(8, Edges(6), Edges(9)),
                 Context(9, Edges(7, 8), Edges(Graphs.Exit, 10)),
-                Context(10, Edges(9), Edges(Graphs.Exit)))
+                Context(10, Edges(9), Edges(Graphs.Exit)),
+                Context(Graphs.Exit, Edges(4, 5, 9, 10), NoEdges))
 
         Test(Zork1, &H4E42, expected)
     End Sub
