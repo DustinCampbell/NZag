@@ -1,7 +1,6 @@
-﻿Imports Node = System.Int32
-Imports Edges = Microsoft.FSharp.Collections.FSharpList(Of Integer)
-Imports Context = System.Tuple(Of Integer, Microsoft.FSharp.Collections.FSharpList(Of NZag.Core.Statement), Microsoft.FSharp.Collections.FSharpList(Of Integer), Microsoft.FSharp.Collections.FSharpList(Of Integer))
-Imports Graph = Microsoft.FSharp.Collections.FSharpList(Of System.Tuple(Of Integer, Microsoft.FSharp.Collections.FSharpList(Of NZag.Core.Statement), Microsoft.FSharp.Collections.FSharpList(Of Integer), Microsoft.FSharp.Collections.FSharpList(Of Integer)))
+﻿Imports Edges = Microsoft.FSharp.Collections.FSharpList(Of Integer)
+Imports Block = NZag.Core.Graphs.Block(Of Microsoft.FSharp.Collections.FSharpList(Of NZag.Core.Statement))
+Imports Graph = NZag.Core.Graphs.Graph(Of Microsoft.FSharp.Collections.FSharpList(Of NZag.Core.Statement))
 
 Public Module AnalysisTests
 
@@ -49,30 +48,30 @@ Public Module AnalysisTests
         Test(Zork1, &H4E42, expected)
     End Sub
 
-    Private Function Graph(ParamArray actions() As Action(Of Context)) As Action(Of Graph)
+    Private Function Graph(ParamArray actions() As Action(Of Block)) As Action(Of Graph)
         Return Sub(g)
-                   Assert.Equal(actions.Length, g.Length)
+                   Assert.Equal(actions.Length, g.Blocks.Length)
 
                    For i = 0 To actions.Length - 1
-                       actions(i)(g(i))
+                       actions(i)(g.Blocks(i))
                    Next
                End Sub
     End Function
 
-    Private Function Context(id As Node, predecessors As Action(Of Edges), successors As Action(Of Edges)) As Action(Of Context)
-        Return Sub(c)
-                   Assert.Equal(id, c.Item1)
-                   predecessors(c.Item3)
-                   successors(c.Item4)
+    Private Function Context(id As Integer, predecessors As Action(Of Edges), successors As Action(Of Edges)) As Action(Of Block)
+        Return Sub(b)
+                   Assert.Equal(id, b.ID)
+                   predecessors(b.Predecessors)
+                   successors(b.Successors)
                End Sub
     End Function
 
-    Private Function Edges(ParamArray nodes() As Node) As Action(Of Edges)
+    Private Function Edges(ParamArray ids() As Integer) As Action(Of Edges)
         Return Sub(e)
-                   Assert.Equal(nodes.Length, e.Length)
+                   Assert.Equal(ids.Length, e.Length)
 
-                   For i = 0 To nodes.Length - 1
-                       Assert.Equal(nodes(i), e(i))
+                   For i = 0 To ids.Length - 1
+                       Assert.Equal(ids(i), e(i))
                    Next
                End Sub
     End Function
@@ -93,7 +92,7 @@ Public Module AnalysisTests
 
         Dim binder = New RoutineBinder(memory)
         Dim tree = binder.BindRoutine(r)
-        Dim graph = Graphs.buildControlFlowGraph(tree)
+        Dim graph = Graphs.BuildControlFlowGraph(tree)
 
         expected(graph)
     End Sub

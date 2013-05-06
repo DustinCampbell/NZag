@@ -6,10 +6,15 @@ open BoundNodeVisitors
 
 module Graphs =
 
-    type Node = int
-    type Edges = Node list
-    type Context<'T> = (Node * 'T * Edges * Edges)
-    type Graph<'T> = Context<'T> list
+    type Block<'T> =
+      { ID : int
+        Data : 'T
+        Predecessors : int list
+        Successors : int list }
+
+    type Graph<'T> =
+      { Tree : BoundTree
+        Blocks : Block<'T> list }
 
     [<Literal>]
     let Entry = -1
@@ -17,45 +22,45 @@ module Graphs =
     let Exit = -2
 
     type Builder<'T> =
-      { AddNode : Node -> unit;
-        AddEdge : Node -> Node -> unit;
-        AddEdgeToNext : Node -> unit;
-        GetData : Node -> 'T option
-        UpdateData : Node -> 'T option -> unit }
+      { AddNode : int -> unit;
+        AddEdge : int -> int -> unit;
+        AddEdgeToNext : int -> unit;
+        GetData : int -> 'T option
+        UpdateData : int -> 'T option -> unit }
 
-    let buildGraph f (finalizeData : 'T option -> 'U) : Graph<'U> =
+    let computeBlocks (buildBlocks : Builder<'T> -> unit) (finalizeData : 'T option -> 'U) : Block<'U> list =
 
         let map = Dictionary.create()
 
-        let get (id : Node) =
+        let get id =
             map |> Dictionary.find id
 
-        let next (id : Node) =
+        let next id =
             let nextId = id + 1
             if map |> Dictionary.contains nextId then nextId
             else Exit
 
-        let addNode (id : Node) =
+        let addNode id =
             let pred = SortedSet.create()
             let succ = SortedSet.create()
 
             map |> Dictionary.add id (pred, succ, None)
 
-        let addEdge (id1 : Node) (id2 : Node) =
+        let addEdge id1 id2 =
             let (_,succ,_) = get id1
             let (pred,_,_) = get id2
 
             succ |> SortedSet.add id2
             pred |> SortedSet.add id1
 
-        let addEdgeToNext (id : Node) =
+        let addEdgeToNext id =
             addEdge id (next id)
 
-        let getData (id : Node) =
+        let getData id  =
             let (_,_,data) = get id
             data
 
-        let updateData (id : Node) (data : 'T option) =
+        let updateData id (data : 'T option) =
             let (pred,succ,_) = get id
             map.[id] <- (pred,succ,data)
 
@@ -69,60 +74,70 @@ module Graphs =
             GetData = getData;
             UpdateData = updateData }
 
-        f builder
+        buildBlocks builder
 
         addEdgeToNext Entry
 
+        let createBlock (id, (pred,succ,data)) =
+          { ID = id
+            Data = data |> finalizeData
+            Predecessors = pred |> SortedSet.toList
+            Successors = succ |> SortedSet.toList }
+
         map
             |> Dictionary.toList
-            |> List.map (fun (id,(pred,succ,data)) -> (id, data |> finalizeData, pred |> SortedSet.toList, succ |> SortedSet.toList))
+            |> List.map createBlock
 
+    [<CompiledNameAttribute("BuildControlFlowGraph")>]
     let buildControlFlowGraph (tree : BoundTree) =
 
-        buildGraph
-            (fun builder ->
-                // First, add all nodes to the map.
-                do tree |> walkTree
-                    (fun s -> match s with | LabelStmt(label) -> builder.AddNode label | _ -> ())
-                    (fun e -> ())
+        let blocks =
+            computeBlocks
+                (fun builder ->
+                    // First, add all nodes to the map.
+                    do tree |> walkTree
+                        (fun s -> match s with | LabelStmt(label) -> builder.AddNode label | _ -> ())
+                        (fun e -> ())
 
-                // Next, add all data (i.e. statements) and edges.
-                let currentId = ref Entry
-                let lastStatement = ref None
+                    // Next, add all data (i.e. statements) and edges.
+                    let currentId = ref Entry
+                    let lastStatement = ref None
 
-                do tree |> walkTree
-                    (fun s ->
-                        let mutable id = !currentId
+                    do tree |> walkTree
+                        (fun s ->
+                            let mutable id = !currentId
 
-                        match s with
-                        | LabelStmt(label) ->
-                            match !lastStatement with
-                            | Some(JumpStmt(_))
-                            | Some(ReturnStmt(_)) -> ()
-                            | _ -> builder.AddEdge id label
+                            match s with
+                            | LabelStmt(label) ->
+                                match !lastStatement with
+                                | Some(JumpStmt(_))
+                                | Some(ReturnStmt(_)) -> ()
+                                | _ -> builder.AddEdge id label
 
-                            id <- label
-                            currentId := label
-                        | JumpStmt(label) ->
-                            builder.AddEdge id label
-                        | BranchStmt(_,_,_) ->
-                            builder.AddEdgeToNext id
-                        | ReturnStmt(_) ->
-                            builder.AddEdge id Exit
-                        | _ -> ()
+                                id <- label
+                                currentId := label
+                            | JumpStmt(label) ->
+                                builder.AddEdge id label
+                            | BranchStmt(_,_,_) ->
+                                builder.AddEdgeToNext id
+                            | ReturnStmt(_) ->
+                                builder.AddEdge id Exit
+                            | _ -> ()
 
-                        let slist =
-                            match builder.GetData id with
-                            | Some(slist) -> slist
-                            | None -> ResizeArray.create()
+                            let slist =
+                                match builder.GetData id with
+                                | Some(slist) -> slist
+                                | None -> ResizeArray.create()
 
-                        slist |> ResizeArray.add s
-                        builder.UpdateData id (Some(slist))
+                            slist |> ResizeArray.add s
+                            builder.UpdateData id (Some(slist))
 
-                        lastStatement := Some(s))
-                    (fun e -> ()))
-            (fun data ->
-                match data with
-                | Some(slist) -> slist |> List.ofSeq
-                | None -> List.empty)
+                            lastStatement := Some(s))
+                        (fun e -> ()))
+                (fun data ->
+                    match data with
+                    | Some(slist) -> slist |> List.ofSeq
+                    | None -> List.empty)
+
+        { Tree = tree; Blocks = blocks }
 
