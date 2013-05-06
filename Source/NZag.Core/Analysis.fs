@@ -149,3 +149,49 @@ module Graphs =
 
         { Tree = tree; Blocks = blocks }
 
+//    let computeReachingDefinitions graph =
+//        let blocks = graph.Blocks
+//
+//        let entry,rest =
+//            match blocks with
+//            | [] | _::[] | _::_::[] -> invalidOperation "Expected at least three nodes in graph (entry, exit and some basic block)"
+//            | h::t -> h,t
+//
+//        let outs =
+//            blocks
+//            |> List.fold (fun res b -> res |> Map.add b.ID Set.empty) Map.empty
+//            |> ref
+//
+//        let computeIns b =
+//            b.Predecessors
+//            |> List.map (fun p -> !outs |> Map.find p)
+//            |> List.reduce (fun s1 s2 -> Set.union s1 s2)
+//
+//        let computeOuts b =
+//            let ins = computeIns b
+//            let generated = ref Set.empty
+//            let killed = ref Set.empty
+//
+//            // TODO: Compute
+//            b.Data
+//            |> List.iter (fun s ->
+//                match s with
+//                | WriteTempStmt(t,e) -> ()
+//                | _ -> ())
+//
+//            ins
+//            |> Set.difference !killed
+//            |> Set.union !generated
+//
+//        let stop = ref false
+//        while !stop do
+//            stop := true
+//
+//            rest
+//            |> List.iter (fun b ->
+//                let currentOuts = !outs |> Map.find b.ID
+//                let newOuts = computeOuts b
+//                if currentOuts <> newOuts then
+//                    outs := !outs |> Map.add b.ID newOuts
+//                    stop := false)
+
