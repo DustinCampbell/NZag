@@ -25,6 +25,8 @@
     <Compile Include="Analysis.fsi" />
     <Compile Include="Analysis.fs" />
     <Compile Include="Binder.fs" />
+    <Compile Include="CodeGen.fs" />
+    <Compile Include="Machine.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

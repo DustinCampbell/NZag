@@ -67,6 +67,11 @@ module Enumerator =
         if e.MoveNext() then Some(e.Current)
         else None
 
+module Array =
+
+    let clear arr =
+        Array.Clear(arr, 0, arr |> Array.length)
+
 module Collection =
 
     let length (c : ICollection<_>) = c.Count
@@ -152,6 +157,16 @@ module SortedSet =
 
     let toList (s : SortedSet<_>) =
         s |> List.ofSeq
+
+module Stack =
+
+    let create() = new Stack<_>()
+
+    let length (s: Stack<_>) = s.Count
+    let isEmpty (s: Stack<_>) = s.Count = 0
+
+    let push v (s: Stack<_>) = s.Push(v)
+    let pop (s: Stack<_>) = s.Pop()
 
 [<AutoOpen>]
 module Functions =
