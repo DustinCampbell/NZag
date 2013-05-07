@@ -96,6 +96,9 @@ module Graphs =
             |> Dictionary.toList
             |> List.map createBlock
 
+    type ControlFlowData =
+      { Statements : Statement list }
+
     [<CompiledNameAttribute("BuildControlFlowGraph")>]
     let buildControlFlowGraph (tree : BoundTree) =
 
@@ -144,54 +147,76 @@ module Graphs =
                         (fun e -> ()))
                 (fun data ->
                     match data with
-                    | Some(slist) -> slist |> List.ofSeq
-                    | None -> List.empty)
+                    | Some(slist) -> { Statements = slist |> List.ofSeq }
+                    | None -> { Statements = List.empty })
 
         { Tree = tree; Blocks = blocks }
 
-//    let computeReachingDefinitions graph =
-//        let blocks = graph.Blocks
-//
-//        let entry,rest =
-//            match blocks with
-//            | [] | _::[] | _::_::[] -> invalidOperation "Expected at least three nodes in graph (entry, exit and some basic block)"
-//            | h::t -> h,t
-//
-//        let outs =
-//            blocks
-//            |> List.fold (fun res b -> res |> Map.add b.ID Set.empty) Map.empty
-//            |> ref
-//
-//        let computeIns b =
-//            b.Predecessors
-//            |> List.map (fun p -> !outs |> Map.find p)
-//            |> List.reduce (fun s1 s2 -> Set.union s1 s2)
-//
-//        let computeOuts b =
-//            let ins = computeIns b
-//            let generated = ref Set.empty
-//            let killed = ref Set.empty
-//
-//            // TODO: Compute
-//            b.Data
-//            |> List.iter (fun s ->
-//                match s with
-//                | WriteTempStmt(t,e) -> ()
-//                | _ -> ())
-//
-//            ins
-//            |> Set.difference !killed
-//            |> Set.union !generated
-//
-//        let stop = ref false
-//        while !stop do
-//            stop := true
-//
-//            rest
-//            |> List.iter (fun b ->
-//                let currentOuts = !outs |> Map.find b.ID
-//                let newOuts = computeOuts b
-//                if currentOuts <> newOuts then
-//                    outs := !outs |> Map.add b.ID newOuts
-//                    stop := false)
+    type Definition =
+      { Temp : int
+        Value : Expression }
+
+        override x.ToString() =
+            sprintf "Temp = %02x" x.Temp
+
+    type DefinitionData =
+      { Statements : Statement list
+        Definitions : Definition list }
+
+    [<CompiledNameAttribute("ComputeReachingDefinitions")>]
+    let computeReachingDefinitions (graph : Graph<ControlFlowData>) =
+        let entry,rest =
+            match graph.Blocks with
+            | [] | _::[] | _::_::[] -> invalidOperation "Expected at least three nodes in graph (entry, exit and some basic block)"
+            | h::t -> h,t
+
+        let outs =
+            graph.Blocks
+            |> List.fold (fun res b -> res |> Map.add b.ID Set.empty) Map.empty
+            |> ref
+
+        let computeIns b =
+            b.Predecessors
+            |> List.map (fun p -> !outs |> Map.find p)
+            |> List.reduce (fun s1 s2 -> Set.union s1 s2)
+
+        let computeOuts (b : Block<ControlFlowData>) =
+            let ins = computeIns b
+            let generated = ref Set.empty
+            let killed = ref Set.empty
+
+            b.Data.Statements
+            |> List.iter (fun s ->
+                match s with
+                | WriteTempStmt(t,e) ->
+                    let def = { Temp = t; Value = e }
+                    generated := !generated |> Set.filter (fun d -> d.Temp <> t)
+                    killed := !killed |> Set.filter (fun d -> d.Temp = t)
+                    generated := !generated |> Set.add def
+                | _ -> ())
+
+            Set.union !generated (Set.difference ins !killed)
+
+        let stop = ref false
+        while not (!stop) do
+            stop := true
+
+            rest
+            |> List.iter (fun b ->
+                let currentOuts = !outs |> Map.find b.ID
+                let newOuts = computeOuts b
+                if currentOuts <> newOuts then
+                    outs := !outs |> Map.add b.ID newOuts
+                    stop := false)
+
+        let blocks =
+            graph.Blocks
+            |> List.map (fun b -> { ID = b.ID
+                                    Data = { Statements = b.Data.Statements; Definitions = !outs |> Map.find b.ID |> Set.toList }
+                                    Predecessors = b.Predecessors
+                                    Successors = b.Successors })
+
+        { Tree = graph.Tree;
+          Blocks = blocks }
+
 

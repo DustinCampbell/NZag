@@ -1,26 +1,27 @@
-﻿Imports Edges = Microsoft.FSharp.Collections.FSharpList(Of Integer)
-Imports Block = NZag.Core.Graphs.Block(Of Microsoft.FSharp.Collections.FSharpList(Of NZag.Core.Statement))
-Imports Graph = NZag.Core.Graphs.Graph(Of Microsoft.FSharp.Collections.FSharpList(Of NZag.Core.Statement))
+﻿Imports ControlFlowGraph = NZag.Core.Graphs.Graph(Of NZag.Core.Graphs.ControlFlowData)
+Imports ControlFlowBlock = NZag.Core.Graphs.Block(Of NZag.Core.Graphs.ControlFlowData)
+Imports DefinitionsGraph = NZag.Core.Graphs.Graph(Of NZag.Core.Graphs.DefinitionData)
+Imports DefinitionsBlock = NZag.Core.Graphs.Block(Of NZag.Core.Graphs.DefinitionData)
 
 Public Module AnalysisTests
 
     <Fact>
-    Sub Zork1_4E3B()
+    Sub Zork1_4E3B_ControlFlow()
         ' 4e3b:  b2 ...                  PRINT           "a "
         ' 4e3e:  aa 01                   PRINT_OBJ       L00
         ' 4e40:  b0                      RTRUE
 
         Dim expected =
-            Graph(
-                Context(Graphs.Entry, NoEdges, Edges(0)),
-                Context(0, Edges(Graphs.Entry), Edges(Graphs.Exit)),
-                Context(Graphs.Exit, Edges(0), NoEdges))
+            ControlFlowGraph(
+                ControlFlowBlock(Graphs.Entry, NoPred, Succ(0)),
+                ControlFlowBlock(0, Pred(Graphs.Entry), Succ(Graphs.Exit)),
+                ControlFlowBlock(Graphs.Exit, Pred(0), NoSucc))
 
         Test(Zork1, &H4E38, expected)
     End Sub
 
     <Fact>
-    Sub Zork1_4E42()
+    Sub Zork1_4E42_ControlFlow()
         ' 4e45:  a0 4c cb                JZ              G3c [TRUE] 4e51
         ' 4e48:  e7 7f 64 00             RANDOM          #64 -> -(SP)
         ' 4e4c:  63 01 00 c1             JG              L00,(SP)+ [TRUE] RTRUE
@@ -30,25 +31,54 @@ Public Module AnalysisTests
         ' 4e5a:  b1                      RFALSE
 
         Dim expected =
-            Graph(
-                Context(Graphs.Entry, NoEdges, Edges(0)),
-                Context(0, Edges(Graphs.Entry), Edges(1, 6)),
-                Context(1, Edges(0), Edges(2, 3)),
-                Context(2, Edges(1), Edges(4)),
-                Context(3, Edges(1), Edges(4)),
-                Context(4, Edges(2, 3), Edges(Graphs.Exit, 5)),
-                Context(5, Edges(4), Edges(Graphs.Exit)),
-                Context(6, Edges(0), Edges(7, 8)),
-                Context(7, Edges(6), Edges(9)),
-                Context(8, Edges(6), Edges(9)),
-                Context(9, Edges(7, 8), Edges(Graphs.Exit, 10)),
-                Context(10, Edges(9), Edges(Graphs.Exit)),
-                Context(Graphs.Exit, Edges(4, 5, 9, 10), NoEdges))
+            ControlFlowGraph(
+                ControlFlowBlock(Graphs.Entry, NoPred, Succ(0)),
+                ControlFlowBlock(0, Pred(Graphs.Entry), Succ(1, 6)),
+                ControlFlowBlock(1, Pred(0), Succ(2, 3)),
+                ControlFlowBlock(2, Pred(1), Succ(4)),
+                ControlFlowBlock(3, Pred(1), Succ(4)),
+                ControlFlowBlock(4, Pred(2, 3), Succ(Graphs.Exit, 5)),
+                ControlFlowBlock(5, Pred(4), Succ(Graphs.Exit)),
+                ControlFlowBlock(6, Pred(0), Succ(7, 8)),
+                ControlFlowBlock(7, Pred(6), Succ(9)),
+                ControlFlowBlock(8, Pred(6), Succ(9)),
+                ControlFlowBlock(9, Pred(7, 8), Succ(Graphs.Exit, 10)),
+                ControlFlowBlock(10, Pred(9), Succ(Graphs.Exit)),
+                ControlFlowBlock(Graphs.Exit, Pred(4, 5, 9, 10), NoSucc))
 
         Test(Zork1, &H4E42, expected)
     End Sub
 
-    Private Function Graph(ParamArray actions() As Action(Of Block)) As Action(Of Graph)
+    <Fact>
+    Sub Zork1_4E42_ReachingDefinitions()
+        ' 4e45:  a0 4c cb                JZ              G3c [TRUE] 4e51
+        ' 4e48:  e7 7f 64 00             RANDOM          #64 -> -(SP)
+        ' 4e4c:  63 01 00 c1             JG              L00,(SP)+ [TRUE] RTRUE
+        ' 4e50:  b1                      RFALSE
+        ' 4e51:  e7 3f 01 2c 00          RANDOM          #012c -> -(SP)
+        ' 4e56:  63 01 00 c1             JG              L00,(SP)+ [TRUE] RTRUE
+        ' 4e5a:  b1                      RFALSE
+
+        Dim expected =
+            DefinitionsGraph(
+                DefinitionsBlock(Graphs.Entry, NoDefs),
+                DefinitionsBlock(0, Outs(0)),
+                DefinitionsBlock(1, Outs(0, 1, 2)),
+                DefinitionsBlock(2, Outs(0, 1, 2)),
+                DefinitionsBlock(3, Outs(0, 1, 2)),
+                DefinitionsBlock(4, Outs(0, 1, 2, 3, 4, 5, 6)),
+                DefinitionsBlock(5, Outs(0, 1, 2, 3, 4, 5, 6)),
+                DefinitionsBlock(6, Outs(0, 7, 8)),
+                DefinitionsBlock(7, Outs(0, 7, 8)),
+                DefinitionsBlock(8, Outs(0, 7, 8)),
+                DefinitionsBlock(9, Outs(0, 7, 8, 9, 10, 11, 12)),
+                DefinitionsBlock(10, Outs(0, 7, 8, 9, 10, 11, 12)),
+                DefinitionsBlock(Graphs.Exit, Outs(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)))
+
+        Test(Zork1, &H4E42, expected)
+    End Sub
+
+    Private Function ControlFlowGraph(ParamArray actions() As Action(Of ControlFlowBlock)) As Action(Of ControlFlowGraph)
         Return Sub(g)
                    Assert.Equal(actions.Length, g.Blocks.Length)
 
@@ -58,30 +88,82 @@ Public Module AnalysisTests
                End Sub
     End Function
 
-    Private Function Context(id As Integer, predecessors As Action(Of Edges), successors As Action(Of Edges)) As Action(Of Block)
+    Private Function ControlFlowBlock(id As Integer, ParamArray actions() As Action(Of ControlFlowBlock)) As Action(Of ControlFlowBlock)
         Return Sub(b)
                    Assert.Equal(id, b.ID)
-                   predecessors(b.Predecessors)
-                   successors(b.Successors)
-               End Sub
-    End Function
 
-    Private Function Edges(ParamArray ids() As Integer) As Action(Of Edges)
-        Return Sub(e)
-                   Assert.Equal(ids.Length, e.Length)
-
-                   For i = 0 To ids.Length - 1
-                       Assert.Equal(ids(i), e(i))
+                   For Each action In actions
+                       action(b)
                    Next
                End Sub
     End Function
 
-    Private ReadOnly NoEdges As Action(Of Edges) =
-        Sub(e)
-            Assert.Equal(0, e.Length)
+    Private Function Pred(ParamArray ids() As Integer) As Action(Of ControlFlowBlock)
+        Return Sub(b)
+                   Assert.Equal(ids.Length, b.Predecessors.Length)
+
+                   For i = 0 To ids.Length - 1
+                       Assert.Equal(ids(i), b.Predecessors(i))
+                   Next
+               End Sub
+    End Function
+
+    Private Function Succ(ParamArray ids() As Integer) As Action(Of ControlFlowBlock)
+        Return Sub(b)
+                   Assert.Equal(ids.Length, b.Successors.Length)
+
+                   For i = 0 To ids.Length - 1
+                       Assert.Equal(ids(i), b.Successors(i))
+                   Next
+               End Sub
+    End Function
+
+    Private ReadOnly NoPred As Action(Of ControlFlowBlock) =
+        Sub(b)
+            Assert.Equal(0, b.Predecessors.Length)
         End Sub
 
-    Private Sub Test(gameName As String, address As Integer, expected As Action(Of Graph))
+    Private ReadOnly NoSucc As Action(Of ControlFlowBlock) =
+        Sub(b)
+            Assert.Equal(0, b.Successors.Length)
+        End Sub
+
+    Private Function DefinitionsGraph(ParamArray actions() As Action(Of DefinitionsBlock)) As Action(Of DefinitionsGraph)
+        Return Sub(g)
+                   Assert.Equal(actions.Length, g.Blocks.Length)
+
+                   For i = 0 To actions.Length - 1
+                       actions(i)(g.Blocks(i))
+                   Next
+               End Sub
+    End Function
+
+    Private Function DefinitionsBlock(id As Integer, ParamArray actions() As Action(Of DefinitionsBlock)) As Action(Of DefinitionsBlock)
+        Return Sub(b)
+                   Assert.Equal(id, b.ID)
+
+                   For Each action In actions
+                       action(b)
+                   Next
+               End Sub
+    End Function
+
+    Private Function Outs(ParamArray ids() As Integer) As Action(Of DefinitionsBlock)
+        Return Sub(b)
+                   Assert.Equal(ids.Length, b.Data.Definitions.Length)
+
+                   For i = 0 To ids.Length - 1
+                       Assert.Equal(ids(i), b.Data.Definitions(i).Temp)
+                   Next
+               End Sub
+    End Function
+
+    Private ReadOnly NoDefs As Action(Of DefinitionsBlock) =
+        Sub(b)
+            Assert.Equal(0, b.Data.Definitions.Length)
+        End Sub
+
+    Private Sub Test(gameName As String, address As Integer, expected As Action(Of ControlFlowGraph))
         Dim memory = GameMemory(gameName)
         Dim reader = New RoutineReader(memory)
 
@@ -95,6 +177,23 @@ Public Module AnalysisTests
         Dim graph = Graphs.BuildControlFlowGraph(tree)
 
         expected(graph)
+    End Sub
+
+    Private Sub Test(gameName As String, address As Integer, expected As Action(Of DefinitionsGraph))
+        Dim memory = GameMemory(gameName)
+        Dim reader = New RoutineReader(memory)
+
+        Dim a = RawAddress(address)
+        Dim r = reader.ReadRoutine(a)
+
+        Assert.Equal(a, r.Address)
+
+        Dim binder = New RoutineBinder(memory)
+        Dim tree = binder.BindRoutine(r)
+        Dim cfg = Graphs.BuildControlFlowGraph(tree)
+        Dim dg = Graphs.ComputeReachingDefinitions(cfg)
+
+        expected(dg)
     End Sub
 
 End Module

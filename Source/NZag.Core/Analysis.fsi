@@ -18,5 +18,19 @@ module Graphs =
       { Tree : BoundTree
         Blocks : Block<'T> list }
 
+    type ControlFlowData =
+      { Statements : Statement list }
+
     [<CompiledNameAttribute("BuildControlFlowGraph")>]
-    val buildControlFlowGraph : tree:BoundTree -> Graph<Statement list>
+    val buildControlFlowGraph : tree:BoundTree -> Graph<ControlFlowData>
+
+    type Definition =
+      { Temp : int
+        Value : Expression }
+
+    type DefinitionData =
+      { Statements : Statement list
+        Definitions : Definition list }
+
+    [<CompiledNameAttribute("ComputeReachingDefinitions")>]
+    val computeReachingDefinitions : graph:Graph<ControlFlowData> -> Graph<DefinitionData>
