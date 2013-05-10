@@ -347,7 +347,7 @@ type RoutineBinder (memory : Memory) =
                 match s with
                 | LabelStmt(l) ->
                     let newLabel = !nextLabelIndex
-                    labels.Add(l, newLabel)
+                    labels |> Dictionary.add l newLabel
                     incr nextLabelIndex
                 | _ -> ())
             (fun e -> ())
@@ -361,6 +361,33 @@ type RoutineBinder (memory : Memory) =
                 | s -> s)
             (fun e -> e)
 
+    let sortTemps tree =
+        let nextTempIndex = ref 0
+        let temps = Dictionary.create()
+
+        let getOrAddTemp t =
+            match temps |> Dictionary.tryFind t with
+            | Some(t) -> t
+            | None    -> let newTemp = !nextTempIndex
+                         temps |> Dictionary.add t newTemp
+                         incr nextTempIndex
+                         newTemp
+
+        // Rewrite the tree, replacing old temps with new ones
+        tree |> rewriteTree
+            (fun s -> 
+                match s with
+                | WriteTempStmt(t,e) ->
+                    let t' = getOrAddTemp t
+                    WriteTempStmt(t',e)
+                | s -> s)
+            (fun e ->
+                match e with
+                | TempExpr(t) ->
+                    let t' = getOrAddTemp t
+                    TempExpr(t')
+                | e -> e)
+
     member x.BindRoutine (routine : Routine) =
 
         let builder = new BoundTreeBuilder(routine)
@@ -371,3 +398,4 @@ type RoutineBinder (memory : Memory) =
 
         { Statements = builder.Statements; TempCount = builder.TempCount; LabelCount = builder.LabelCount }
             |> sortLabels
+            |> sortTemps

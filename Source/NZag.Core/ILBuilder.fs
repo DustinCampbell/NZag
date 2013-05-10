@@ -7,7 +7,11 @@ open NZag.Utilities
 
 type IArguments =
     abstract member LoadMachine : unit -> unit
+    abstract member LoadMemory : unit -> unit
     abstract member LoadLocals : unit -> unit
+    abstract member LoadStack : unit -> unit
+    abstract member LoadSP : unit -> unit
+    abstract member StoreSP : unit -> unit
     abstract member LoadArgCount : unit -> unit
 
 type IEvaluationStack =
@@ -21,19 +25,32 @@ type IEvaluationStack =
 
 type IMath =
     abstract member Add : unit -> unit
+    abstract member Add : int -> unit
     abstract member Subtract : unit -> unit
+    abstract member Subtract : int -> unit
     abstract member Multiply : unit -> unit
+    abstract member Multiply : int -> unit
     abstract member Divide : unit -> unit
+    abstract member Divide : int -> unit
     abstract member Remainder : unit -> unit
+    abstract member Remainder : int -> unit
     abstract member And : unit -> unit
+    abstract member And : int -> unit
     abstract member Or : unit -> unit
-    abstract member Not : unit -> unit
+    abstract member Or : int -> unit
     abstract member ShiftLeft : unit -> unit
+    abstract member ShiftLeft : int -> unit
     abstract member ShiftRight : unit -> unit
+    abstract member ShiftRight : int -> unit
+    abstract member Not : unit -> unit
     abstract member Negate : unit -> unit
 
 type IConvert =
     abstract member ToInt16 : unit -> unit
+
+type IArrays =
+    abstract member LoadUInt16 : unit -> unit
+    abstract member StoreUInt16 : unit -> unit
 
 type Condition =
     | False = 0
@@ -119,10 +136,18 @@ type ILBuilder (generator: ILGenerator) =
         { new IArguments with
             member y.LoadMachine() =
                 generator.Emit(OpCodes.Ldarg_0)
-            member y.LoadLocals() =
+            member y.LoadMemory() =
                 generator.Emit(OpCodes.Ldarg_1)
+            member y.LoadLocals() =
+                generator.Emit(OpCodes.Ldarg_2)
+            member y.LoadStack() =
+                generator.Emit(OpCodes.Ldarg_3)
+            member y.LoadSP() =
+                generator.Emit(OpCodes.Ldarg_S, 4uy)
+            member y.StoreSP() =
+                generator.Emit(OpCodes.Starg_S, 4uy)
             member y.LoadArgCount() =
-                generator.Emit(OpCodes.Ldarg_2) }
+                generator.Emit(OpCodes.Ldarg_S, 5uy) }
 
     member x.EvaluationStack =
         { new IEvaluationStack with
@@ -146,24 +171,51 @@ type ILBuilder (generator: ILGenerator) =
         { new IMath with
             member y.Add() =
                 generator.Emit(OpCodes.Add)
+            member y.Add(value) =
+                loadInt32 value
+                generator.Emit(OpCodes.Add)
             member y.Subtract() =
+                generator.Emit(OpCodes.Sub)
+            member y.Subtract(value) =
+                loadInt32 value
                 generator.Emit(OpCodes.Sub)
             member y.Multiply() =
                 generator.Emit(OpCodes.Mul)
+            member y.Multiply(value) =
+                loadInt32 value
+                generator.Emit(OpCodes.Mul)
             member y.Divide() =
+                generator.Emit(OpCodes.Div)
+            member y.Divide(value) =
+                loadInt32 value
                 generator.Emit(OpCodes.Div)
             member y.Remainder() =
                 generator.Emit(OpCodes.Rem)
+            member y.Remainder(value) =
+                loadInt32 value
+                generator.Emit(OpCodes.Rem)
             member y.And() =
+                generator.Emit(OpCodes.And)
+            member y.And(value) =
+                loadInt32 value
                 generator.Emit(OpCodes.And)
             member y.Or() =
                 generator.Emit(OpCodes.Or)
-            member y.Not() =
-                generator.Emit(OpCodes.Not)
+            member y.Or(value) =
+                loadInt32 value
+                generator.Emit(OpCodes.Or)
             member y.ShiftLeft() =
+                generator.Emit(OpCodes.Shl)
+            member y.ShiftLeft(value) =
+                loadInt32 value
                 generator.Emit(OpCodes.Shl)
             member y.ShiftRight() =
                 generator.Emit(OpCodes.Shr)
+            member y.ShiftRight(value) =
+                loadInt32 value
+                generator.Emit(OpCodes.Shr)
+            member y.Not() =
+                generator.Emit(OpCodes.Not)
             member y.Negate() =
                 generator.Emit(OpCodes.Neg) }
 
@@ -171,6 +223,13 @@ type ILBuilder (generator: ILGenerator) =
         { new IConvert with
             member y.ToInt16() =
                 generator.Emit(OpCodes.Conv_I2) }
+
+    member x.Arrays =
+        { new IArrays with
+            member y.LoadUInt16() =
+                generator.Emit(OpCodes.Ldelem_U2)
+            member y.StoreUInt16() =
+                generator.Emit(OpCodes.Stelem_I2) }
 
     member x.Call(methodInfo: MethodInfo) =
         generator.Emit(OpCodes.Call, methodInfo)
