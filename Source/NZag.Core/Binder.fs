@@ -64,6 +64,7 @@ type BoundTreeBuilder (routine : Routine) =
 
     member x.Statements = statements |> List.ofSeq
     member x.TempCount = tempCount
+    member x.LabelCount = labelCount
 
 type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
 
@@ -368,5 +369,5 @@ type RoutineBinder (memory : Memory) =
         for i in routine.Instructions do
             binder.BindInstruction(i)
 
-        { Statements = builder.Statements; TempCount = builder.TempCount }
+        { Statements = builder.Statements; TempCount = builder.TempCount; LabelCount = builder.LabelCount }
             |> sortLabels

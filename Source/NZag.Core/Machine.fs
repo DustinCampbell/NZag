@@ -2,9 +2,9 @@
 
 open NZag.Utilities
 
-type Machine (memory : Memory) =
+type Machine (memory : Memory) as this =
 
-    let functionMap = Dictionary.create()
+    let zfuncMap = Dictionary.create()
 
     let localArrayPool = Stack.create()
 
@@ -16,11 +16,27 @@ type Machine (memory : Memory) =
         arr |> Array.clear
         localArrayPool |> Stack.push arr
 
+    let compile (routine: Routine) =
+        let dynamicMethod =
+            new System.Reflection.Emit.DynamicMethod(
+                name = sprintf "%4x_%d_locals" routine.Address.IntValue routine.Locals.Length,
+                returnType = typeof<uint16>,
+                parameterTypes = [|typeof<Machine>; typeof<uint16>; typeof<int>|],
+                owner = typeof<Machine>,
+                skipVisibility = true)
+
+        let generator = dynamicMethod.GetILGenerator()
+        let builder = new ILBuilder(generator)
+
+        CodeGenerator.Compile(memory, routine, builder)
+
+        dynamicMethod.CreateDelegate(typeof<ZFunc>, this) :?> ZFunc
+
     member x.Memory = memory
 
     interface IMachine with
 
-        member x.GetInitialLocalArray routine =
+        member y.GetInitialLocalArray(routine) =
             let result = getOrCreateLocalArray()
 
             if memory.Version < 5 then
@@ -29,8 +45,12 @@ type Machine (memory : Memory) =
 
             result
 
-        member x.ReleaseLocalArray locals =
+        member y.ReleaseLocalArray(locals) =
             releaseLocalArray locals
 
-        member x.GetOrCompileFunction address =
-            ()
+        member y.GetOrCompileZFunc(routine) =
+            match zfuncMap |> Dictionary.tryFind routine.Address with
+            | Some(f) -> f
+            | None    -> let f = compile routine
+                         zfuncMap |> Dictionary.add routine.Address f
+                         f

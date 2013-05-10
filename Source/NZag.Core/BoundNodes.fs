@@ -136,7 +136,8 @@ type Statement =
 
 type BoundTree =
   { Statements : list<Statement>
-    TempCount : int }
+    TempCount : int
+    LabelCount : int }
 
 module BoundNodeConstruction =
 
@@ -279,7 +280,7 @@ module BoundNodeVisitors =
         let rewriteStmt = rewriteStatement fstmt fexpr
         let newStatements = tree.Statements |> List.map rewriteStmt
 
-        { Statements = newStatements; TempCount = tree.TempCount }
+        { Statements = newStatements; TempCount = tree.TempCount; LabelCount = tree.LabelCount }
 
     let rec visitExpression fexpr expr =
         let visitExpr = visitExpression fexpr
