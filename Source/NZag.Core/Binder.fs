@@ -73,7 +73,7 @@ type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
         | 1 | 2 | 3 -> two
         | 4 | 5 | 6 | 7 -> four
         | 8 -> eight
-        | v -> invalidOperation "Invalid version number: %d" v
+        | v -> failcompilef "Invalid version number: %d" v
 
     let routinesOffset =
         int32Const (memory |> Header.readRoutinesOffset).IntValue
@@ -119,7 +119,7 @@ type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
             let branch =
                 match instruction.Branch with
                 | Some(b) -> b
-                | None -> invalidOperation "Expected instruction to have a valid branch."
+                | None -> failcompile "Expected instruction to have a valid branch."
 
             let statement =
                 match branch with
@@ -134,7 +134,7 @@ type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
             let storeVar =
                 match instruction.StoreVariable with
                 | Some(v) -> v
-                | None -> invalidOperation "Expected instruction to have a valid store variable."
+                | None -> failcompile "Expected instruction to have a valid store variable."
 
             storeVar |> writeVar expression |> addStatement
 
@@ -170,7 +170,7 @@ type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
                 | Some(e) ->
                     byRefVariableFromExpression e
                 | _ ->
-                    invalidOperation "Expected operand temp for by-ref variable index"
+                    failcompile "Expected operand temp for by-ref variable index"
 
             match variableIndex with
             | ConstantExpr(Byte(b)) ->

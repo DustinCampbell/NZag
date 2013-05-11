@@ -89,7 +89,7 @@ type CodeGenerator private (tree: BoundTree, builder: ILBuilder) =
     let labels = Array.init tree.LabelCount (fun i -> builder.NewLabel())
     let temps = Array.init tree.TempCount (fun i -> builder.NewLocal(typeof<uint16>))
 
-    let unexpectedNodeFound o = invalidOperation "Encountered %s, which should not appear in a lowered tree." (o.GetType().Name)
+    let unexpectedNodeFound o = failcompilef "Encountered %s, which should not appear in a lowered tree." (o.GetType().Name)
 
     let peekStack() =
         builder.Arguments.LoadStack()

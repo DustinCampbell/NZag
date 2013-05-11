@@ -27,14 +27,26 @@ module Exceptions =
     type ZMachineQuitException() =
         inherit Exception()
 
-    let invalidOperation message =
-        Printf.ksprintf (fun s -> raise <| InvalidOperationException(s)) message
+    type ContractException(message: string) =
+        inherit Exception(message)
 
-    let argumentOutOfRange paramName message =
-        Printf.ksprintf (fun s -> raise <| ArgumentOutOfRangeException(paramName, s)) message
+    let failcompile message =
+        raise <| CompilerException(message)
 
-    let argumentNull paramName message =
-        Printf.ksprintf (fun s -> raise <| ArgumentNullException(paramName, s)) message
+    let failcompilef format =
+        Printf.ksprintf (fun s -> failcompile s) format
+
+    let failruntime message =
+        raise <| RuntimeException(message)
+
+    let failruntimef format =
+        Printf.ksprintf (fun s -> failruntime s) format
+
+    let argNull name format =
+        Printf.ksprintf (fun s -> raise <| ArgumentNullException(name, s)) format
+
+    let argOutOfRange name format =
+        Printf.ksprintf (fun s -> raise <| ArgumentOutOfRangeException(name, s)) format
 
 [<RequireQualifiedAccess>]
 module String =

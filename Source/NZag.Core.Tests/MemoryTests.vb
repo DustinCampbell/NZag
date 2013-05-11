@@ -171,7 +171,7 @@
 
     <Fact>
     Sub BadVersionNumber()
-        Assert.Throws(Of InvalidOperationException)(
+        Assert.Throws(Of Exception)(
             Sub()
                 CreateMemory(0, {})
             End Sub)
@@ -184,7 +184,7 @@
                 End Sub)
         Next
 
-        Assert.Throws(Of InvalidOperationException)(
+        Assert.Throws(Of Exception)(
             Sub()
                 CreateMemory(9, {})
             End Sub)

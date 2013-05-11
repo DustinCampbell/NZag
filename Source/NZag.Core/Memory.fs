@@ -49,13 +49,13 @@ type Address =
         let add_uint16 x y =
             let result = (int x) + y
             if result < 0 || result > int UInt16.MaxValue then
-                invalidOperation "Operation caused address overflow"
+                failwith "Operation caused address overflow"
             uint16 result
 
         let add_int32 x y =
             let result = int64 x + int64 y
             if result < 0L || result > int64 Int32.MaxValue then
-                invalidOperation "Operation caused address overflow"
+                failwith "Operation caused address overflow"
             int result
 
         match x with
@@ -69,13 +69,13 @@ type Address =
         let subtract_uint16 x y =
             let result = (int x) - y
             if result < 0 || result > int UInt16.MaxValue then
-                invalidOperation "Operation caused address overflow"
+                failwith "Operation caused address overflow"
             uint16 result
 
         let subtract_int32 x y =
             let result = int64 x - int64 y
             if result < 0L || result > int64 Int32.MaxValue then
-                invalidOperation "Operation caused address overflow"
+                failwith "Operation caused address overflow"
             int result
 
         match x with
@@ -127,9 +127,9 @@ and Memory private (stream : Stream) =
 
         match stream.NextByte() with
         | Some(b) -> if b >= 1uy && b <= 8uy then int b
-                     else invalidOperation "Invalid version number: %d" b
+                     else failwithf "Invalid version number: %d" b
 
-        | None    -> invalidOperation "Could not read version"
+        | None    -> failwith "Could not read version"
 
     let size =
         do stream.Seek(0x1AL, SeekOrigin.Begin) |> ignore
@@ -137,34 +137,34 @@ and Memory private (stream : Stream) =
         let packedSize =
             match stream.NextWord() with
             | Some(w) -> int w
-            | None    -> invalidOperation "Could not read size"
+            | None    -> failwith "Could not read size"
 
         match version with
         | 1 | 2 | 3 -> packedSize * 2
         | 4 | 5     -> packedSize * 4
         | 6 | 7 | 8 -> packedSize * 8
-        | v -> invalidOperation "Invalid version number: %d" v
+        | v -> failwithf "Invalid version number: %d" v
 
     let packedMultiplier =
         match version with
         | 1 | 2 | 3 -> 2
         | 4 | 5 | 6 | 7 -> 4
         | 8 -> 8
-        | v -> invalidOperation "Invalid version number: %d" v
+        | v -> failwithf "Invalid version number: %d" v
 
     let routinesOffset =
         do stream.Seek(0x28L, SeekOrigin.Begin) |> ignore
 
         match stream.NextWord() with
         | Some(w) -> int w * 8
-        | None    -> invalidOperation "Could not read routines offset"
+        | None    -> failwith "Could not read routines offset"
 
     let stringsOffset =
         do stream.Seek(0x2AL, SeekOrigin.Begin) |> ignore
 
         match stream.NextWord() with
         | Some(w) -> int w * 8
-        | None    -> invalidOperation "Could not read static strings offset"
+        | None    -> failwith "Could not read static strings offset"
 
     let translate address =
         match address with
@@ -250,19 +250,19 @@ and Memory private (stream : Stream) =
 
     member x.Read (buffer : byte[]) offset count address =
         if buffer = null then
-            argumentNull "buffer" "buffer is null"
+            argNull "buffer" "buffer is null"
         if offset < 0 then
-            argumentOutOfRange "offset" "offset is less than zero"
+            argOutOfRange "offset" "offset is less than zero"
         if count < 0 then
-            argumentOutOfRange "count" "count is less than zero"
+            argOutOfRange "count" "count is less than zero"
         if offset + count > buffer.Length then
-            argumentOutOfRange "count" "count is larger than buffer size"
+            argOutOfRange "count" "count is larger than buffer size"
         if count > size then
-            argumentOutOfRange "count" "count is larger than the Memory size"
+            argOutOfRange "count" "count is larger than the Memory size"
 
         let address' = translate address
         if address' > size - count then
-            argumentOutOfRange "address" "Expected address to be in range 0 to %d" (size - count)
+            argOutOfRange "address" "Expected address to be in range 0 to %d" (size - count)
 
         let mutable readSoFar = offset
 
@@ -280,17 +280,17 @@ and Memory private (stream : Stream) =
     member x.ReadByte address =
         let address' = translate address
         if address' > size - 1 then
-            argumentOutOfRange "address" "Expected address to be in range 0 to %d" (size - 1)
+            argOutOfRange "address" "Expected address to be in range 0 to %d" (size - 1)
 
         readByte address'
 
     member x.ReadBytes address count =
         if count > size then
-            argumentOutOfRange "count" "count is larger than the Memory size"
+            argOutOfRange "count" "count is larger than the Memory size"
 
         let address' = translate address
         if address' > size - count then
-            argumentOutOfRange "address" "Expected address to be in range 0 to %d" (size - count)
+            argOutOfRange "address" "Expected address to be in range 0 to %d" (size - count)
 
         let buffer = Array.zeroCreate count
         let mutable readSoFar = 0
@@ -311,17 +311,17 @@ and Memory private (stream : Stream) =
     member x.ReadWord address =
         let address' = translate address
         if address' > size - 2 then
-            argumentOutOfRange "address" "Expected address to be in range 0 to %d" (size - 2)
+            argOutOfRange "address" "Expected address to be in range 0 to %d" (size - 2)
 
         readWord address'
 
     member x.ReadWords address count =
         if (count * 2) > size then
-            argumentOutOfRange "count" "count is larger than the Memory size"
+            argOutOfRange "count" "count is larger than the Memory size"
 
         let address' = translate address
         if address' > size - (count * 2) then
-            argumentOutOfRange "address" "Expected address to be in range 0 to % d" (size - count)
+            argOutOfRange "address" "Expected address to be in range 0 to % d" (size - count)
 
         let buffer = Array.zeroCreate count
         for i = 0 to count - 1 do
@@ -332,7 +332,7 @@ and Memory private (stream : Stream) =
     member x.ReadDWord address =
         let address' = translate address
         if address' > size - 4 then
-            argumentOutOfRange "address" "Expected address to be in range 0 to %d" (size - 4)
+            argOutOfRange "address" "Expected address to be in range 0 to %d" (size - 4)
 
         // We take a faster path if the entire dword can be read from the current chunk
         if address' >= currentChunkStart && address' < currentChunkEnd - 4 then
@@ -354,14 +354,14 @@ and Memory private (stream : Stream) =
     member x.WriteByte address value =
         let address' = translate address
         if address' > size - 1 then
-            argumentOutOfRange "address" "Expected address to be in range 0 to %d" (size - 1)
+            argOutOfRange "address" "Expected address to be in range 0 to %d" (size - 1)
 
         writeByte address' value
 
     member x.WriteWord address (value : uint16) =
         let address' = translate address
         if address' > size - 2 then
-            argumentOutOfRange "address" "Expected address to be in range 0 to %d" (size - 2)
+            argOutOfRange "address" "Expected address to be in range 0 to %d" (size - 2)
 
         // We take a faster path if the entire word can be written to the current chunk
         if address' >= currentChunkStart && address' < currentChunkEnd - 2 then
@@ -377,7 +377,7 @@ and Memory private (stream : Stream) =
     member x.WriteDWord address (value : uint32) =
         let address' = translate address
         if address' > size - 4 then
-            argumentOutOfRange "address" "Expected argument to be in range 0 to %d" (size - 4)
+            argOutOfRange "address" "Expected argument to be in range 0 to %d" (size - 4)
 
         // We take a faster path if the entire dword can be written to the current chunk
         if address' >= currentChunkStart && address' < currentChunkEnd - 4 then
@@ -403,7 +403,7 @@ and Memory private (stream : Stream) =
         let readerChunkOffset = ref 0
 
         let readPastEndOfMemory() =
-            invalidOperation "Attempted to read past end of memory."
+            failwith "Attempted to read past end of memory."
 
         let getChunk() =
             match !readerChunk with
@@ -533,7 +533,7 @@ and Memory private (stream : Stream) =
 
             member y.SkipBytes count =
                 if count < 0 then
-                    argumentOutOfRange "count" "count was less than 0."
+                    argOutOfRange "count" "count was less than 0."
                 if count > 0 then
                     increment count
 

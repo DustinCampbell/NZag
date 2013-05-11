@@ -408,7 +408,7 @@ type BoundNodeDumper (builder : StringBuilder) =
     let dumpUnaryOperationKind = function
         | UnaryOperationKind.Negate -> append "-"
         | UnaryOperationKind.Not    -> append "not "
-        | x -> Exceptions.invalidOperation "Unknown unary operator kind: %A" x
+        | x -> failcompilef "Unknown unary operator kind: %A" x
 
     let dumpBinaryOperationKind = function
         | BinaryOperationKind.Add         -> append " + "
@@ -426,11 +426,11 @@ type BoundNodeDumper (builder : StringBuilder) =
         | BinaryOperationKind.GreaterThan -> append " > "
         | BinaryOperationKind.AtMost      -> append " <= "
         | BinaryOperationKind.AtLeast     -> append " >= "
-        | x -> Exceptions.invalidOperation "Unknown binary operator kind: %A" x
+        | x -> failcompilef "Unknown binary operator kind: %A" x
 
     let dumpConversionKind = function
         | ConversionKind.ToInt16 -> append "int16"
-        | x -> Exceptions.invalidOperation "Unknown conversion kind: %A" x
+        | x -> failcompilef "Unknown conversion kind: %A" x
 
     let rec dumpExpression = function
         | ConstantExpr(c) ->

@@ -169,7 +169,7 @@ module Graphs =
     let computeReachingDefinitions (graph : Graph<ControlFlowData>) =
         let entry,rest =
             match graph.Blocks with
-            | [] | _::[] | _::_::[] -> invalidOperation "Expected at least three nodes in graph (entry, exit and some basic block)"
+            | [] | _::[] | _::_::[] -> failcompile "Expected at least three nodes in graph (entry, exit and some basic block)"
             | h::t -> h,t
 
         let outs =

@@ -38,7 +38,7 @@ type AlphabetTable (memory : Memory) =
             let customTableAddress = memory |> Header.readAlphabetTableAddress
             if customTableAddress.IsZero then [|A0; A1; A2|]
             else readCustomTable customTableAddress
-        | _ -> Exceptions.invalidOperation "Unexpected version number: %d" memory.Version
+        | _ -> failcompilef "Unexpected version number: %d" memory.Version
 
     let baseAlphabet = ref 0
     let currentAlphabet = ref 0
@@ -122,11 +122,11 @@ type CharProcessor (memory : Memory, ?abbreviationReader : AbbreviationReader) =
         | _ ->
             // Incomplete multi-byte characters are not allowed in abbreviations.
             if abbreviationReader.IsSome then
-                Exceptions.invalidOperation "Encountered illegal incomplete multi-byte ZSCII character"
+                failcompile "Encountered illegal incomplete multi-byte ZSCII character"
 
     let appendAbbreviation (zcharEnum : ZCharEnumerator) offset builder =
         if abbreviationReader.IsNone then
-            Exceptions.invalidOperation "Encounted ZSCII code for an illegal abbreviation."
+            failcompile "Encounted ZSCII code for an illegal abbreviation."
 
         match zcharEnum.Next() with
         | Some(code) ->
@@ -145,7 +145,7 @@ type CharProcessor (memory : Memory, ?abbreviationReader : AbbreviationReader) =
         | 5uy -> alphabetTable.DoubleShiftLock()
         | 6uy when alphabetTable.CurrentAlphabet = 2 -> builder |> appendMultibyteZsciiChar zcharEnum
         | zc -> if zc <= 31uy then builder |> StringBuilder.appendChar (alphabetTable.GetChar(zc))
-                else Exceptions.invalidOperation "Unexpected ZSCII character value: %d. Legal values are from 0 to 31." zc
+                else failcompilef "Unexpected ZSCII character value: %d. Legal values are from 0 to 31." zc
 
     let processChar_v2 builder zcharEnum (zchar : ZChar) =
         match zchar with
@@ -157,7 +157,7 @@ type CharProcessor (memory : Memory, ?abbreviationReader : AbbreviationReader) =
         | 5uy -> alphabetTable.DoubleShiftLock()
         | 6uy when alphabetTable.CurrentAlphabet = 2 -> builder |> appendMultibyteZsciiChar zcharEnum
         | zc -> if zc <= 31uy then builder |> StringBuilder.appendChar (alphabetTable.GetChar(zc))
-                else Exceptions.invalidOperation "Unexpected ZSCII character value: %d. Legal values are from 0 to 31." zc
+                else failcompilef "Unexpected ZSCII character value: %d. Legal values are from 0 to 31." zc
 
     let processChar_v3 builder zcharEnum (zchar : ZChar) =
         match zchar with
@@ -169,14 +169,14 @@ type CharProcessor (memory : Memory, ?abbreviationReader : AbbreviationReader) =
         | 5uy -> alphabetTable.DoubleShift()
         | 6uy when alphabetTable.CurrentAlphabet = 2 -> builder |> appendMultibyteZsciiChar zcharEnum
         | zc -> if zc <= 31uy then builder |> StringBuilder.appendChar (alphabetTable.GetChar(zc))
-                else Exceptions.invalidOperation "Unexpected ZSCII character value: %d. Legal values are from 0 to 31." zc
+                else failcompilef "Unexpected ZSCII character value: %d. Legal values are from 0 to 31." zc
 
     let processChar =
         match memory.Version with
         | 1 -> processChar_v1
         | 2 -> processChar_v2
         | 3 | 4 | 5 | 6 | 7 | 8 -> processChar_v3
-        | _ -> Exceptions.invalidOperation "Unexpected version number: %d" memory.Version
+        | _ -> failcompilef "Unexpected version number: %d" memory.Version
 
     interface ICharProcessor with
         member x.Reset() =
@@ -206,7 +206,7 @@ type ZTextReader (memory : Memory) =
 
     member x.ReadString (reader : IMemoryReader) =
         if reader.Memory <> memory then
-            Exceptions.invalidOperation "Expected IMemoryReader from same memory"
+            failcompile "Expected IMemoryReader from same memory"
 
         ZText.readString reader charProcessor
 

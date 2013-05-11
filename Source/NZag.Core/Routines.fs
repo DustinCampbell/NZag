@@ -318,12 +318,12 @@ type Instruction(address : Address, length : int, opcode : Opcode, operands: lis
 
     member x.JumpAddress =
         if not opcode.IsJump then
-            invalidOperation "Not a jump instruction"
+            failcompile "Not a jump instruction"
 
         let jumpOffset =
             match operands with
             | [LargeConstantOperand(v)] -> int16 v
-            | _ -> invalidOperation "Expected single large constant operand"
+            | _ -> failcompile "Expected single large constant operand"
 
         address + (length + int jumpOffset - 2)
 
@@ -461,7 +461,7 @@ type InstructionReader (memory : Memory) =
         | LargeConstantOp -> LargeConstantOperand(reader.NextWord())
         | SmallConstantOp -> SmallConstantOperand(reader.NextByte())
         | VariableOp      -> VariableOperand(reader.NextByte() |> Variable.FromByte)
-        | k               -> invalidOperation "Unexpected operand kind: %d" k
+        | k               -> failcompile "Unexpected operand kind: %d" k
 
     let readStoreVariable (reader : IMemoryReader) =
         reader.NextByte() |> Variable.FromByte
@@ -499,7 +499,7 @@ type InstructionReader (memory : Memory) =
 
     member x.ReadInstruction (reader : IMemoryReader) =
         if reader.Memory <> memory then
-            invalidOperation "Expected IMemoryReader from same memory"
+            failcompile "Expected IMemoryReader from same memory"
 
         let address = reader.Address
         let opcodeByte1 = reader.NextByte()
@@ -625,7 +625,7 @@ type RoutineReader (memory : Memory) =
 
     member x.ReadRoutine (reader : IMemoryReader) =
         if reader.Memory <> memory then
-            invalidOperation "Expected IMemoryReader from same memory"
+            failcompile "Expected IMemoryReader from same memory"
 
         let address = reader.Address
         let locals = reader |> readLocals |> List.ofArray

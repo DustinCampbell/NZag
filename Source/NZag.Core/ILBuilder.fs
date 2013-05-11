@@ -261,7 +261,7 @@ type ILBuilder (generator: ILGenerator) =
         { new ILabel with
             member x.Mark() =
                 if (!marked) then
-                    invalidOperation "Attempted to mark label that has already been marked."
+                    failcompile "Attempted to mark label that has already been marked."
 
                 generator.MarkLabel(label)
                 marked := true
@@ -279,7 +279,7 @@ type ILBuilder (generator: ILGenerator) =
                 | Condition.AtMost      -> emitBranch OpCodes.Ble OpCodes.Ble_S short
                 | Condition.LessThan    -> emitBranch OpCodes.Blt OpCodes.Blt_S short
                 | Condition.GreaterThan -> emitBranch OpCodes.Bgt OpCodes.Bgt_S short
-                | _  -> invalidOperation "Unsupported branch condition: %A (short = %b)" condition short }
+                | _  -> failcompilef "Unsupported branch condition: %A (short = %b)" condition short }
 
     member x.NewLocal(localType: Type) =
         let local = generator.DeclareLocal(localType)
@@ -305,7 +305,7 @@ type ILBuilder (generator: ILGenerator) =
             elif elementType = typeof<uint16> then OpCodes.Ldelem_U2, OpCodes.Stelem_I2
             elif elementType = typeof<byte> then OpCodes.Ldelem_U1, OpCodes.Stelem_I1
             elif elementType.IsClass then OpCodes.Ldelem_Ref, OpCodes.Stelem_Ref
-            else invalidOperation "Unsupported array element type: %s" elementType.FullName
+            else failcompilef "Unsupported array element type: %s" elementType.FullName
 
         let local = generator.DeclareLocal(arrayType)
 
