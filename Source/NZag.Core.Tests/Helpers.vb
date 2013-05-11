@@ -4,10 +4,11 @@ Imports System.Reflection
 Module Helpers
 
     Public Const Zork1 = "zork1.z3"
+    Public Const CZech = "czech.z5"
 
     Function GameMemory(name As String) As Memory
         Dim asm = Assembly.GetExecutingAssembly()
-        Using stream = asm.GetManifestResourceStream(asm.GetName().Name + "." + Zork1)
+        Using stream = asm.GetManifestResourceStream(asm.GetName().Name + "." + name)
             Return Memory.CreateFrom(stream)
         End Using
     End Function

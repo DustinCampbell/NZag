@@ -237,6 +237,19 @@ type ILBuilder (generator: ILGenerator) =
     member x.Return() =
         generator.Emit(OpCodes.Ret)
 
+    member x.ThrowException<'T when 'T :> Exception>() =
+        let exceptionType = typeof<'T>
+        let exceptionCtor = exceptionType.GetConstructor([||])
+        generator.Emit(OpCodes.Newobj, exceptionCtor)
+        generator.Emit(OpCodes.Throw)
+
+    member x.ThrowException<'T when 'T :> Exception>(message: string) =
+        let exceptionType = typeof<'T>
+        let exceptionCtor = exceptionType.GetConstructor([|typeof<string>|])
+        x.EvaluationStack.Load(message)
+        generator.Emit(OpCodes.Newobj, exceptionCtor)
+        generator.Emit(OpCodes.Throw)
+
     member x.NewLabel() =
         let label = generator.DefineLabel()
         let marked = ref false

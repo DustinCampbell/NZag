@@ -3,6 +3,32 @@
 Public Module BinderTests
 
     <Fact>
+    Sub CZech_7DC()
+        ' 7dd:  e0 3f 09 12 ff          call_vs         2448 -> gef
+        ' 7e2:  ba                      quit  
+
+        Dim expected =
+<![CDATA[
+# temps: 2
+
+LABEL 00
+    temp00 <- 0912
+    if (temp00 = 0) is false then
+        jump-to: LABEL 02
+LABEL 01
+    Gef <- 0
+    jump-to: LABEL 03
+LABEL 02
+    temp01 <- (temp00 * 4)
+    Gef <- call temp01 ()
+LABEL 03
+    quit
+]]>
+
+        Test(CZech, &H7DC, expected)
+    End Sub
+
+    <Fact>
     Sub Zork1_4E3B()
         ' 4e3b:  b2 ...                  PRINT           "a "
         ' 4e3e:  aa 01                   PRINT_OBJ       L00

@@ -99,6 +99,9 @@ type Statement =
     /// Executes the specified statement if the given expression evaluates to the given condition
     | BranchStmt of bool * Expression * Statement
 
+    /// Quits by throwing a ZMachineQuitException
+    | QuitStmt
+
     /// Writes the given value to the temp at the specified index
     | WriteTempStmt of int * Expression
 
@@ -253,6 +256,8 @@ module BoundNodeVisitors =
             fstmt (JumpStmt(i))
         | BranchStmt(b,e,s) ->
             fstmt (BranchStmt(b, rewriteExpr e, rewriteStmt s))
+        | QuitStmt ->
+            fstmt (QuitStmt)
         | WriteTempStmt(i,e) ->
             fstmt (WriteTempStmt(i, rewriteExpr e))
         | WriteLocalStmt(i,e) ->
@@ -318,6 +323,7 @@ module BoundNodeVisitors =
             match stmt with
             | LabelStmt(_)
             | JumpStmt(_)
+            | QuitStmt
             | RuntimeExceptionStmt(_) ->
                 ()
             | ReturnStmt(e)
@@ -508,6 +514,8 @@ type BoundNodeDumper (builder : StringBuilder) =
             indent()
             dumpStatement s
             unindent()
+        | QuitStmt ->
+            append "quit"
         | WriteTempStmt(i,v) ->
             appendf "temp%02x <- " i
             dumpExpression v

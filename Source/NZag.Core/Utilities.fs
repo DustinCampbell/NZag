@@ -18,6 +18,15 @@ module Patterns =
 [<AutoOpen>]
 module Exceptions =
 
+    type CompilerException(message: string) =
+        inherit Exception(message)
+
+    type RuntimeException(message: string) =
+        inherit Exception(message)
+
+    type ZMachineQuitException() =
+        inherit Exception()
+
     let invalidOperation message =
         Printf.ksprintf (fun s -> raise <| InvalidOperationException(s)) message
 

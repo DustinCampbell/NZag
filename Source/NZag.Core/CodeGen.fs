@@ -157,6 +157,8 @@ type CodeGenerator private (tree: BoundTree, builder: ILBuilder) =
             conditionNotMet.BranchIf(Condition.NotEqual, short = false)
             emitStatement s
             conditionNotMet.Mark()
+        | QuitStmt ->
+            builder.ThrowException<ZMachineQuitException>()
         | WriteTempStmt(t,e) ->
             emitExpression e
             temps.[t].Store()

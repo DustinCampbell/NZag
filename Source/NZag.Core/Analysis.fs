@@ -122,7 +122,8 @@ module Graphs =
                             | LabelStmt(label) ->
                                 match !lastStatement with
                                 | Some(JumpStmt(_))
-                                | Some(ReturnStmt(_)) -> ()
+                                | Some(ReturnStmt(_))
+                                | Some(QuitStmt) -> ()
                                 | _ -> builder.AddEdge id label
 
                                 id <- label
@@ -131,7 +132,8 @@ module Graphs =
                                 builder.AddEdge id label
                             | BranchStmt(_,_,_) ->
                                 builder.AddEdgeToNext id
-                            | ReturnStmt(_) ->
+                            | ReturnStmt(_)
+                            | QuitStmt ->
                                 builder.AddEdge id Exit
                             | _ -> ()
 

@@ -283,6 +283,9 @@ type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
         | "print_obj", Any, Op1(obj) ->
             objectName obj |> printText |> addStatement
 
+        | "quit", Any, NoOps ->
+            QuitStmt |> addStatement
+
         | "random", Any, Op1(range) ->
             let range = initTemp (range |> toInt16)
 
