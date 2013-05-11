@@ -45,6 +45,14 @@ type IMath =
     abstract member Not : unit -> unit
     abstract member Negate : unit -> unit
 
+type ICompare =
+    abstract member Equal : unit -> unit
+    abstract member NotEqual : unit -> unit
+    abstract member LessThan : unit -> unit
+    abstract member GreaterThan : unit -> unit
+    abstract member AtLeast : unit -> unit
+    abstract member AtMost : unit -> unit
+
 type IConvert =
     abstract member ToInt16 : unit -> unit
 
@@ -218,6 +226,27 @@ type ILBuilder (generator: ILGenerator) =
                 generator.Emit(OpCodes.Not)
             member y.Negate() =
                 generator.Emit(OpCodes.Neg) }
+
+    member x.Compare =
+        { new ICompare with
+            member y.Equal() =
+                generator.Emit(OpCodes.Ceq)
+            member y.NotEqual() =
+                generator.Emit(OpCodes.Ceq)
+                loadInt32 0
+                generator.Emit(OpCodes.Ceq)
+            member y.LessThan() =
+                generator.Emit(OpCodes.Clt)
+            member y.GreaterThan() =
+                generator.Emit(OpCodes.Cgt)
+            member y.AtLeast() =
+                generator.Emit(OpCodes.Clt)
+                loadInt32 0
+                generator.Emit(OpCodes.Ceq)
+            member y.AtMost() =
+                generator.Emit(OpCodes.Cgt)
+                loadInt32 0
+                generator.Emit(OpCodes.Ceq) }
 
     member x.Convert =
         { new IConvert with

@@ -42,6 +42,7 @@
   <ItemGroup>
     <Compile Include="AnalysisTests.vb" />
     <Compile Include="BinderTests.vb" />
+    <Compile Include="GameTests.vb" />
     <Compile Include="Helpers.vb" />
     <Compile Include="InstructionTests.vb" />
     <Compile Include="MemoryTests.vb" />

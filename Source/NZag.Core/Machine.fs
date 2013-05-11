@@ -4,8 +4,8 @@ open NZag.Utilities
 
 type Machine (memory : Memory) as this =
 
+    let mainRoutineAddress = memory |> Header.readMainRoutineAddress
     let zfuncMap = Dictionary.create()
-
     let localArrayPool = Stack.create()
 
     let getOrCreateLocalArray() =
@@ -34,6 +34,14 @@ type Machine (memory : Memory) as this =
 
     member x.Memory = memory
 
+    member x.Run() =
+        let machine = this :> IMachine
+        let reader = new RoutineReader(memory)
+        let mainRoutine = reader.ReadRoutine(mainRoutineAddress)
+        let mainRoutineInvoker = machine.GetOrCompileZFunc(mainRoutine)
+        let stack = Array.zeroCreate 1024
+        mainRoutineInvoker.Invoke0(memory, stack, 0)
+
     interface IMachine with
 
         member y.GetInitialLocalArray(routine) =
@@ -50,7 +58,10 @@ type Machine (memory : Memory) as this =
 
         member y.GetOrCompileZFunc(routine) =
             match zfuncMap |> Dictionary.tryFind routine.Address with
-            | Some(f) -> f
-            | None    -> let f = compile routine
-                         zfuncMap |> Dictionary.add routine.Address f
-                         f
+            | Some(invoker) ->
+                invoker
+            | None ->
+                let zfunc = compile routine
+                let invoker = new ZFuncInvoker(y, routine, zfunc)
+                zfuncMap |> Dictionary.add routine.Address invoker
+                invoker

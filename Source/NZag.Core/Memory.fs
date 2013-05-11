@@ -552,19 +552,31 @@ and Memory private (stream : Stream) =
 
 module Header =
 
-    let private offset_abbreviationTableAddress = ByteAddress(0x18us)
-    let private offset_routinesOffset = ByteAddress(0x28us)
-    let private offset_stringsOffset = ByteAddress(0x2aus)
-    let private offset_alphabetTableAddress = ByteAddress(0x34us)
+    let private offset_InitialPC = ByteAddress(0x06us)
+    let private offset_GlobalVariableTableAddress = ByteAddress(0x06us)
+    let private offset_AbbreviationTableAddress = ByteAddress(0x18us)
+    let private offset_RoutinesOffset = ByteAddress(0x28us)
+    let private offset_StringsOffset = ByteAddress(0x2aus)
+    let private offset_AlphabetTableAddress = ByteAddress(0x34us)
 
-    let readAbbreviationTableAddress (memory : Memory) =
-        offset_abbreviationTableAddress |> memory.ReadWord |> ByteAddress
+    let readMainRoutineAddress (memory: Memory) =
+        let initialPC = offset_InitialPC |> memory.ReadWord
+        if memory.Version < 6 then
+            ByteAddress(initialPC - 1us)
+        else
+            RoutineAddress(initialPC)
 
-    let readRoutinesOffset (memory : Memory) =
-        offset_routinesOffset |> memory.ReadWord |> ByteAddress
+    let readGlobalVariableTableAddress (memory: Memory) =
+        offset_GlobalVariableTableAddress |> memory.ReadWord |> ByteAddress
 
-    let readStringOffset (memory : Memory) =
-        offset_routinesOffset |> memory.ReadWord |> ByteAddress
+    let readAbbreviationTableAddress (memory: Memory) =
+        offset_AbbreviationTableAddress |> memory.ReadWord |> ByteAddress
 
-    let readAlphabetTableAddress (memory : Memory) =
-        offset_alphabetTableAddress |> memory.ReadWord |> ByteAddress
+    let readRoutinesOffset (memory: Memory) =
+        offset_RoutinesOffset |> memory.ReadWord |> ByteAddress
+
+    let readStringOffset (memory: Memory) =
+        offset_StringsOffset |> memory.ReadWord |> ByteAddress
+
+    let readAlphabetTableAddress (memory: Memory) =
+        offset_AlphabetTableAddress |> memory.ReadWord |> ByteAddress

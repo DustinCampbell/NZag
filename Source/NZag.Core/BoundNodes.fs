@@ -38,6 +38,15 @@ type Expression =
     /// A constant value
     | ConstantExpr of Constant
 
+    /// A byte address
+    | ByteAddressExpr of Expression
+
+    /// A packed routine address
+    | RoutineAddressExpr of Expression
+
+    /// A packed string address
+    | StringAddressExpr of Expression
+
     /// The value of the temp with the specified index
     | TempExpr of int
 
@@ -170,6 +179,10 @@ module BoundNodeConstruction =
     let int32Const v = ConstantExpr(Int32(v))
     let textConst v = ConstantExpr(Text(v))
 
+    let byteAddress v = ByteAddressExpr(v)
+    let routineAddress v = RoutineAddressExpr(v)
+    let stringAddress v = StringAddressExpr(v)
+
     let zero = int32Const 0
     let one = int32Const 1
     let two = int32Const 2
@@ -194,6 +207,12 @@ module BoundNodeConstruction =
         | LocalVariable(i) -> WriteLocalStmt(byteConst i, e)
         | GlobalVariable(i) -> WriteGlobalStmt(byteConst i, e)
 
+    let redaByte a = ReadMemoryByteExpr(a)
+    let readWord a = ReadMemoryWordExpr(a)
+
+    let writeByte a v = WriteMemoryByteStmt(a, v)
+    let writeWord a v = WriteMemoryWordStmt(a, v)
+
     let printText text = PrintTextStmt(text)
 
     let objectName objNum = ReadObjectNameExpr(objNum)
@@ -212,6 +231,12 @@ module BoundNodeVisitors =
         match expr with
         | ConstantExpr(c) ->
             fexpr (ConstantExpr(c))
+        | ByteAddressExpr(e) ->
+            fexpr (ByteAddressExpr(rewriteExpr e))
+        | RoutineAddressExpr(e) ->
+            fexpr (RoutineAddressExpr(rewriteExpr e))
+        | StringAddressExpr(e) ->
+            fexpr (StringAddressExpr(rewriteExpr e))
         | TempExpr(i) ->
             fexpr (TempExpr(i))
         | ReadLocalExpr(e) ->
@@ -297,6 +322,9 @@ module BoundNodeVisitors =
             | StackPopExpr
             | StackPeekExpr ->
                 ()
+            | ByteAddressExpr(e)
+            | RoutineAddressExpr(e)
+            | StringAddressExpr(e)
             | ReadLocalExpr(e)
             | ReadGlobalExpr(e)
             | ReadComputedVarExpr(e)
@@ -437,6 +465,18 @@ type BoundNodeDumper (builder : StringBuilder) =
             dumpConstant c
         | TempExpr(i) ->
             appendf "temp%02x" i
+        | ByteAddressExpr(a) ->
+            append "byte-address"
+            parenthesize (fun () ->
+                dumpExpression a)
+        | RoutineAddressExpr(a) ->
+            append "routine-address"
+            parenthesize (fun () ->
+                dumpExpression a)
+        | StringAddressExpr(a) ->
+            append "string-address"
+            parenthesize (fun () ->
+                dumpExpression a)
         | ReadLocalExpr(e) ->
             append "L"
             dumpExpression e

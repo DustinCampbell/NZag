@@ -14,7 +14,7 @@ type IMachine =
     abstract member GetInitialLocalArray : Routine -> uint16[]
     abstract member ReleaseLocalArray : uint16[] -> unit
 
-    abstract member GetOrCompileZFunc : Routine -> ZFunc
+    abstract member GetOrCompileZFunc : Routine -> ZFuncInvoker
 
 and ZFuncInvoker(machine: IMachine, routine: Routine, zfunc: ZFunc) =
 
@@ -126,6 +126,48 @@ type CodeGenerator private (tree: BoundTree, builder: ILBuilder) =
         | Int32(v) -> builder.EvaluationStack.Load(v)
         | Text(v)  -> builder.EvaluationStack.Load(v)
 
+    let emitUnaryOperation = function
+        | UnaryOperationKind.Not ->
+            builder.Math.Not()
+        | UnaryOperationKind.Negate ->
+            builder.Math.Negate()
+        | kind ->
+            builder.ThrowException<RuntimeException>(sprintf "Can't emit code for unary operator: %A" kind)
+
+    let emitBinaryOperation = function
+        | BinaryOperationKind.Add ->
+            builder.Math.Add()
+        | BinaryOperationKind.Subtract ->
+            builder.Math.Subtract()
+        | BinaryOperationKind.Multiply ->
+            builder.Math.Multiply()
+        | BinaryOperationKind.Divide ->
+            builder.Math.Divide()
+        | BinaryOperationKind.Remainder ->
+            builder.Math.Remainder()
+        | BinaryOperationKind.And ->
+            builder.Math.And()
+        | BinaryOperationKind.Or ->
+            builder.Math.Or()
+        | BinaryOperationKind.ShiftLeft ->
+            builder.Math.ShiftLeft()
+        | BinaryOperationKind.ShiftRight ->
+            builder.Math.ShiftRight()
+        | BinaryOperationKind.Equal ->
+            builder.Compare.Equal()
+        | BinaryOperationKind.NotEqual ->
+            builder.Compare.NotEqual()
+        | BinaryOperationKind.LessThan ->
+            builder.Compare.LessThan()
+        | BinaryOperationKind.AtMost ->
+            builder.Compare.AtMost()
+        | BinaryOperationKind.AtLeast ->
+            builder.Compare.AtLeast()
+        | BinaryOperationKind.GreaterThan ->
+            builder.Compare.GreaterThan()
+        | kind ->
+            builder.ThrowException<RuntimeException>(sprintf "Can't emit code for unary operator: %A" kind)
+
     let rec emitExpression = function
         | ConstantExpr(c) ->
             emitConstant c
@@ -139,6 +181,13 @@ type CodeGenerator private (tree: BoundTree, builder: ILBuilder) =
             popStack()
         | StackPeekExpr ->
             peekStack()
+        | UnaryOperationExpr(k,e) ->
+            emitExpression e
+            emitUnaryOperation k
+        | BinaryOperationExpr(k,l,r) ->
+            emitExpression l
+            emitExpression r
+            emitBinaryOperation k
         | e ->
             unexpectedNodeFound e
 
