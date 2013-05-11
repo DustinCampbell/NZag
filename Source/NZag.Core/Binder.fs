@@ -5,43 +5,21 @@ open BoundNodeConstruction
 open BoundNodeVisitors
 open OperandPatterns
 
-type BoundTreeBuilder (routine : Routine) =
+[<AbstractClass>]
+type BoundTreeBuilder() =
 
-    let statements = new ResizeArray<_>()
-    let mutable tempCount = 0
-    let mutable labelCount = 0
+    member x.AssignTemp temp value =
+        let write = WriteTempStmt(temp, value)
+        x.AddStatement(write)
 
-    let newLabel() =
-        let newLabel = labelCount
-        labelCount <- labelCount + 1
-        newLabel
-
-    let jumpTargetMap =
-        let d = Dictionary.create()
-        for a in routine.JumpTargets do
-            d.Add(a, newLabel())
-        d
-
-    member x.AddStatement(statement : Statement) =
-        statements.Add(statement)
-
-    member x.NewTemp() =
-        let newTemp = tempCount
-        tempCount <- tempCount + 1
-        newTemp
-
-    member x.NewLabel() =
-        newLabel()
+    member x.InitTemp value =
+        let temp = x.NewTemp()
+        x.AssignTemp temp value
+        TempExpr(temp)
 
     member x.MarkLabel label =
         let label = LabelStmt(label)
         x.AddStatement(label)
-
-    member x.IsJumpTarget address =
-        jumpTargetMap.ContainsKey(address)
-
-    member x.GetJumpTargetLabel address =
-        jumpTargetMap.[address]
 
     member x.JumpTo label =
         let jump = JumpStmt(label)
@@ -62,11 +40,73 @@ type BoundTreeBuilder (routine : Routine) =
         let ret = ReturnStmt(expression)
         x.AddStatement(ret)
 
-    member x.Statements = statements |> List.ofSeq
-    member x.TempCount = tempCount
-    member x.LabelCount = labelCount
+    member x.IfThenElse condition whenTrue whenFalse =
+        let whenTrueLabel = x.NewLabel()
+        let whenFalseLabel = x.NewLabel()
+        let doneLabel = x.NewLabel()
 
-type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
+        whenFalseLabel |> x.BranchIfFalse condition
+
+        x.MarkLabel(whenTrueLabel)
+        whenTrue()
+        x.JumpTo(doneLabel)
+
+        x.MarkLabel(whenFalseLabel)
+        whenFalse()
+
+        x.MarkLabel(doneLabel)
+
+    abstract member AddStatement : statement:Statement -> unit
+    abstract member NewTemp : unit -> int
+    abstract member NewLabel : unit -> int
+
+    abstract member Statements : List<Statement>
+    abstract member TempCount : int
+    abstract member LabelCount : int
+
+type BoundTreeCreator(routine: Routine) =
+    inherit BoundTreeBuilder()
+
+    let statements = ResizeArray.create()
+    let mutable tempCount = 0
+    let mutable labelCount = 0
+
+    let newLabel() =
+        let newLabel = labelCount
+        labelCount <- labelCount + 1
+        newLabel
+
+    let newTemp() =
+        let newTemp = tempCount
+        tempCount <- tempCount + 1
+        newTemp
+
+    let jumpTargetMap =
+        let d = Dictionary.create()
+        for a in routine.JumpTargets do
+            d.Add(a, newLabel())
+        d
+
+    member x.IsJumpTarget address =
+        jumpTargetMap.ContainsKey(address)
+
+    member x.GetJumpTargetLabel address =
+        jumpTargetMap.[address]
+
+    override x.AddStatement(statement: Statement) =
+        statements.Add(statement)
+
+    override x.NewTemp() =
+        newTemp()
+
+    override x.NewLabel() =
+        newLabel()
+
+    override x.Statements = statements |> List.ofSeq
+    override x.TempCount = tempCount
+    override x.LabelCount = labelCount
+
+type InstructionBinder(memory: Memory, builder: BoundTreeCreator) =
 
     let packedMultiplier =
         match memory.Version with
@@ -85,35 +125,20 @@ type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
         builder.Return(expression)
 
     let assignTemp t v =
-        WriteTempStmt(t, v) |> addStatement
+        builder.AssignTemp t v
 
     let initTemp expression =
-        let t = builder.NewTemp()
-        assignTemp t expression
-        TempExpr(t)
+        builder.InitTemp expression
 
     let ifThenElse condition whenTrue whenFalse =
-        let whenTrueLabel = builder.NewLabel()
-        let whenFalseLabel = builder.NewLabel()
-        let doneLabel = builder.NewLabel()
-
-        whenFalseLabel |> builder.BranchIfFalse condition
-
-        builder.MarkLabel(whenTrueLabel)
-        whenTrue()
-        builder.JumpTo(doneLabel)
-
-        builder.MarkLabel(whenFalseLabel)
-        whenFalse()
-
-        builder.MarkLabel(doneLabel)
+        builder.IfThenElse condition whenTrue whenFalse
 
     let bindOperand = function
         | LargeConstantOperand(v) -> wordConst v
         | SmallConstantOperand(v) -> byteConst v
         | VariableOperand(v)      -> readVar v
 
-    member x.BindInstruction (instruction : Instruction) =
+    member x.BindInstruction(instruction: Instruction) =
 
         let branchIf expression =
             let branch =
@@ -338,7 +363,7 @@ type InstructionBinder (memory : Memory, builder : BoundTreeBuilder) =
         | (n,k,ops) ->
             runtimeException "Unsupported opcode: %s (v.%d) with %d operands" n k ops.Length |> addStatement
 
-type RoutineBinder (memory : Memory) =
+type RoutineBinder(memory: Memory) =
 
     let sortLabels tree =
         let nextLabelIndex = ref 0
@@ -391,9 +416,9 @@ type RoutineBinder (memory : Memory) =
                     TempExpr(t')
                 | e -> e)
 
-    member x.BindRoutine (routine : Routine) =
+    member x.BindRoutine(routine: Routine) =
 
-        let builder = new BoundTreeBuilder(routine)
+        let builder = new BoundTreeCreator(routine)
         let binder = new InstructionBinder(memory, builder)
 
         for i in routine.Instructions do

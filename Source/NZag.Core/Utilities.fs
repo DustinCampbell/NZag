@@ -156,12 +156,14 @@ module SortedList =
 module ResizeArray =
 
     let create() = new ResizeArray<_>()
-    let length (arr : ResizeArray<_>) = arr.Count
+    let createFrom (e: seq<_>) = new ResizeArray<_>(e)
 
-    let add v (arr : ResizeArray<_>) =
+    let length (arr: ResizeArray<_>) = arr.Count
+
+    let add v (arr: ResizeArray<_>) =
         arr.Add(v) |> ignore
 
-    let toList (arr : ResizeArray<_>) =
+    let toList (arr: ResizeArray<_>) =
         let mutable res = []
         for i = length arr - 1 downto 0 do
             res <- arr.[i] :: res

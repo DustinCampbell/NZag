@@ -207,7 +207,7 @@ module BoundNodeConstruction =
         | LocalVariable(i) -> WriteLocalStmt(byteConst i, e)
         | GlobalVariable(i) -> WriteGlobalStmt(byteConst i, e)
 
-    let redaByte a = ReadMemoryByteExpr(a)
+    let readByte a = ReadMemoryByteExpr(a)
     let readWord a = ReadMemoryWordExpr(a)
 
     let writeByte a v = WriteMemoryByteStmt(a, v)
