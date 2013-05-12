@@ -12,14 +12,7 @@ Public Module BinderTests
 # temps: 0
 
 LABEL 00
-    if (0) is false then
-        jump-to: LABEL 02
-LABEL 01
-    write-word(09bb) <- 0
-    jump-to: LABEL 03
-LABEL 02
     write-word(09bb) <- call 2448 ()
-LABEL 03
     quit
 ]]>
 
@@ -120,7 +113,7 @@ LABEL 0a
 
 LABEL 00
     temp00 <- L00
-    temp01 <- (temp00 + 0000)
+    temp01 <- temp00
     push-SP: read-byte(temp01)
     temp02 <- pop-SP
     temp03 <- int16(temp02)
@@ -170,7 +163,7 @@ LABEL 03
 
 LABEL 00
     temp00 <- L00
-    temp01 <- (temp00 + 0000)
+    temp01 <- temp00
     L01 <- read-byte(temp01)
     temp02 <- L00
     temp03 <- (temp02 + 0002)
@@ -238,7 +231,7 @@ LABEL 04
 LABEL 05
     temp29 <- L00
     temp2a <- L02
-    temp2b <- (temp29 + 0000)
+    temp2b <- temp29
     write-word(temp2b) <- temp2a
     temp2c <- L04
     return: temp2c
@@ -263,14 +256,7 @@ LABEL 00
     if (temp01) is false then
         return: 0
 LABEL 01
-    if (0) is false then
-        jump-to: LABEL 03
-LABEL 02
-    push-SP: 0
-    jump-to: LABEL 04
-LABEL 03
     push-SP: call 90ba (a3)
-LABEL 04
     return: 0
 ]]>
 
@@ -297,7 +283,7 @@ LABEL 04
 LABEL 00
     temp00 <- read-byte(4f61)
     if (temp00 = 0) is true then
-        jump-to: LABEL 07
+        jump-to: LABEL 04
 LABEL 01
     temp01 <- obj-attribute(ae, 0b)
     if (temp01 = 1) is false then
@@ -307,16 +293,9 @@ LABEL 02
 LABEL 03
     print: "The grating is closed!"
     print: "\n"
-    if (0) is false then
-        jump-to: LABEL 05
-LABEL 04
-    push-SP: 0
-    jump-to: LABEL 06
-LABEL 05
     push-SP: call 9530 (ae)
-LABEL 06
     return: 0
-LABEL 07
+LABEL 04
     print: "You can't go that way."
     print: "\n"
     return: 0
@@ -352,14 +331,7 @@ LABEL 02
     if (temp04 = 0) is false then
         return: 0
 LABEL 03
-    if (0) is false then
-        jump-to: LABEL 05
-LABEL 04
-    push-SP: 0
-    jump-to: LABEL 06
-LABEL 05
     push-SP: call 0666 (983b)
-LABEL 06
     return: 1
 ]]>
 
@@ -409,52 +381,17 @@ LABEL 06
 # temps: 43
 
 LABEL 00
-    if (0) is false then
-        jump-to: LABEL 02
-LABEL 01
-    push-SP: 0
-    jump-to: LABEL 03
-LABEL 02
     push-SP: call 5472 (8010, ffff)
-LABEL 03
     temp00 <- pop-SP
-    temp01 <- (temp00 + 0000)
+    temp01 <- temp00
     write-word(temp01) <- 01
-    if (0) is false then
-        jump-to: LABEL 05
-LABEL 04
-    push-SP: 0
-    jump-to: LABEL 06
-LABEL 05
     push-SP: call 5472 (807c, ffff)
-LABEL 06
-    if (0) is false then
-        jump-to: LABEL 08
-LABEL 07
-    push-SP: 0
-    jump-to: LABEL 09
-LABEL 08
     push-SP: call 5472 (80f0, ffff)
-LABEL 09
     temp02 <- pop-SP
-    temp03 <- (temp02 + 0000)
+    temp03 <- temp02
     write-word(temp03) <- 01
-    if (0) is false then
-        jump-to: LABEL 0b
-LABEL 0a
-    push-SP: 0
-    jump-to: LABEL 0c
-LABEL 0b
     push-SP: call 5472 (6f6a, 28)
-LABEL 0c
-    if (0) is false then
-        jump-to: LABEL 0e
-LABEL 0d
-    push-SP: 0
-    jump-to: LABEL 0f
-LABEL 0e
     push-SP: call 5472 (6f55, c8)
-LABEL 0f
     RUNTIME EXCEPTION: Unsupported opcode: put_prop (v.3) with 3 operands
     temp04 <- read-byte(4f25)
     temp05 <- int16(temp04)
@@ -505,50 +442,22 @@ LABEL 0f
     temp27 <- (temp25 + 0006)
     write-word(temp27) <- temp26
     write-word(4f05) <- b4
-    if (0) is false then
-        jump-to: LABEL 11
-LABEL 10
-    push-SP: 0
-    jump-to: LABEL 12
-LABEL 11
     push-SP: call 9530 (a0)
-LABEL 12
     temp28 <- read-byte(4f05)
     temp29 <- obj-attribute(temp28, 03)
     if (temp29 = 1) is true then
-        jump-to: LABEL 17
-LABEL 13
-    if (0) is false then
-        jump-to: LABEL 15
-LABEL 14
-    push-SP: 0
-    jump-to: LABEL 16
-LABEL 15
+        jump-to: LABEL 02
+LABEL 01
     push-SP: call 6ee0 ()
-LABEL 16
     print: "\n"
-LABEL 17
+LABEL 02
     write-word(4f89) <- 01
     write-word(4fe3) <- 04
     temp2a <- read-byte(4fe3)
     write-word(5005) <- temp2a
     RUNTIME EXCEPTION: Unsupported opcode: insert_obj (v.3) with 2 operands
-    if (0) is false then
-        jump-to: LABEL 19
-LABEL 18
-    push-SP: 0
-    jump-to: LABEL 1a
-LABEL 19
     push-SP: call 7e04 ()
-LABEL 1a
-    if (0) is false then
-        jump-to: LABEL 1c
-LABEL 1b
-    push-SP: 0
-    jump-to: LABEL 1d
-LABEL 1c
     push-SP: call 552a ()
-LABEL 1d
     jump-to: LABEL 00
 ]]>
 

@@ -24,7 +24,6 @@ module Graphs =
     type Builder<'T> =
       { AddNode : int -> unit;
         AddEdge : int -> int -> unit;
-        AddEdgeToNext : int -> unit;
         GetData : int -> 'T option
         UpdateData : int -> 'T option -> unit }
 
@@ -78,7 +77,6 @@ module Graphs =
         let builder =
           { AddNode = addNode;
             AddEdge = addEdge;
-            AddEdgeToNext = addEdgeToNext;
             GetData = getData;
             UpdateData = updateData }
 
@@ -113,6 +111,7 @@ module Graphs =
                     // Next, add all data (i.e. statements) and edges.
                     let currentId = ref Entry
                     let lastStatement = ref None
+                    let previousId = ref None
 
                     do tree |> walkTree
                         (fun s ->
@@ -124,14 +123,21 @@ module Graphs =
                                 | Some(JumpStmt(_))
                                 | Some(ReturnStmt(_))
                                 | Some(QuitStmt) -> ()
+
                                 | _ -> builder.AddEdge id label
+
+                                match !previousId with
+                                | Some(id) ->
+                                    builder.AddEdge id label
+                                    previousId := None
+                                | None -> ()
 
                                 id <- label
                                 currentId := label
                             | JumpStmt(label) ->
                                 builder.AddEdge id label
                             | BranchStmt(_,_,_) ->
-                                builder.AddEdgeToNext id
+                                previousId := Some(id)
                             | ReturnStmt(_)
                             | QuitStmt ->
                                 builder.AddEdge id Exit

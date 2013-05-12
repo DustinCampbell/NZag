@@ -564,6 +564,12 @@ type RoutineBinder(memory: Memory) =
                                 match binaryOp v1 v2 k with
                                 | Some(res) -> res
                                 | None -> e
+                            | (TempExpr(_) as t), ConstantExpr(Zero)
+                            | ConstantExpr(Zero), (TempExpr(_) as t) ->
+                                match k with
+                                | BinaryOperationKind.Add -> t
+                                | BinaryOperationKind.Multiply -> zero
+                                | _ -> e
                             | _ -> e
                         | e -> e)
 
@@ -615,6 +621,78 @@ type RoutineBinder(memory: Memory) =
             | Some(s') -> updater.AddStatement(s')
             | None -> ())
 
+    let optimize_EliminateDeadBranches tree =
+        tree |> updateTree (fun s updater ->
+            let s' = match s with
+                     | BranchStmt(b,e,j) ->
+                         if b && e = one then
+                             Some(j)
+                         elif not b && e = zero then
+                             Some(j)
+                         else
+                             Some(s)
+                     | s ->
+                         Some(s)
+
+            match s' with
+            | Some(s') -> updater.AddStatement(s')
+            | None -> ())
+
+    let optimize_EliminateDeadBlocks tree =
+        let graph = Graphs.buildControlFlowGraph tree
+
+        let block = ref None
+
+        let setBlock id =
+            block := Some(graph.Blocks |> List.find (fun b -> b.ID = id))
+
+        let hasPredecessors() =
+            match !block with
+            | Some(b) -> b.Predecessors.Length > 0
+            | None -> failcompile "Couldn't find block"
+
+        tree |> updateTree (fun s updater ->
+            match s with
+            | LabelStmt(l) ->
+                setBlock(l)
+            | s -> ()
+
+            if hasPredecessors() then
+                updater.AddStatement(s))
+
+    let optimize_EliminateRedundantLabels tree =
+        let graph = Graphs.buildControlFlowGraph tree
+
+        let labelsToRemove = ref Set.empty
+
+        for i = 0 to tree.Statements.Length - 2 do
+            let s1 = tree.Statements.[i]
+            let s2 = tree.Statements.[i+1]
+
+            match s1, s2 with
+            | BranchStmt(_,_,_), LabelStmt(_)
+            | ReturnStmt(_), LabelStmt(_)
+            | QuitStmt(_), LabelStmt(_) -> ()
+
+            | JumpStmt(j), LabelStmt(l) ->
+                if j = l then
+                    let b = graph.Blocks |> List.find (fun b -> b.ID = l)
+                    if b.Predecessors.Length = 1 then
+                        labelsToRemove := !labelsToRemove |> Set.add l
+            | _, LabelStmt(l) ->
+                let b = graph.Blocks |> List.find (fun b -> b.ID = l)
+                if b.Predecessors.Length = 1 then
+                    labelsToRemove := !labelsToRemove |> Set.add l
+            | _ -> ()
+
+        tree |> updateTree (fun s updater ->
+            match s with
+            | LabelStmt(l)
+            | JumpStmt(l) ->
+                if not (!labelsToRemove |> Set.contains l) then
+                    updater.AddStatement(s)
+            | s -> updater.AddStatement(s))
+
     let lower tree =
         tree
         |> lower_GlobalVariableReadsAndWrites
@@ -624,7 +702,10 @@ type RoutineBinder(memory: Memory) =
             tree
             |> optimize_PropagateConstants
             |> optimize_FoldConstants
-            |> optimize_RemoveUnusedTemps)
+            |> optimize_RemoveUnusedTemps
+            |> optimize_EliminateDeadBranches
+            |> optimize_EliminateDeadBlocks
+            |> optimize_EliminateRedundantLabels)
 
     member x.BindRoutine(routine: Routine) =
 

@@ -18,6 +18,18 @@ module ConstantPatterns =
         | Int32(v) -> Some(v)
         | _ -> None
 
+    let (|Zero|_|) = function
+        | Byte(0uy) -> Some()
+        | Word(0us) -> Some()
+        | Int32(0) -> Some()
+        | _ -> None
+
+    let (|One|_|) = function
+        | Byte(1uy) -> Some()
+        | Word(1us) -> Some()
+        | Int32(1) -> Some()
+        | _ -> None
+
 type UnaryOperationKind =
     | Not = 1
     | Negate = 2
