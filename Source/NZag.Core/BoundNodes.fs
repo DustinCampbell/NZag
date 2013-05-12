@@ -9,6 +9,15 @@ type Constant =
     | Int32 of int32
     | Text of string
 
+[<AutoOpen>]
+module ConstantPatterns =
+
+    let (|Int32Value|_|) = function
+        | Byte(v) -> Some(int v)
+        | Word(v) -> Some(int v)
+        | Int32(v) -> Some(v)
+        | _ -> None
+
 type UnaryOperationKind =
     | Not = 1
     | Negate = 2

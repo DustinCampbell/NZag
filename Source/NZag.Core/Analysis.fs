@@ -156,14 +156,27 @@ module Graphs =
 
     type Definition =
       { Temp : int
+        BlockID : int
+        StatementIndex : int
         Value : Expression }
 
         override x.ToString() =
-            sprintf "Temp = %02x" x.Temp
+            sprintf "Definition: Temp = %d; BlockID = %d; StatementIndex = %d" x.Temp x.BlockID x.StatementIndex
+
+    type StatementFlowInfo =
+      { Statement : Statement
+        InDefinitions : Set<Definition>
+        OutDefinitions : Set<Definition> }
 
     type DefinitionData =
-      { Statements : Statement list
-        Definitions : Definition list }
+      { Statements : StatementFlowInfo list
+        InDefinitions : Set<Definition>
+        OutDefinitions : Set<Definition> }
+
+    type ReachingDefinitions =
+      { Definitions : Map<int, Set<Definition>>
+        Usages : Map<Definition, int>
+        Graph : Graph<DefinitionData> }
 
     [<CompiledNameAttribute("ComputeReachingDefinitions")>]
     let computeReachingDefinitions (graph : Graph<ControlFlowData>) =
@@ -172,32 +185,73 @@ module Graphs =
             | [] | _::[] | _::_::[] -> failcompile "Expected at least three nodes in graph (entry, exit and some basic block)"
             | h::t -> h,t
 
-        let outs =
-            graph.Blocks
-            |> List.fold (fun res b -> res |> Map.add b.ID Set.empty) Map.empty
-            |> ref
+        let statementsMap = Dictionary.createFrom (graph.Blocks |> List.map (fun b -> b.ID, ResizeArray.create()))
+        let insMap = Dictionary.createFrom (graph.Blocks |> List.map (fun b -> b.ID, Set.empty))
+        let outsMap = Dictionary.createFrom (graph.Blocks |> List.map (fun b -> b.ID, Set.empty))
+        let tempToDefinitionsMap = Dictionary.create()
+        let definitionToUsagesMap = Dictionary.create()
 
         let computeIns b =
             b.Predecessors
-            |> List.map (fun p -> !outs |> Map.find p)
-            |> List.reduce (fun s1 s2 -> Set.union s1 s2)
+            |> List.map (fun p -> outsMap.[p])
+            |> List.fold (fun res s -> Set.union res s) Set.empty
 
         let computeOuts (b : Block<ControlFlowData>) =
+            let oldIns = insMap.[b.ID]
             let ins = computeIns b
+            if oldIns <> ins then
+                insMap.[b.ID] <- ins
+
+            let statements = statementsMap.[b.ID]
             let generated = ref Set.empty
             let killed = ref Set.empty
+            let currentOuts = ref (Set.union !generated (Set.difference ins !killed))
 
-            b.Data.Statements
-            |> List.iter (fun s ->
-                match s with
-                | WriteTempStmt(t,e) ->
-                    let def = { Temp = t; Value = e }
-                    generated := !generated |> Set.filter (fun d -> d.Temp <> t)
-                    killed := !killed |> Set.filter (fun d -> d.Temp = t)
-                    generated := !generated |> Set.add def
-                | _ -> ())
+            b.Data.Statements |> List.iteri (fun i s ->
+                let currentIns = !currentOuts
 
-            Set.union !generated (Set.difference ins !killed)
+                // First, get the flow info for this statement
+                let info =
+                    match s with
+                    | WriteTempStmt(t,e) ->
+                        let definitionSet =
+                            tempToDefinitionsMap
+                            |> Dictionary.getOrAdd t (fun () -> Set.empty)
+
+                        let definition = { Temp = t
+                                           BlockID = b.ID
+                                           StatementIndex = i
+                                           Value = e }
+
+                        tempToDefinitionsMap.[t] <- definitionSet |> Set.add definition
+
+                        generated := !generated |> Set.filter (fun d -> d.Temp <> t)
+                        killed := !killed |> Set.filter (fun d -> d.Temp = t)
+                        generated := !generated |> Set.add definition
+                        currentOuts := Set.union !generated (Set.difference currentIns !killed)
+                    | s -> ()
+
+                    {Statement = s; InDefinitions = currentIns; OutDefinitions = !currentOuts}
+
+                // Next, find any definition usages for this statement
+                s |> walkStatement
+                    (fun s -> ())
+                    (fun e ->
+                        match e with
+                        | TempExpr(t) ->
+                            let defs = currentIns |> Set.filter (fun d -> d.Temp = t)
+                            for def in defs do
+                                let usages = match definitionToUsagesMap |> Dictionary.tryFind def with
+                                             | Some(u) -> u + 1
+                                             | None -> 1
+
+                                definitionToUsagesMap.[def] <- usages
+
+                        | e -> ())
+
+                statements.Add(info))
+
+            !currentOuts
 
         let stop = ref false
         while not (!stop) do
@@ -205,20 +259,30 @@ module Graphs =
 
             rest
             |> List.iter (fun b ->
-                let currentOuts = !outs |> Map.find b.ID
+                let currentOuts = outsMap |> Dictionary.find b.ID
                 let newOuts = computeOuts b
                 if currentOuts <> newOuts then
-                    outs := !outs |> Map.add b.ID newOuts
+                    outsMap.[b.ID] <- newOuts
                     stop := false)
 
         let blocks =
             graph.Blocks
             |> List.map (fun b -> { ID = b.ID
-                                    Data = { Statements = b.Data.Statements; Definitions = !outs |> Map.find b.ID |> Set.toList }
+                                    Data = { Statements = statementsMap |> Dictionary.find b.ID |> ResizeArray.toList
+                                             InDefinitions = insMap |> Dictionary.find b.ID
+                                             OutDefinitions = outsMap |> Dictionary.find b.ID }
                                     Predecessors = b.Predecessors
                                     Successors = b.Successors })
 
-        { Tree = graph.Tree;
-          Blocks = blocks }
+        { Definitions =
+            tempToDefinitionsMap 
+            |> Dictionary.toList
+            |> Map.ofList
+          Usages =
+            definitionToUsagesMap
+            |> Dictionary.toMap
+          Graph =
+            { Tree = graph.Tree;
+              Blocks = blocks } }
 
 

@@ -108,23 +108,30 @@ module Collection =
 module Dictionary =
 
     let create() = new Dictionary<_,_>() :> IDictionary<_,_>
-    let length (d : IDictionary<_,_>) = d.Count
 
-    let contains key (d : IDictionary<_,_>) =
+    let createFrom (keyValues: seq<_*_>) =
+        let d = new Dictionary<_,_>()
+        for (k,v) in keyValues do
+            d.[k] <- v
+        d :> IDictionary<_,_>
+
+    let length (d: IDictionary<_,_>) = d.Count
+
+    let contains key (d: IDictionary<_,_>) =
         d.ContainsKey(key)
 
-    let find key (d : IDictionary<_,_>) =
+    let find key (d: IDictionary<_,_>) =
         d.[key]
 
-    let tryFind key (d : IDictionary<_,_>) =
+    let tryFind key (d: IDictionary<_,_>) =
         match d.TryGetValue(key) with
         | (true, v) -> Some(v)
         | (false,_) -> None
 
-    let add k v (d : IDictionary<_,_>) =
+    let add k v (d: IDictionary<_,_>) =
         d.Add(k, v)
 
-    let getOrAdd k f (d : IDictionary<_,_>) =
+    let getOrAdd k f (d: IDictionary<_,_>) =
         match d |> tryFind k with
         | Some(v) -> v
         | None ->
@@ -132,7 +139,7 @@ module Dictionary =
             d.Add(k, v)
             v
 
-    let toList (d : IDictionary<_,_>) =
+    let toList (d: IDictionary<_,_>) =
         let mutable res = []
 
         let keys = d.Keys |> Collection.toArray
@@ -140,6 +147,14 @@ module Dictionary =
             let key = keys.[i]
             res <- (key, d.[key]) :: res
         res
+
+    let toMap (d: IDictionary<_,_>) =
+        let mutable map = Map.empty
+
+        for kvp in d do
+            map <- map |> Map.add kvp.Key kvp.Value
+
+        map
 
 module SortedList =
 
@@ -202,6 +217,20 @@ module Functions =
             | None -> let v = f k
                       map.[k] <- v
                       v
+
+    let fixedpoint f v =
+        let mutable current = v
+        let mutable stop = false
+
+        while not stop do
+            let result = f current
+
+            if current <> result then
+                current <- result
+            else
+                stop <- true
+
+        current
 
 [<AutoOpen>]
 module Extensions =

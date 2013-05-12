@@ -61,19 +61,45 @@ Public Module AnalysisTests
 
         Dim expected =
             DefinitionsGraph(
-                DefinitionsBlock(Graphs.Entry, NoDefs),
-                DefinitionsBlock(0, Outs(0, 1, 2)),
-                DefinitionsBlock(1, Outs(0, 1, 2, 3, 4)),
-                DefinitionsBlock(2, Outs(0, 1, 2, 3, 4)),
-                DefinitionsBlock(3, Outs(0, 1, 2, 3, 4)),
-                DefinitionsBlock(4, Outs(0, 1, 2, 3, 4, 5, 6, 7, 8)),
-                DefinitionsBlock(5, Outs(0, 1, 2, 3, 4, 5, 6, 7, 8)),
-                DefinitionsBlock(6, Outs(0, 1, 2, 9, 10)),
-                DefinitionsBlock(7, Outs(0, 1, 2, 9, 10)),
-                DefinitionsBlock(8, Outs(0, 1, 2, 9, 10)),
-                DefinitionsBlock(9, Outs(0, 1, 2, 9, 10, 11, 12, 13, 14)),
-                DefinitionsBlock(10, Outs(0, 1, 2, 9, 10, 11, 12, 13, 14)),
-                DefinitionsBlock(Graphs.Exit, Outs(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)))
+                DefinitionsBlock(Graphs.Entry,
+                                 NoInDefs,
+                                 NoOutDefs),
+                DefinitionsBlock(0,
+                                 NoInDefs,
+                                 Outs(0)),
+                DefinitionsBlock(1,
+                                 Ins(0),
+                                 Outs(0, 1)),
+                DefinitionsBlock(2,
+                                 Ins(0, 1),
+                                 Outs(0, 1)),
+                DefinitionsBlock(3,
+                                 Ins(0, 1),
+                                 Outs(0, 1)),
+                DefinitionsBlock(4,
+                                 Ins(0, 1),
+                                 Outs(0, 1, 2, 3, 4, 5)),
+                DefinitionsBlock(5,
+                                 Ins(0, 1, 2, 3, 4, 5),
+                                 Outs(0, 1, 2, 3, 4, 5)),
+                DefinitionsBlock(6,
+                                 Ins(0),
+                                 Outs(0, 6)),
+                DefinitionsBlock(7,
+                                 Ins(0, 6),
+                                 Outs(0, 6)),
+                DefinitionsBlock(8,
+                                 Ins(0, 6),
+                                 Outs(0, 6)),
+                DefinitionsBlock(9,
+                                 Ins(0, 6),
+                                 Outs(0, 6, 7, 8, 9, 10)),
+                DefinitionsBlock(10,
+                                 Ins(0, 6, 7, 8, 9, 10),
+                                 Outs(0, 6, 7, 8, 9, 10)),
+                DefinitionsBlock(Graphs.Exit,
+                                 Ins(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                                 Outs(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)))
 
         Test(Zork1, &H4E42, expected)
     End Sub
@@ -148,19 +174,38 @@ Public Module AnalysisTests
                End Sub
     End Function
 
-    Private Function Outs(ParamArray ids() As Integer) As Action(Of DefinitionsBlock)
+    Private Function Ins(ParamArray ids() As Integer) As Action(Of DefinitionsBlock)
         Return Sub(b)
-                   Assert.Equal(ids.Length, b.Data.Definitions.Length)
+                   Dim orderedIns = b.Data.InDefinitions.OrderBy(Function(d) d.Temp).ToArray()
+
+                   Assert.Equal(ids.Length, orderedIns.Length)
 
                    For i = 0 To ids.Length - 1
-                       Assert.Equal(ids(i), b.Data.Definitions(i).Temp)
+                       Assert.Equal(ids(i), orderedIns(i).Temp)
                    Next
                End Sub
     End Function
 
-    Private ReadOnly NoDefs As Action(Of DefinitionsBlock) =
+    Private ReadOnly NoInDefs As Action(Of DefinitionsBlock) =
         Sub(b)
-            Assert.Equal(0, b.Data.Definitions.Length)
+            Assert.Equal(0, b.Data.InDefinitions.Count)
+        End Sub
+
+    Private Function Outs(ParamArray ids() As Integer) As Action(Of DefinitionsBlock)
+        Return Sub(b)
+                   Dim orderedOuts = b.Data.OutDefinitions.OrderBy(Function(d) d.Temp).ToArray()
+
+                   Assert.Equal(ids.Length, orderedOuts.Length)
+
+                   For i = 0 To ids.Length - 1
+                       Assert.Equal(ids(i), orderedOuts(i).Temp)
+                   Next
+               End Sub
+    End Function
+
+    Private ReadOnly NoOutDefs As Action(Of DefinitionsBlock) =
+        Sub(b)
+            Assert.Equal(0, b.Data.OutDefinitions.Count)
         End Sub
 
     Private Sub Test(gameName As String, address As Integer, expected As Action(Of ControlFlowGraph))
@@ -191,9 +236,9 @@ Public Module AnalysisTests
         Dim binder = New RoutineBinder(memory)
         Dim tree = binder.BindRoutine(r)
         Dim cfg = Graphs.BuildControlFlowGraph(tree)
-        Dim dg = Graphs.ComputeReachingDefinitions(cfg)
+        Dim rd = Graphs.ComputeReachingDefinitions(cfg)
 
-        expected(dg)
+        expected(rd.Graph)
     End Sub
 
 End Module

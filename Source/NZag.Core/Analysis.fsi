@@ -26,11 +26,24 @@ module Graphs =
 
     type Definition =
       { Temp : int
+        BlockID : int
+        StatementIndex : int
         Value : Expression }
 
+    type StatementFlowInfo =
+      { Statement : Statement
+        InDefinitions : Set<Definition>
+        OutDefinitions : Set<Definition> }
+
     type DefinitionData =
-      { Statements : Statement list
-        Definitions : Definition list }
+      { Statements : StatementFlowInfo list
+        InDefinitions : Set<Definition>
+        OutDefinitions : Set<Definition> }
+
+    type ReachingDefinitions =
+      { Definitions : Map<int, Set<Definition>>
+        Usages : Map<Definition, int>
+        Graph : Graph<DefinitionData> }
 
     [<CompiledNameAttribute("ComputeReachingDefinitions")>]
-    val computeReachingDefinitions : graph:Graph<ControlFlowData> -> Graph<DefinitionData>
+    val computeReachingDefinitions : graph:Graph<ControlFlowData> -> ReachingDefinitions

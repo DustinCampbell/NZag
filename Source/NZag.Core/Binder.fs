@@ -464,7 +464,7 @@ type RoutineBinder(memory: Memory) =
 
         updater.GetTree()
 
-    let lowerGlobalVariableReadsAndWrites tree =
+    let lower_GlobalVariableReadsAndWrites tree =
         let globalVariableTableAddress =
             let x = memory |> Header.readGlobalVariableTableAddress
             int32Const x.IntValue
@@ -487,6 +487,145 @@ type RoutineBinder(memory: Memory) =
 
             updater.AddStatement(s'))
 
+    let optimize_PropagateConstants tree =
+        let graph = Graphs.buildControlFlowGraph tree
+        let reachingDefinitions = Graphs.computeReachingDefinitions graph
+
+        let block = ref None
+        let index = ref 0
+
+        let setBlock id =
+            block := Some(reachingDefinitions.Graph.Blocks |> List.find (fun b -> b.ID = id))
+
+        let getDefinitions t =
+            match !block with
+            | Some(b) ->
+                b.Data.Statements.[!index].InDefinitions
+                    |> Set.filter (fun d -> d.Temp = t)
+                    |> Set.map (fun d -> d.Value)
+                    |> Set.toList
+            | None ->
+                failcompile "Couldn't find statement info"
+
+        tree |> updateTree (fun s updater ->
+            let s' =
+                s |> rewriteStatement
+                    (fun s ->
+                        match s with
+                        | LabelStmt(l) ->
+                            index := 0
+                            setBlock(l)
+                            incr index
+                            s
+                        | s ->
+                            incr index
+                            s)
+                    (fun e ->
+                        match e with
+                        | TempExpr(t) ->
+                            // If this temp only has a single definition of a constant expression
+                            // at this point, use the constant.
+                            match getDefinitions t with
+                            | [ConstantExpr(c) as v] -> v
+                            | _ -> e
+                        | e -> e)
+
+            updater.AddStatement(s'))
+
+    let optimize_FoldConstants tree =
+        let binaryOp l r k =
+            match k with
+            | BinaryOperationKind.Add         -> Some(wordConst (uint16 ((int16 l) + (int16 r))))
+            | BinaryOperationKind.Subtract    -> Some(wordConst (uint16 ((int16 l) - (int16 r))))
+            | BinaryOperationKind.Multiply    -> Some(wordConst (uint16 ((int16 l) * (int16 r))))
+            | BinaryOperationKind.Divide      -> Some(wordConst (uint16 ((int16 l) / (int16 r))))
+            | BinaryOperationKind.Remainder   -> Some(wordConst (uint16 ((int16 l) % (int16 r))))
+            | BinaryOperationKind.Or          -> Some(wordConst (uint16 l ||| uint16 r))
+            | BinaryOperationKind.And         -> Some(wordConst (uint16 l &&& uint16 r))
+            | BinaryOperationKind.ShiftLeft   -> Some(wordConst (uint16 l <<< r))
+            | BinaryOperationKind.ShiftRight  -> Some(wordConst (uint16 l >>> r))
+            | BinaryOperationKind.Equal       -> if l = r then Some(one) else Some(zero)
+            | BinaryOperationKind.NotEqual    -> if l <> r then Some(one) else Some(zero)
+            | BinaryOperationKind.LessThan    -> if (int16 l) < (int16 r) then Some(one) else Some(zero)
+            | BinaryOperationKind.GreaterThan -> if (int16 l) > (int16 r) then Some(one) else Some(zero)
+            | BinaryOperationKind.AtLeast     -> if (int16 l) >= (int16 r) then Some(one) else Some(zero)
+            | BinaryOperationKind.AtMost      -> if (int16 l) <= (int16 r) then Some(one) else Some(zero)
+            | _ -> None
+
+        tree |> updateTree (fun s updater ->
+            let s' =
+                s |> rewriteStatement
+                    (fun s -> s)
+                    (fun e ->
+                        match e with
+                        | BinaryOperationExpr(k,l,r) ->
+                            match l,r with
+                            | ConstantExpr(Int32Value v1),ConstantExpr(Int32Value v2) ->
+                                match binaryOp v1 v2 k with
+                                | Some(res) -> res
+                                | None -> e
+                            | _ -> e
+                        | e -> e)
+
+            updater.AddStatement(s'))
+
+    let optimize_RemoveUnusedTemps tree =
+        let graph = Graphs.buildControlFlowGraph tree
+        let reachingDefinitions = Graphs.computeReachingDefinitions graph
+
+        let block = ref None
+        let index = ref 0
+
+        let setBlock id =
+            block := Some(reachingDefinitions.Graph.Blocks |> List.find (fun b -> b.ID = id))
+
+        let hasUsages t =
+            match !block with
+            | Some(b) ->
+                let defs =
+                    reachingDefinitions.Definitions.[t]
+                    |> Set.filter (fun d -> d.BlockID = b.ID && d.StatementIndex = !index)
+                    |> Set.toList
+
+                match defs with
+                | [d] ->
+                    match reachingDefinitions.Usages |> Map.tryFind d with
+                    | Some(u) -> u > 0
+                    | None -> false
+                | _ -> failcompile "Expected a single definition"
+
+            | None ->
+                failcompile "Couldn't find block"
+
+        tree |> updateTree (fun s updater ->
+            let s' = match s with
+                     | LabelStmt(l) ->
+                         index := 0
+                         setBlock(l)
+                         Some(s)
+                     | WriteTempStmt(t,_) ->
+                         if hasUsages t then Some(s)
+                         else None
+                     | s ->
+                         Some(s)
+
+            incr index
+
+            match s' with
+            | Some(s') -> updater.AddStatement(s')
+            | None -> ())
+
+    let lower tree =
+        tree
+        |> lower_GlobalVariableReadsAndWrites
+
+    let optimize tree =
+        tree |> fixedpoint (fun tree ->
+            tree
+            |> optimize_PropagateConstants
+            |> optimize_FoldConstants
+            |> optimize_RemoveUnusedTemps)
+
     member x.BindRoutine(routine: Routine) =
 
         let builder = new BoundTreeCreator(routine)
@@ -496,6 +635,7 @@ type RoutineBinder(memory: Memory) =
             binder.BindInstruction(i)
 
         builder.GetTree()
-            |> lowerGlobalVariableReadsAndWrites
+            |> lower
+            |> optimize
             |> sortLabels
             |> sortTemps
