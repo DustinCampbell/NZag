@@ -62,18 +62,18 @@ Public Module AnalysisTests
         Dim expected =
             DefinitionsGraph(
                 DefinitionsBlock(Graphs.Entry, NoDefs),
-                DefinitionsBlock(0, Outs(0)),
-                DefinitionsBlock(1, Outs(0, 1, 2)),
-                DefinitionsBlock(2, Outs(0, 1, 2)),
-                DefinitionsBlock(3, Outs(0, 1, 2)),
-                DefinitionsBlock(4, Outs(0, 1, 2, 3, 4, 5, 6)),
-                DefinitionsBlock(5, Outs(0, 1, 2, 3, 4, 5, 6)),
-                DefinitionsBlock(6, Outs(0, 7, 8)),
-                DefinitionsBlock(7, Outs(0, 7, 8)),
-                DefinitionsBlock(8, Outs(0, 7, 8)),
-                DefinitionsBlock(9, Outs(0, 7, 8, 9, 10, 11, 12)),
-                DefinitionsBlock(10, Outs(0, 7, 8, 9, 10, 11, 12)),
-                DefinitionsBlock(Graphs.Exit, Outs(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)))
+                DefinitionsBlock(0, Outs(0, 1, 2)),
+                DefinitionsBlock(1, Outs(0, 1, 2, 3, 4)),
+                DefinitionsBlock(2, Outs(0, 1, 2, 3, 4)),
+                DefinitionsBlock(3, Outs(0, 1, 2, 3, 4)),
+                DefinitionsBlock(4, Outs(0, 1, 2, 3, 4, 5, 6, 7, 8)),
+                DefinitionsBlock(5, Outs(0, 1, 2, 3, 4, 5, 6, 7, 8)),
+                DefinitionsBlock(6, Outs(0, 1, 2, 9, 10)),
+                DefinitionsBlock(7, Outs(0, 1, 2, 9, 10)),
+                DefinitionsBlock(8, Outs(0, 1, 2, 9, 10)),
+                DefinitionsBlock(9, Outs(0, 1, 2, 9, 10, 11, 12, 13, 14)),
+                DefinitionsBlock(10, Outs(0, 1, 2, 9, 10, 11, 12, 13, 14)),
+                DefinitionsBlock(Graphs.Exit, Outs(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)))
 
         Test(Zork1, &H4E42, expected)
     End Sub

@@ -91,6 +91,11 @@ type CodeGenerator private (tree: BoundTree, builder: ILBuilder) =
 
     let unexpectedNodeFound o = failcompilef "Encountered %s, which should not appear in a lowered tree." (o.GetType().Name)
 
+    let readByte = typeof<Memory>.GetMethod("ReadByte", [|typeof<int>|])
+    let readWord = typeof<Memory>.GetMethod("ReadWord", [|typeof<int>|])
+    let writeByte = typeof<Memory>.GetMethod("WriteByte", [|typeof<int>; typeof<byte>|])
+    let writeWord = typeof<Memory>.GetMethod("WriteWord", [|typeof<int>; typeof<uint16>|])
+
     let peekStack() =
         builder.Arguments.LoadStack()
         builder.Arguments.LoadSP()
@@ -188,6 +193,14 @@ type CodeGenerator private (tree: BoundTree, builder: ILBuilder) =
             emitExpression l
             emitExpression r
             emitBinaryOperation k
+        | ReadMemoryByteExpr(a) ->
+            builder.Arguments.LoadMemory()
+            emitExpression a
+            builder.Call(readByte)
+        | ReadMemoryWordExpr(a) ->
+            builder.Arguments.LoadMemory()
+            emitExpression a
+            builder.Call(readWord)
         | e ->
             unexpectedNodeFound e
 
@@ -222,6 +235,16 @@ type CodeGenerator private (tree: BoundTree, builder: ILBuilder) =
         | StackUpdateStmt(e) ->
             updateStack
                 (fun () -> emitExpression e)
+        | WriteMemoryByteStmt(a,v) ->
+            builder.Arguments.LoadMemory()
+            emitExpression a
+            emitExpression v
+            builder.Call(writeByte)
+        | WriteMemoryWordStmt(a,v) ->
+            builder.Arguments.LoadMemory()
+            emitExpression a
+            emitExpression v
+            builder.Call(writeWord)
         | s ->
             unexpectedNodeFound s
 

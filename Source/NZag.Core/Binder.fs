@@ -64,6 +64,8 @@ type BoundTreeBuilder() =
     abstract member TempCount : int
     abstract member LabelCount : int
 
+    abstract member GetTree : unit -> BoundTree
+
 type BoundTreeCreator(routine: Routine) =
     inherit BoundTreeBuilder()
 
@@ -105,6 +107,40 @@ type BoundTreeCreator(routine: Routine) =
     override x.Statements = statements |> List.ofSeq
     override x.TempCount = tempCount
     override x.LabelCount = labelCount
+
+    override x.GetTree() =
+        { Statements = statements |> Seq.toList; TempCount = tempCount; LabelCount = labelCount }
+
+type BoundTreeUpdater(tree : BoundTree) =
+    inherit BoundTreeBuilder()
+
+    let mutable statements = ResizeArray.create()
+    let mutable tempCount = tree.TempCount
+    let mutable labelCount = tree.LabelCount
+
+    override x.AddStatement(statement: Statement) =
+        statements.Add(statement)
+
+    override x.NewTemp() =
+        let newTemp = tempCount
+        tempCount <- tempCount + 1
+        newTemp
+
+    override x.NewLabel() =
+        let newLabel = labelCount
+        labelCount <- labelCount + 1
+        newLabel
+
+    override x.Statements = statements |> List.ofSeq
+    override x.TempCount = tempCount
+    override x.LabelCount = labelCount
+
+    member x.Update f =
+        for s in tree.Statements do
+            f s x
+
+    override x.GetTree() =
+        { Statements = statements |> Seq.toList; TempCount = tempCount; LabelCount = labelCount }
 
 type InstructionBinder(memory: Memory, builder: BoundTreeCreator) =
 
@@ -401,20 +437,55 @@ type RoutineBinder(memory: Memory) =
                          incr nextTempIndex
                          newTemp
 
-        // Rewrite the tree, replacing old temps with new ones
-        tree |> rewriteTree
-            (fun s -> 
-                match s with
-                | WriteTempStmt(t,e) ->
-                    let t' = getOrAddTemp t
-                    WriteTempStmt(t',e)
-                | s -> s)
-            (fun e ->
-                match e with
-                | TempExpr(t) ->
-                    let t' = getOrAddTemp t
-                    TempExpr(t')
-                | e -> e)
+        // Rewrite the tree's statements, replacing old temps with new ones
+        let rewriteTemps s =
+            s |> rewriteStatement
+                (fun s -> 
+                    match s with
+                    | WriteTempStmt(t,e) ->
+                        let newTemp = getOrAddTemp t
+                        WriteTempStmt(newTemp,e)
+                    | s -> s)
+                (fun e ->
+                    match e with
+                    | TempExpr(t) ->
+                        let newTemp = getOrAddTemp t
+                        TempExpr(newTemp)
+                    | e -> e)
+
+        let newStatements = tree.Statements |> List.map rewriteTemps
+
+        { Statements = newStatements; TempCount = !nextTempIndex; LabelCount = tree.LabelCount }
+
+    let updateTree f tree =
+        let updater = new BoundTreeUpdater(tree)
+
+        updater.Update f
+
+        updater.GetTree()
+
+    let lowerGlobalVariableReadsAndWrites tree =
+        let globalVariableTableAddress =
+            let x = memory |> Header.readGlobalVariableTableAddress
+            int32Const x.IntValue
+
+        tree |> updateTree (fun s updater ->
+            let computeGlobalVariableAddress index =
+                let x = updater.InitTemp(index .*. two)
+                updater.InitTemp(x .+. globalVariableTableAddress)
+
+            let s' =
+                s |> rewriteStatement
+                    (fun s ->
+                        match s with
+                        | WriteGlobalStmt(i,v) -> writeWord (computeGlobalVariableAddress i) v
+                        | s -> s)
+                    (fun e ->
+                        match e with
+                        | ReadGlobalExpr(i) -> readWord (computeGlobalVariableAddress i)
+                        | e -> e)
+
+            updater.AddStatement(s'))
 
     member x.BindRoutine(routine: Routine) =
 
@@ -424,6 +495,7 @@ type RoutineBinder(memory: Memory) =
         for i in routine.Instructions do
             binder.BindInstruction(i)
 
-        { Statements = builder.Statements; TempCount = builder.TempCount; LabelCount = builder.LabelCount }
+        builder.GetTree()
+            |> lowerGlobalVariableReadsAndWrites
             |> sortLabels
             |> sortTemps
