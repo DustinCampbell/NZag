@@ -16,21 +16,29 @@ type Machine (memory : Memory) as this =
         arr |> Array.clear
         localArrayPool |> Stack.push arr
 
-    let compile (routine: Routine) =
-        let dynamicMethod =
-            new System.Reflection.Emit.DynamicMethod(
-                name = sprintf "%4x_%d_locals" routine.Address.IntValue routine.Locals.Length,
-                returnType = typeof<uint16>,
-                parameterTypes = [|typeof<Machine>; typeof<uint16>; typeof<int>|],
-                owner = typeof<Machine>,
-                skipVisibility = true)
+    let compile =
+        let compileAux (routine: Routine) =
+            let dynamicMethod =
+                new System.Reflection.Emit.DynamicMethod(
+                    name = sprintf "%4x_%d_locals" routine.Address.IntValue routine.Locals.Length,
+                    returnType = typeof<uint16>,
+                    parameterTypes = [|typeof<Machine>; typeof<uint16>; typeof<int>|],
+                    owner = typeof<Machine>,
+                    skipVisibility = true)
 
-        let generator = dynamicMethod.GetILGenerator()
-        let builder = new ILBuilder(generator)
+            let generator = dynamicMethod.GetILGenerator()
+            let builder = new ILBuilder(generator)
+            let callSites = ResizeArray.create()
 
-        CodeGenerator.Compile(memory, routine, builder)
+            CodeGenerator.Compile(memory, routine, builder, callSites)
 
-        dynamicMethod.CreateDelegate(typeof<ZFunc>, this) :?> ZFunc
+            let zfunc = dynamicMethod.CreateDelegate(typeof<ZFunc>, this) :?> ZFunc
+
+            { Routine = routine
+              ZFunc = zfunc
+              CallSites = callSites.ToArray() }
+
+        memoize compileAux
 
     member x.Memory = memory
 
@@ -38,9 +46,10 @@ type Machine (memory : Memory) as this =
         let machine = this :> IMachine
         let reader = new RoutineReader(memory)
         let mainRoutine = reader.ReadRoutine(mainRoutineAddress)
-        let mainRoutineInvoker = machine.GetOrCompileZFunc(mainRoutine)
+        let compileResult = machine.Compile(mainRoutine)
+        let callSite = new ZFuncCallSite(this, mainRoutine, compileResult.ZFunc)
         let stack = Array.zeroCreate 1024
-        mainRoutineInvoker.Invoke0(memory, stack, 0)
+        callSite.Invoke0(memory, stack, 0)
 
     interface IMachine with
 
@@ -56,12 +65,5 @@ type Machine (memory : Memory) as this =
         member y.ReleaseLocalArray(locals) =
             releaseLocalArray locals
 
-        member y.GetOrCompileZFunc(routine) =
-            match zfuncMap |> Dictionary.tryFind routine.Address with
-            | Some(invoker) ->
-                invoker
-            | None ->
-                let zfunc = compile routine
-                let invoker = new ZFuncInvoker(y, routine, zfunc)
-                zfuncMap |> Dictionary.add routine.Address invoker
-                invoker
+        member y.Compile(routine) =
+            compile routine

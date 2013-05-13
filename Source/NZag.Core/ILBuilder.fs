@@ -12,6 +12,7 @@ type IArguments =
     abstract member LoadStack : unit -> unit
     abstract member LoadSP : unit -> unit
     abstract member StoreSP : unit -> unit
+    abstract member LoadCallSites : unit -> unit
     abstract member LoadArgCount : unit -> unit
 
 type IEvaluationStack =
@@ -154,8 +155,10 @@ type ILBuilder (generator: ILGenerator) =
                 generator.Emit(OpCodes.Ldarg_S, 4uy)
             member y.StoreSP() =
                 generator.Emit(OpCodes.Starg_S, 4uy)
+            member y.LoadCallSites() =
+                generator.Emit(OpCodes.Starg_S, 5uy)
             member y.LoadArgCount() =
-                generator.Emit(OpCodes.Ldarg_S, 5uy) }
+                generator.Emit(OpCodes.Ldarg_S, 6uy) }
 
     member x.EvaluationStack =
         { new IEvaluationStack with

@@ -2,25 +2,40 @@
 
 open NZag.Utilities
 
-type ZFunc = delegate of memory:Memory
-                       * locals:uint16[]
-                       * stack:uint16[]
-                       * sp:int
-                       * argCount:int
-                      -> uint16
-
 type IMachine =
 
     abstract member GetInitialLocalArray : Routine -> uint16[]
     abstract member ReleaseLocalArray : uint16[] -> unit
 
-    abstract member GetOrCompileZFunc : Routine -> ZFuncInvoker
+    abstract member Compile : Routine -> ZCompileResult
 
-and ZFuncInvoker(machine: IMachine, routine: Routine, zfunc: ZFunc) =
+and ZCompileResult =
+  { Routine : Routine
+    ZFunc : ZFunc
+    CallSites : ZFuncCallSite[] }
+
+and ZFunc = delegate of memory:Memory
+                       * locals:uint16[]
+                       * stack:uint16[]
+                       * sp:int
+                       * callSites:ZFuncCallSite[]
+                       * argCount:int
+                      -> uint16
+
+and ZFuncCallSite(machine: IMachine, routine: Routine, zfunc: ZFunc) =
+
+    let mutable compileResult = None
+
+    let getCompileResult() = 
+        if compileResult = None then
+            compileResult <- Some(machine.Compile(routine))
+
+        compileResult.Value
 
     let invoke memory locals stack sp argCount =
         try
-            zfunc.Invoke(memory, locals, stack, sp, argCount)
+            let compileResult = getCompileResult()
+            compileResult.ZFunc.Invoke(memory, locals, stack, sp, compileResult.CallSites, argCount)
         finally
             machine.ReleaseLocalArray(locals)
 
@@ -84,7 +99,7 @@ and ZFuncInvoker(machine: IMachine, routine: Routine, zfunc: ZFunc) =
         locals.[6] <- arg7
         invoke memory locals stack sp 7
 
-type CodeGenerator private (tree: BoundTree, builder: ILBuilder) =
+type CodeGenerator private (tree: BoundTree, builder: ILBuilder, callSites: ResizeArray<ZFuncCallSite>) =
 
     let labels = Array.init tree.LabelCount (fun i -> builder.NewLabel())
     let temps = Array.init tree.TempCount (fun i -> builder.NewLocal(typeof<uint16>))
@@ -252,9 +267,9 @@ type CodeGenerator private (tree: BoundTree, builder: ILBuilder) =
         for s in tree.Statements do
             emitStatement s
 
-    static member Compile (memory: Memory, routine: Routine, builder: ILBuilder) =
+    static member Compile (memory: Memory, routine: Routine, builder: ILBuilder, callSites: ResizeArray<ZFuncCallSite>) =
         let binder = new RoutineBinder(memory)
         let tree = binder.BindRoutine(routine)
 
-        let codeGenerator = new CodeGenerator(tree, builder)
+        let codeGenerator = new CodeGenerator(tree, builder, callSites)
         codeGenerator.CompileTree(tree)
