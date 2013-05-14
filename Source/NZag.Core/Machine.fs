@@ -22,7 +22,7 @@ type Machine (memory : Memory) as this =
                 new System.Reflection.Emit.DynamicMethod(
                     name = sprintf "%4x_%d_locals" routine.Address.IntValue routine.Locals.Length,
                     returnType = typeof<uint16>,
-                    parameterTypes = [|typeof<Machine>; typeof<uint16>; typeof<int>|],
+                    parameterTypes = [|typeof<Machine>; typeof<Memory>; typeof<uint16[]>; typeof<uint16[]>; typeof<int>; typeof<ZFuncCallSite[]>; typeof<int>|],
                     owner = typeof<Machine>,
                     skipVisibility = true)
 
@@ -30,7 +30,7 @@ type Machine (memory : Memory) as this =
             let builder = new ILBuilder(generator)
             let callSites = ResizeArray.create()
 
-            CodeGenerator.Compile(memory, routine, builder, callSites)
+            CodeGenerator.Compile(memory, routine, this, builder, callSites)
 
             let zfunc = dynamicMethod.CreateDelegate(typeof<ZFunc>, this) :?> ZFunc
 
@@ -40,14 +40,19 @@ type Machine (memory : Memory) as this =
 
         memoize compileAux
 
+    let getRoutine =
+        let reader = new RoutineReader(memory)
+
+        memoize (fun (address: Address) -> reader.ReadRoutine(address))
+
+    let getCallSite =
+        memoize (fun address -> new ZFuncCallSite(this, getRoutine address))
+
     member x.Memory = memory
 
     member x.Run() =
-        let machine = this :> IMachine
         let reader = new RoutineReader(memory)
-        let mainRoutine = reader.ReadRoutine(mainRoutineAddress)
-        let compileResult = machine.Compile(mainRoutine)
-        let callSite = new ZFuncCallSite(this, mainRoutine, compileResult.ZFunc)
+        let callSite = getCallSite mainRoutineAddress
         let stack = Array.zeroCreate 1024
         callSite.Invoke0(memory, stack, 0)
 
@@ -67,3 +72,6 @@ type Machine (memory : Memory) as this =
 
         member y.Compile(routine) =
             compile routine
+        member y.GetCallSite(address) =
+            getCallSite address
+
