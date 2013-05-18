@@ -20,6 +20,276 @@ LABEL 00
     End Sub
 
     <Fact>
+    Sub CZech_8f4()
+        ' 8f5:  b2 ...                  print           "Jumps"
+        ' 8fa:  a0 01 ca                jz              local0 905
+        ' 8fd:  b2 ...                  print           " skipped"
+        ' 904:    b1 rfalse
+        ' 905:  b2 ...                  print           " ["
+        ' 90a:  54 11 01 00             add             g01 #01 -> sp
+        ' 90e:  e6 bf 00                print_num       sp
+        ' 911:  b2 ...                  print           "]: "
+        ' 918:  b2 ...                  print           "jump"
+        ' 91d:  8c 00 08                jump            926
+        ' 920:  b2 ...                  print           "bad!"
+        ' 925:  ba quit
+        ' 926:  8f 02 38                call_1n         8e0
+        ' 929:  b2 ...                  print           "je"
+        ' 92c:  01 05 05 01 29          je              #05 #05 ~a58
+        ' 931:  8f 02 38                call_1n         8e0
+        ' 934:  c1 4f 05 ff fb 81 1f    je              #05 #fffb a58
+        ' 93b:  8f 02 38                call_1n         8e0
+        ' 93e:  c1 1f ff fb 05 81 15    je              #fffb #05 a58
+        ' 945:  8f 02 38                call_1n         8e0
+        ' 948:  c1 0f ff fb ff fb 01 0a je              #fffb #fffb ~a58
+        ' 950:  8f 02 38                call_1n         8e0
+        ' 953:  c1 0f 7f ff 80 00 80 ff je              #7fff #8000 a58
+        ' 95b:  8f 02 38                call_1n         8e0
+        ' 95e:  c1 0f 80 00 80 00 00 f4 je              #8000 #8000 ~a58
+        ' 966:  8f 02 38                call_1n         8e0
+        ' 969:  c1 57 05 04 05 00 ea    je              #05 #04 #05 ~a58
+        ' 970:  8f 02 38                call_1n         8e0
+        ' 973:  c1 55 05 04 03 05 00 df je              #05 #04 #03 #05 ~a58
+        ' 97b:  8f 02 38                call_1n         8e0
+        ' 97e:  c1 55 05 04 05 03 00 d4 je              #05 #04 #05 #03 ~a58
+        ' 986:  8f 02 38                call_1n         8e0
+        ' 989:  c1 55 05 04 03 02 80 c9 je              #05 #04 #03 #02 a58
+        ' 991:  8f 02 38                call_1n         8e0
+        ' 994:  b2 ...                  print           "jg"
+        ' 997:  03 05 05 80 be          jg              #05 #05 a58
+        ' 99c:  8f 02 38                call_1n         8e0
+        ' 99f:  03 01 00 00 b6          jg              #01 #00 ~a58
+        ' 9a4:  8f 02 38                call_1n         8e0
+        ' 9a7:  03 00 01 80 ae          jg              #00 #01 a58
+        ' 9ac:  8f 02 38                call_1n         8e0
+        ' 9af:  c3 0f ff ff ff fe 00 a3 jg              #ffff #fffe ~a58
+        ' 9b7:  8f 02 38                call_1n         8e0
+        ' 9ba:  c3 0f ff fe ff ff 80 98 jg              #fffe #ffff a58
+        ' 9c2:  8f 02 38                call_1n         8e0
+        ' 9c5:  c3 4f 01 ff ff 00 8e    jg              #01 #ffff ~a58
+        ' 9cc:  8f 02 38                call_1n         8e0
+        ' 9cf:  c3 1f ff ff 01 80 84    jg              #ffff #01 a58
+        ' 9d6:  8f 02 38                call_1n         8e0
+        ' 9d9:  b2 ...                  print           "jl"
+        ' 9dc:  02 05 05 80 79          jl              #05 #05 a58
+        ' 9e1:  8f 02 38                call_1n         8e0
+        ' 9e4:  02 01 00 80 71          jl              #01 #00 a58
+        ' 9e9:  8f 02 38                call_1n         8e0
+        ' 9ec:  02 00 01 00 69          jl              #00 #01 ~a58
+        ' 9f1:  8f 02 38                call_1n         8e0
+        ' 9f4:  c2 0f ff ff ff fe 80 5e jl              #ffff #fffe a58
+        ' 9fc:  8f 02 38                call_1n         8e0
+        ' 9ff:  c2 0f ff fe ff ff 00 53 jl              #fffe #ffff ~a58
+        ' a07:  8f 02 38                call_1n         8e0
+        ' a0a:  c2 4f 01 ff ff 80 49    jl              #01 #ffff a58
+        ' a11:  8f 02 38                call_1n         8e0
+        ' a14:  c2 1f ff ff 01 00 3f    jl              #ffff #01 ~a58
+        ' a1b:  8f 02 38                call_1n         8e0
+        ' a1e:  b2 ...                  print           "jz"
+        ' a21:  90 00 76                jz              #00 ~a58
+        ' a24:  8f 02 38                call_1n         8e0
+        ' a27:  90 01 f0                jz              #01 a58
+        ' a2a:  8f 02 38                call_1n         8e0
+        ' a2d:  80 ff fc e9             jz              #fffc a58
+        ' a31:  8f 02 38                call_1n         8e0
+        ' a34:  b2 ...                  print           "offsets"
+        ' a3b:  d9 1f 02 a3 00 02       call_2s         a8c #00 -> local1
+        ' a41:  f9 24 01 f9 02 00 0b 1f call_vn         7e4 local1 #00 s002
+        ' a49:  d9 1f 02 a3 01 02       call_2s         a8c #01 -> local1
+        ' a4f:  f9 24 01 f9 02 01 0b 21 call_vn         7e4 local1 #01 s003
+        ' a57:  b0 rtrue
+        ' a58:  b2 ...                  print           "^bad ["
+        ' a61:  e6 bf 11                print_num       g01
+        ' a64:  b2 ...                  print           "]!^"
+        ' a6b:  b2 ...                  print           "Quitting tests because jumps don't work!"
+        ' a8a:  ba quit
+
+        Dim expected =
+<![CDATA[
+# temps: 34
+
+LABEL 00
+    print: "Jumps"
+    temp00 <- L00
+    if (temp00 = 0) is true then
+        jump-to: LABEL 02
+LABEL 01
+    print: " skipped"
+    return: 0
+LABEL 02
+    print: " ["
+    temp01 <- read-byte(07df)
+    temp02 <- int16(temp01)
+    temp03 <- int16(01)
+    push-SP: (temp02 + temp03)
+    temp04 <- pop-SP
+    print: number-to-text(int16(temp04))
+    print: "]: "
+    print: "jump"
+    jump-to: LABEL 03
+    print: "bad!"
+    quit
+LABEL 03
+    discard(call 08e0 ())
+    print: "je"
+    if (1) is false then
+        jump-to: LABEL 1f
+LABEL 04
+    discard(call 08e0 ())
+    if (0) is true then
+        jump-to: LABEL 1f
+LABEL 05
+    discard(call 08e0 ())
+    if (0) is true then
+        jump-to: LABEL 1f
+LABEL 06
+    discard(call 08e0 ())
+    if (1) is false then
+        jump-to: LABEL 1f
+LABEL 07
+    discard(call 08e0 ())
+    if (0) is true then
+        jump-to: LABEL 1f
+LABEL 08
+    discard(call 08e0 ())
+    if (1) is false then
+        jump-to: LABEL 1f
+LABEL 09
+    discard(call 08e0 ())
+    if (0001) is false then
+        jump-to: LABEL 1f
+LABEL 0a
+    discard(call 08e0 ())
+    if (0001) is false then
+        jump-to: LABEL 1f
+LABEL 0b
+    discard(call 08e0 ())
+    if (0001) is false then
+        jump-to: LABEL 1f
+LABEL 0c
+    discard(call 08e0 ())
+    if (0000) is true then
+        jump-to: LABEL 1f
+LABEL 0d
+    discard(call 08e0 ())
+    print: "jg"
+    temp05 <- int16(05)
+    temp06 <- int16(05)
+    if (temp05 > temp06) is true then
+        jump-to: LABEL 1f
+LABEL 0e
+    discard(call 08e0 ())
+    temp07 <- int16(01)
+    temp08 <- int16(00)
+    if (temp07 > temp08) is false then
+        jump-to: LABEL 1f
+LABEL 0f
+    discard(call 08e0 ())
+    temp09 <- int16(00)
+    temp0a <- int16(01)
+    if (temp09 > temp0a) is true then
+        jump-to: LABEL 1f
+LABEL 10
+    discard(call 08e0 ())
+    temp0b <- int16(ffff)
+    temp0c <- int16(fffe)
+    if (temp0b > temp0c) is false then
+        jump-to: LABEL 1f
+LABEL 11
+    discard(call 08e0 ())
+    temp0d <- int16(fffe)
+    temp0e <- int16(ffff)
+    if (temp0d > temp0e) is true then
+        jump-to: LABEL 1f
+LABEL 12
+    discard(call 08e0 ())
+    temp0f <- int16(01)
+    temp10 <- int16(ffff)
+    if (temp0f > temp10) is false then
+        jump-to: LABEL 1f
+LABEL 13
+    discard(call 08e0 ())
+    temp11 <- int16(ffff)
+    temp12 <- int16(01)
+    if (temp11 > temp12) is true then
+        jump-to: LABEL 1f
+LABEL 14
+    discard(call 08e0 ())
+    print: "jl"
+    temp13 <- int16(05)
+    temp14 <- int16(05)
+    if (temp13 < temp14) is true then
+        jump-to: LABEL 1f
+LABEL 15
+    discard(call 08e0 ())
+    temp15 <- int16(01)
+    temp16 <- int16(00)
+    if (temp15 < temp16) is true then
+        jump-to: LABEL 1f
+LABEL 16
+    discard(call 08e0 ())
+    temp17 <- int16(00)
+    temp18 <- int16(01)
+    if (temp17 < temp18) is false then
+        jump-to: LABEL 1f
+LABEL 17
+    discard(call 08e0 ())
+    temp19 <- int16(ffff)
+    temp1a <- int16(fffe)
+    if (temp19 < temp1a) is true then
+        jump-to: LABEL 1f
+LABEL 18
+    discard(call 08e0 ())
+    temp1b <- int16(fffe)
+    temp1c <- int16(ffff)
+    if (temp1b < temp1c) is false then
+        jump-to: LABEL 1f
+LABEL 19
+    discard(call 08e0 ())
+    temp1d <- int16(01)
+    temp1e <- int16(ffff)
+    if (temp1d < temp1e) is true then
+        jump-to: LABEL 1f
+LABEL 1a
+    discard(call 08e0 ())
+    temp1f <- int16(ffff)
+    temp20 <- int16(01)
+    if (temp1f < temp20) is false then
+        jump-to: LABEL 1f
+LABEL 1b
+    discard(call 08e0 ())
+    print: "jz"
+    if (1) is false then
+        jump-to: LABEL 1f
+LABEL 1c
+    discard(call 08e0 ())
+    if (0) is true then
+        jump-to: LABEL 1f
+LABEL 1d
+    discard(call 08e0 ())
+    if (0) is true then
+        jump-to: LABEL 1f
+LABEL 1e
+    discard(call 08e0 ())
+    print: "offsets"
+    RUNTIME EXCEPTION: Unsupported opcode: call_2s (v.5) with 2 operands
+    RUNTIME EXCEPTION: Unsupported opcode: call_vn (v.5) with 4 operands
+    RUNTIME EXCEPTION: Unsupported opcode: call_2s (v.5) with 2 operands
+    RUNTIME EXCEPTION: Unsupported opcode: call_vn (v.5) with 4 operands
+    return: 1
+LABEL 1f
+    print: "\nbad ["
+    temp21 <- read-byte(07df)
+    print: number-to-text(int16(temp21))
+    print: "]!\n"
+    print: "Quitting tests because jumps don't work!"
+    quit
+]]>
+
+        Test(CZech, &H8F4, expected)
+    End Sub
+
+    <Fact>
     Sub CZech_2448()
         ' 2449:  0d 11 00                store           g01 #00
         ' 244c:  0d 12 00                store           g02 #00

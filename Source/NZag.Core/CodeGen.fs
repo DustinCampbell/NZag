@@ -11,7 +11,7 @@ type IMachine =
     abstract member ReleaseLocalArray : uint16[] -> unit
 
     abstract member Compile : Routine -> ZCompileResult
-    abstract member GetCallSite : Address -> ZFuncCallSite
+    abstract member GetCallSite : address:int -> ZFuncCallSite
 
     abstract member ReadZText : address:int -> string
 
@@ -655,7 +655,7 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
 
         | CallExpr(a,args) ->
             match a with
-            | ConstantExpr(Word(a)) -> emitDirectCall (ByteAddress(a)) args
+            | ConstantExpr(Int32Value a) -> emitDirectCall a args
             | _ -> emitComputedCall a args
         | ReadMemoryByteExpr(a) ->
             builder.Arguments.LoadMemory()

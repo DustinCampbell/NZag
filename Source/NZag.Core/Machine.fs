@@ -54,14 +54,14 @@ type Machine (memory : Memory) as this =
         memoize (fun (address: Address) -> reader.ReadRoutine(address))
 
     let getCallSite =
-        memoize (fun address -> new ZFuncCallSite(this, getRoutine address))
+        memoize (fun address -> new ZFuncCallSite(this, RawAddress(address) |> getRoutine))
 
     member x.Memory = memory
 
     member x.RunAsync() =
         async {
             let reader = new RoutineReader(memory)
-            let callSite = getCallSite mainRoutineAddress
+            let callSite = getCallSite mainRoutineAddress.IntValue
             let stack = Array.zeroCreate 1024
             callSite.Invoke0(memory, stack, 0) |> ignore
         }
