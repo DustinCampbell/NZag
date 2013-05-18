@@ -190,4 +190,35 @@
             End Sub)
     End Sub
 
+    <Fact>
+    Sub WriteBytes()
+        Dim memory = CreateMemory(8, &H30000)
+
+        'Initially, write memory with zeros
+        Const length As Integer = &H30000 - &H40
+        For i = 0 To length - 1
+            Dim a = RawAddress(&H40 + i)
+            memory.WriteByte(a, 0)
+        Next
+
+        'Create value to write
+        Dim value = New Byte(length) {}
+        For i = 0 To length - 1
+            value(i) = CByte(i Mod Byte.MaxValue)
+        Next
+
+        'Actually write the bytes
+        memory.WriteBytes(RawAddress(&H40), value)
+
+        'Read the bytes back
+
+        For i = 0 To length - 1
+            Dim a = RawAddress(&H40 + i)
+            Dim b = i Mod Byte.MaxValue
+            Dim v = memory.ReadByte(a)
+            Assert.Equal(b, v)
+        Next
+    End Sub
+
+
 End Module

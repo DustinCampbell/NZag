@@ -97,6 +97,9 @@ type Expression =
     /// Converts the given expression to the type indicated by the conversion kind
     | ConversionExpr of ConversionKind * Expression
 
+    /// Converts the number represents by the given expression to text
+    | NumberToTextExpr of Expression
+
     /// Calls the routine at the specified address with the list of given arguments
     | CallExpr of Expression * list<Expression>
 
@@ -105,6 +108,9 @@ type Expression =
 
     /// Reads a word from game memory at the specified address
     | ReadMemoryWordExpr of Expression
+
+    /// Reads the text from game memory at the specified address
+    | ReadMemoryTextExpr of Expression
 
     /// Reads name of the object whose number is represented by the given expression
     | ReadObjectNameExpr of Expression
@@ -157,6 +163,9 @@ type Statement =
 
     /// Writes a word from game memory at the specified address
     | WriteMemoryWordStmt of Expression * Expression
+
+    /// Discards a value (i.e. does nothing with it).
+    | DiscardValueStmt of Expression
 
     /// Prints the text represented by the given expression
     | PrintTextStmt of Expression
@@ -234,6 +243,8 @@ module BoundNodeConstruction =
     let writeByte a v = WriteMemoryByteStmt(a, v)
     let writeWord a v = WriteMemoryWordStmt(a, v)
 
+    let discardValue e = DiscardValueStmt(e)
+
     let printText text = PrintTextStmt(text)
 
     let objectName objNum = ReadObjectNameExpr(objNum)
@@ -276,12 +287,16 @@ module BoundNodeVisitors =
             fexpr (BinaryOperationExpr(k, rewriteExpr e1, rewriteExpr e2))
         | ConversionExpr(k,e) ->
             fexpr (ConversionExpr(k, rewriteExpr e))
+        | NumberToTextExpr(e) ->
+            fexpr (NumberToTextExpr(rewriteExpr e))
         | CallExpr(e,elist) ->
             fexpr (CallExpr(rewriteExpr e, elist |> List.map rewriteExpr))
         | ReadMemoryByteExpr(e) ->
             fexpr (ReadMemoryByteExpr(rewriteExpr e))
         | ReadMemoryWordExpr(e) ->
             fexpr (ReadMemoryWordExpr(rewriteExpr e))
+        | ReadMemoryTextExpr(e) ->
+            fexpr (ReadMemoryTextExpr(rewriteExpr e))
         | ReadObjectNameExpr(e) ->
             fexpr (ReadObjectNameExpr(rewriteExpr e))
         | ReadObjectAttributeExpr(e1, e2) ->
@@ -320,6 +335,8 @@ module BoundNodeVisitors =
             fstmt (WriteMemoryByteStmt(rewriteExpr e1, rewriteExpr e2))
         | WriteMemoryWordStmt(e1,e2) ->
             fstmt (WriteMemoryWordStmt(rewriteExpr e1, rewriteExpr e2))
+        | DiscardValueStmt(e) ->
+            fstmt (DiscardValueStmt(rewriteExpr e))
         | PrintTextStmt(e) ->
             fstmt (PrintTextStmt(rewriteExpr e))
         | SetRandomNumberSeedStmt(e) ->
@@ -351,8 +368,10 @@ module BoundNodeVisitors =
             | ReadComputedVarExpr(e)
             | UnaryOperationExpr(_,e)
             | ConversionExpr(_,e)
+            | NumberToTextExpr(e)
             | ReadMemoryByteExpr(e)
             | ReadMemoryWordExpr(e)
+            | ReadMemoryTextExpr(e)
             | ReadObjectNameExpr(e)
             | GenerateRandomNumberExpr(e) ->
                 visitExpr e
@@ -379,6 +398,7 @@ module BoundNodeVisitors =
             | WriteTempStmt(_,e)
             | StackPushStmt(e)
             | StackUpdateStmt(e)
+            | DiscardValueStmt(e)
             | PrintTextStmt(e)
             | SetRandomNumberSeedStmt(e) ->
                 visitExpr e
@@ -524,6 +544,10 @@ type BoundNodeDumper (builder : StringBuilder) =
             dumpConversionKind k
             parenthesize(fun () ->
                 dumpExpression e)
+        | NumberToTextExpr(e) ->
+            append "number-to-text"
+            parenthesize (fun () ->
+                dumpExpression e)
         | CallExpr(a,args) ->
             append "call "
             dumpExpression a
@@ -537,6 +561,10 @@ type BoundNodeDumper (builder : StringBuilder) =
                 dumpExpression e)
         | ReadMemoryWordExpr(e) ->
             append "read-byte"
+            parenthesize (fun () ->
+                dumpExpression e)
+        | ReadMemoryTextExpr(e) ->
+            append "read-text"
             parenthesize (fun () ->
                 dumpExpression e)
         | ReadObjectNameExpr(e) ->
@@ -613,6 +641,10 @@ type BoundNodeDumper (builder : StringBuilder) =
                 dumpExpression a)
             append " <- "
             dumpExpression v
+        | DiscardValueStmt(e) ->
+            append "discard"
+            parenthesize (fun () ->
+                dumpExpression e)
         | PrintTextStmt(e) ->
             append "print: "
             dumpExpression e

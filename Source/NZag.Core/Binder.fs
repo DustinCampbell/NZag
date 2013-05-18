@@ -154,6 +154,9 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator) =
     let routinesOffset =
         int32Const (memory |> Header.readRoutinesOffset).IntValue
 
+    let stringsOffset =
+        int32Const (memory |> Header.readStringOffset).IntValue
+
     let addStatement s =
         builder.AddStatement(s)
 
@@ -198,6 +201,13 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator) =
                 | None -> failcompile "Expected instruction to have a valid store variable."
 
             storeVar |> writeVar expression |> addStatement
+
+        let discard expression =
+            match instruction.StoreVariable with
+            | Some(_) -> failcompile "Expected instruction to not have a store variable."
+            | None -> ()
+
+            discardValue expression |> addStatement
 
         // If this instruction is a jump target, mark its label
         if builder.IsJumpTarget(instruction.Address) then
@@ -264,6 +274,22 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator) =
                             baseAddress
 
                     store (CallExpr(address, args)))
+
+        | "call_1n", AtLeast 5uy, OpAndList(address, args)
+        | "call_2n", AtLeast 5uy, OpAndList(address, args) ->
+
+            ifThenElse (address .=. zero)
+                (fun () ->
+                    discard zero)
+                (fun () ->
+                    let baseAddress = initTemp (address .*. packedMultiplier)
+                    let address = 
+                        if memory.Version = 6 || memory.Version = 7 then
+                            initTemp (baseAddress .+. routinesOffset)
+                        else
+                            baseAddress
+
+                    discard (CallExpr(address, args)))
 
         | "dec", Any, Op1(varIndex) ->
             let read, write = byRefVariable varIndex
@@ -341,8 +367,25 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator) =
         | "print", Any, NoOps ->
             textConst instruction.Text.Value |> printText |> addStatement
 
+        | "print_num", Any, Op1(number) ->
+            number
+            |> toInt16
+            |> NumberToTextExpr
+            |> printText
+            |> addStatement
+
         | "print_obj", Any, Op1(obj) ->
             objectName obj |> printText |> addStatement
+
+        | "print_paddr", Any, Op1(address) ->
+            let baseAddress = initTemp (address .*. packedMultiplier)
+            let address = 
+                if memory.Version = 6 || memory.Version = 7 then
+                    initTemp (baseAddress .+. stringsOffset)
+                else
+                    baseAddress
+
+            ReadMemoryTextExpr(address) |> printText |> addStatement
 
         | "quit", Any, NoOps ->
             QuitStmt |> addStatement

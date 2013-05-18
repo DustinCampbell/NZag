@@ -366,6 +366,28 @@ and Memory private (stream : Stream) =
     member x.WriteByte(address, value) =
         x.WriteByte(translate address, value)
 
+    member x.WriteBytes(address, value) =
+        let count = value |> Array.length
+
+        if address > (size - count) then
+            argOutOfRange "address" "Expected address to be in range 0 to %d" (size - count)
+
+        let mutable index = 0
+
+        while index < count do
+            let chunkIndex = (address + index) / ChunkSize
+            let chunk = chunks.[chunkIndex]
+            let chunkStart = chunkIndex * ChunkSize
+            let chunkEnd = chunkStart + ChunkSize
+            let chunkOffset = (address + index) - chunkStart
+            let amountToWrite = min (count - index) (chunkEnd - (chunkStart + chunkOffset))
+
+            Array.blit value index chunk chunkOffset amountToWrite
+            index <- index + amountToWrite
+
+    member x.WriteBytes(address, value) =
+        x.WriteBytes(translate address, value)
+
     member x.WriteWord(address, value: uint16) =
         if address > size - 2 then
             argOutOfRange "address" "Expected address to be in range 0 to %d" (size - 2)

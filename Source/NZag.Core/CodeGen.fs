@@ -13,6 +13,14 @@ type IMachine =
     abstract member Compile : Routine -> ZCompileResult
     abstract member GetCallSite : Address -> ZFuncCallSite
 
+    abstract member ReadZText : address:int -> string
+
+    abstract member WriteOutputChar : ch:char -> unit
+    abstract member WriteOutputText : s:string -> unit
+
+    abstract member Randomize : seed:int16 -> unit
+    abstract member NextRandomNumber : range:int16 -> uint16
+
 and ZCompileResult =
   { Routine : Routine
     ZFunc : ZFunc
@@ -129,6 +137,9 @@ type IArguments =
 
 type IRuntimeFunctions =
     abstract member GetCallSite : loadAddress:(unit -> unit) -> unit
+    abstract member ReadZText : loadAddress:(unit -> unit) -> unit
+    abstract member WriteOutputChar : loadChar:(unit -> unit) -> unit
+    abstract member WriteOutputText : loadText:(unit -> unit) -> unit
 
 type IEvaluationStack =
     abstract member Load : bool -> unit
@@ -279,12 +290,24 @@ type ILBuilder (generator: ILGenerator) =
 
     member x.RuntimeFunctions =
         let getCallSite = typeof<IMachine>.GetMethod("GetCallSite")
+        let readZText = typeof<IMachine>.GetMethod("ReadZText")
+        let writeOutputChar = typeof<IMachine>.GetMethod("WriteOutputChar")
+        let writeOutputText = typeof<IMachine>.GetMethod("WriteOutputText")
+
+        let invoke loadArgs methodInfo =
+            x.Arguments.LoadMachine()
+            loadArgs()
+            x.Call(methodInfo)
 
         { new IRuntimeFunctions with
             member y.GetCallSite loadAddress =
-                x.Arguments.LoadMachine()
-                loadAddress()
-                x.Call(getCallSite) }
+                invoke loadAddress getCallSite
+            member y.ReadZText loadAddress =
+                invoke loadAddress readZText
+            member y.WriteOutputChar loadChar =
+                invoke loadChar writeOutputChar
+            member y.WriteOutputText loadText =
+                invoke loadText writeOutputText }
 
     member x.EvaluationStack =
         { new IEvaluationStack with
@@ -551,13 +574,19 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
         | Int32(v) -> builder.EvaluationStack.Load(v)
         | Text(v)  -> builder.EvaluationStack.Load(v)
 
+    let emitConversion = function
+        | ConversionKind.ToInt16 ->
+            builder.Convert.ToInt16()
+        | kind ->
+            failcompilef "Can't emit code for conversion: %A" kind
+
     let emitUnaryOperation = function
         | UnaryOperationKind.Not ->
             builder.Math.Not()
         | UnaryOperationKind.Negate ->
             builder.Math.Negate()
         | kind ->
-            builder.ThrowException<RuntimeException>(sprintf "Can't emit code for unary operator: %A" kind)
+            failcompilef "Can't emit code for unary operator: %A" kind
 
     let emitBinaryOperation = function
         | BinaryOperationKind.Add ->
@@ -591,7 +620,7 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
         | BinaryOperationKind.GreaterThan ->
             builder.Compare.GreaterThan()
         | kind ->
-            builder.ThrowException<RuntimeException>(sprintf "Can't emit code for unary operator: %A" kind)
+            failcompilef "Can't emit code for binary operator: %A" kind
 
     let rec emitExpression = function
         | ConstantExpr(c) ->
@@ -613,6 +642,17 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
             emitExpression l
             emitExpression r
             emitBinaryOperation k
+        | ConversionExpr(k,e) ->
+            emitExpression e
+            emitConversion k
+        | NumberToTextExpr(e) ->
+            let temp = builder.NewLocal(typeof<int16>)
+            emitExpression e
+            temp.Store()
+
+            temp.LoadAddress()
+            builder.Call(typeof<int16>.GetMethod("ToString", [||]))
+
         | CallExpr(a,args) ->
             match a with
             | ConstantExpr(Word(a)) -> emitDirectCall (ByteAddress(a)) args
@@ -625,6 +665,9 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
             builder.Arguments.LoadMemory()
             emitExpression a
             builder.Call(readWord)
+        | ReadMemoryTextExpr(a) ->
+            builder.RuntimeFunctions.ReadZText
+                (fun () -> emitExpression a)
         | e ->
             unexpectedNodeFound e
 
@@ -700,6 +743,14 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
             emitExpression a
             emitExpression v
             builder.Call(writeWord)
+        | DiscardValueStmt(e) ->
+            emitExpression e
+            builder.EvaluationStack.Pop()
+        | PrintTextStmt(e) ->
+            builder.RuntimeFunctions.WriteOutputText
+                (fun () -> emitExpression e)
+        | RuntimeExceptionStmt(s) ->
+            builder.ThrowException<RuntimeException>(s)
         | s ->
             unexpectedNodeFound s
 

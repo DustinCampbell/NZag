@@ -1,5 +1,6 @@
 ﻿namespace NZag.Core
 
+open System
 open NZag.Utilities
 
 type Machine (memory : Memory) as this =
@@ -15,6 +16,13 @@ type Machine (memory : Memory) as this =
     let releaseLocalArray arr =
         arr |> Array.clear
         localArrayPool |> Stack.push arr
+
+    let textReader = new ZTextReader(memory)
+
+    let outputStreams = new OutputStreamCollection(memory)
+    let mutable screen = NullInstances.Screen
+
+    let mutable random = new Random()
 
     let compile =
         let compileAux (routine: Routine) =
@@ -50,11 +58,24 @@ type Machine (memory : Memory) as this =
 
     member x.Memory = memory
 
+    member x.RunAsync() =
+        async {
+            let reader = new RoutineReader(memory)
+            let callSite = getCallSite mainRoutineAddress
+            let stack = Array.zeroCreate 1024
+            callSite.Invoke0(memory, stack, 0) |> ignore
+        }
+
     member x.Run() =
-        let reader = new RoutineReader(memory)
-        let callSite = getCallSite mainRoutineAddress
-        let stack = Array.zeroCreate 1024
-        callSite.Invoke0(memory, stack, 0)
+        Async.RunSynchronously(x.RunAsync())
+
+    member x.Randomize seed =
+        (x :> IMachine).Randomize(seed)
+
+    member x.RegisterScreen newScreen =
+        screen <- newScreen
+        // TODO: Write screen header values
+        outputStreams.RegisterScreenStream(newScreen)
 
     interface IMachine with
 
@@ -74,4 +95,23 @@ type Machine (memory : Memory) as this =
             compile routine
         member y.GetCallSite(address) =
             getCallSite address
+
+        member y.ReadZText(address) =
+            textReader.ReadString(RawAddress(address))
+
+        member y.WriteOutputChar(ch) =
+            let work = (outputStreams :> IOutputStream).WriteCharAsync(ch)
+            Async.RunSynchronously(work |> awaitTask)
+        member y.WriteOutputText(s) =
+            let work = (outputStreams :> IOutputStream).WriteTextAsync(s)
+            Async.RunSynchronously(work |> awaitTask)
+
+        member y.Randomize(seed) =
+            random <- if seed = 0s then new Random(int DateTime.Now.Ticks)
+                      else new Random(int +seed)
+        member y.NextRandomNumber(range) =
+            let minValue = 1us
+            let maxValue = max minValue (uint16 (range - 1s))
+            uint16 (random.Next(int minValue, int maxValue))
+
 

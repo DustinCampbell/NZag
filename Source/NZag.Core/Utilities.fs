@@ -4,6 +4,7 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Text
+open System.Threading.Tasks
 
 [<AutoOpen>]
 module Patterns =
@@ -47,6 +48,20 @@ module Exceptions =
 
     let argOutOfRange name format =
         Printf.ksprintf (fun s -> raise <| ArgumentOutOfRangeException(name, s)) format
+
+[<AutoOpen>]
+module Async =
+
+    let awaitTask (task: Task) =
+        let continuation (t: Task) : unit =
+            match t.IsFaulted with
+            | true -> raise t.Exception
+            | arg -> ()
+
+        task.ContinueWith(continuation, TaskContinuationOptions.ExecuteSynchronously) |> Async.AwaitTask
+
+    let startAsTask (work: Async<unit>) =
+        Task.Factory.StartNew(fun () -> work |> Async.RunSynchronously)
 
 [<RequireQualifiedAccess>]
 module String =
@@ -265,4 +280,3 @@ module Extensions =
                 offset <- offset + read
 
             buffer
-

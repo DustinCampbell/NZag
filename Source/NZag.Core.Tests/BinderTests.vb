@@ -20,6 +20,135 @@ LABEL 00
     End Sub
 
     <Fact>
+    Sub CZech_2448()
+        ' 2449:  0d 11 00                store           g01 #00
+        ' 244c:  0d 12 00                store           g02 #00
+        ' 244f:  0d 13 00                store           g03 #00
+        ' 2452:  0d 14 00                store           g04 #00
+        ' 2455:  b2 ...                  print           "CZECH: the Comprehensive Z-machine Emulation CHecker, version "
+        ' 2488:  8d 0b 1e                print_paddr     s001
+        ' 248b:  b2 ...                  print           "^Test numbers appear in [brackets].^"
+        ' 24ac:  8f 02 36                call_1n         8d8
+        ' 24af:  b2 ...                  print           "^print works or you wouldn't be seeing this.^^"
+        ' 24d2:  da 1f 02 3d 00          call_2n         8f4 #00
+        ' 24d7:  b2 ...                  print           "^"
+        ' 24da:  da 1f 02 a9 00          call_2n         aa4 #00
+        ' 24df:  b2 ...                  print           "^"
+        ' 24e2:  da 1f 03 34 00          call_2n         cd0 #00
+        ' 24e7:  b2 ...                  print           "^"
+        ' 24ea:  da 1f 03 b8 00          call_2n         ee0 #00
+        ' 24ef:  b2 ...                  print           "^"
+        ' 24f2:  da 1f 04 23 00          call_2n         108c #00
+        ' 24f7:  b2 ...                  print           "^"
+        ' 24fa:  da 1f 04 e9 00          call_2n         13a4 #00
+        ' 24ff:  b2 ...                  print           "^"
+        ' 2502:  da 1f 05 b2 00          call_2n         16c8 #00
+        ' 2507:  b2 ...                  print           "^"
+        ' 250a:  da 1f 06 bd 00          call_2n         1af4 #00
+        ' 250f:  b2 ...                  print           "^"
+        ' 2512:  da 1f 08 07 00          call_2n         201c #00
+        ' 2517:  b2 ...                  print           "^"
+        ' 251a:  da 1f 08 31 00          call_2n         20c4 #00
+        ' 251f:  b2 ...                  print           "^"
+        ' 2522:  da 1f 04 54 00          call_2n         1150 #00
+        ' 2527:  b2 ...                  print           "^"
+        ' 252a:  b2 ...                  print           "^^Performed "
+        ' 2535:  e6 bf 11                print_num       g01
+        ' 2538:  b2 ...                  print           " tests.^"
+        ' 2541:  b2 ...                  print           "Passed: "
+        ' 254a:  e6 bf 12                print_num       g02
+        ' 254d:  b2 ...                  print           ", Failed: "
+        ' 2558:  e6 bf 13                print_num       g03
+        ' 255b:  b2 ...                  print           ", Print tests: "
+        ' 2568:  e6 bf 14                print_num       g04
+        ' 256b:  b2 ...                  print           "^"
+        ' 256e:  74 12 13 00             add             g02 g03 -> sp
+        ' 2572:  74 00 14 00             add             sp g04 -> sp
+        ' 2576:  61 00 11 80 42          je              sp g01 25bb
+        ' 257b:  b2 ...                  print           "^ERROR - Total number of tests should equal"
+        ' 259e:  b2 ...                  print           " passed + failed + print tests!^^"
+        ' 25bb:  b2 ...                  print           "Didn't crash: hooray!^"
+        ' 25ce:  b2 ...                  print           "Last test: quit!^"
+        ' 25dd:  ba                      quit            
+
+        Dim expected =
+<![CDATA[
+# temps: 15
+
+LABEL 00
+    write-word(07df) <- 00
+    write-word(07e1) <- 00
+    write-word(07e3) <- 00
+    write-word(07e5) <- 00
+    print: "CZECH: the Comprehensive Z-machine Emulation CHecker, version "
+    print: read-text(2c78)
+    print: "\nTest numbers appear in [brackets].\n"
+    discard(call 08d8 ())
+    print: "\nprint works or you wouldn't be seeing this.\n\n"
+    discard(call 08f4 (00))
+    print: "\n"
+    discard(call 0aa4 (00))
+    print: "\n"
+    discard(call 0cd0 (00))
+    print: "\n"
+    discard(call 0ee0 (00))
+    print: "\n"
+    discard(call 108c (00))
+    print: "\n"
+    discard(call 13a4 (00))
+    print: "\n"
+    discard(call 16c8 (00))
+    print: "\n"
+    discard(call 1af4 (00))
+    print: "\n"
+    discard(call 201c (00))
+    print: "\n"
+    discard(call 20c4 (00))
+    print: "\n"
+    discard(call 1150 (00))
+    print: "\n"
+    print: "\n\nPerformed "
+    temp00 <- read-byte(07df)
+    print: number-to-text(int16(temp00))
+    print: " tests.\n"
+    print: "Passed: "
+    temp01 <- read-byte(07e1)
+    print: number-to-text(int16(temp01))
+    print: ", Failed: "
+    temp02 <- read-byte(07e3)
+    print: number-to-text(int16(temp02))
+    print: ", Print tests: "
+    temp03 <- read-byte(07e5)
+    print: number-to-text(int16(temp03))
+    print: "\n"
+    temp04 <- read-byte(07e1)
+    temp05 <- read-byte(07e3)
+    temp06 <- int16(temp04)
+    temp07 <- int16(temp05)
+    push-SP: (temp06 + temp07)
+    temp08 <- pop-SP
+    temp09 <- read-byte(07e5)
+    temp0a <- int16(temp08)
+    temp0b <- int16(temp09)
+    push-SP: (temp0a + temp0b)
+    temp0c <- pop-SP
+    temp0d <- read-byte(07df)
+    temp0e <- (temp0c = temp0d)
+    if (temp0e) is true then
+        jump-to: LABEL 02
+LABEL 01
+    print: "\nERROR - Total number of tests should equal"
+    print: " passed + failed + print tests!\n\n"
+LABEL 02
+    print: "Didn't crash: hooray!\n"
+    print: "Last test: quit!\n"
+    quit
+]]>
+
+        Test(CZech, &H2448, expected)
+    End Sub
+
+    <Fact>
     Sub Zork1_4E3B()
         ' 4e3b:  b2 ...                  PRINT           "a "
         ' 4e3e:  aa 01                   PRINT_OBJ       L00
