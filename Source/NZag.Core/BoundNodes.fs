@@ -180,7 +180,7 @@ module BoundNodeConstruction =
     let unaryOp e k = UnaryOperationExpr(k, e)
     let binaryOp l r k = BinaryOperationExpr(k, l, r)
 
-    let inline (.-) e = UnaryOperationKind.Negate |> unaryOp e
+    let inline negate e = UnaryOperationKind.Negate |> unaryOp e
 
     let inline (.+.) l r = BinaryOperationKind.Add |> binaryOp l r
     let inline (.-.) l r = BinaryOperationKind.Subtract |> binaryOp l r

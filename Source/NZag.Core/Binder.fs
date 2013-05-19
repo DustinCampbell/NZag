@@ -266,6 +266,16 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         | "and", Any, Op2(left, right) ->
             store (left .&. right)
 
+        | "art_shift", AtLeast 5uy, Op2(number, places) ->
+            let number = number |> toInt16
+            let places = places |> toInt16
+
+            ifThenElse (places .>. zero)
+                (fun () ->
+                    store (number .<<. (places .&. (int32Const 0x1f))))
+                (fun () ->
+                    store (number .>>. ((negate places) .&. (int32Const 0x1f))))
+
         | "call", Any, OpAndList(address, args)
         | "call_2s", AtLeast 4uy, OpAndList(address, args)
         | "call_vs", Any, OpAndList(address, args) ->
@@ -379,6 +389,15 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             let address = initTemp (address .+. offset)
 
             store (ReadMemoryWordExpr(address))
+
+        | "log_shift", AtLeast 5uy, Op2(number, places) ->
+            let places = places |> toInt16
+
+            ifThenElse (places .>. zero)
+                (fun () ->
+                    store (number .<<. (places .&. (int32Const 0x1f))))
+                (fun () ->
+                    store (number .>>. ((negate places) .&. (int32Const 0x1f))))
 
         | "mod", Any, Op2(left, right) ->
             let left = left |> toInt16
