@@ -112,6 +112,15 @@ type Expression =
     /// Reads the specified attribute of the object whose number is represented by the given expression
     | ReadObjectAttributeExpr of Expression * Expression
 
+    /// Reads the child of the object whose number is represented by the given expression
+    | ReadObjectChildExpr of Expression
+
+    /// Reads the parent of the object whose number is represented by the given expression
+    | ReadObjectParentExpr of Expression
+
+    /// Reads the sibling of the object whose number is represented by the given expression
+    | ReadObjectSiblingExpr of Expression
+
     /// Generates a random number using the given range expression
     | GenerateRandomNumberExpr of Expression
 
@@ -293,6 +302,12 @@ module BoundNodeVisitors =
             fexpr (ReadObjectNameExpr(rewriteExpr e))
         | ReadObjectAttributeExpr(e1, e2) ->
             fexpr (ReadObjectAttributeExpr(rewriteExpr e1, rewriteExpr e2))
+        | ReadObjectChildExpr(e) ->
+            fexpr (ReadObjectChildExpr(rewriteExpr e))
+        | ReadObjectParentExpr(e) ->
+            fexpr (ReadObjectParentExpr(rewriteExpr e))
+        | ReadObjectSiblingExpr(e) ->
+            fexpr (ReadObjectSiblingExpr(rewriteExpr e))
         | GenerateRandomNumberExpr(e) ->
             fexpr (GenerateRandomNumberExpr(rewriteExpr e))
 
@@ -365,6 +380,9 @@ module BoundNodeVisitors =
             | ReadMemoryWordExpr(e)
             | ReadMemoryTextExpr(e)
             | ReadObjectNameExpr(e)
+            | ReadObjectChildExpr(e)
+            | ReadObjectParentExpr(e)
+            | ReadObjectSiblingExpr(e)
             | GenerateRandomNumberExpr(e) ->
                 visitExpr e
             | BinaryOperationExpr(_,e1,e2)
@@ -560,6 +578,18 @@ type BoundNodeDumper (builder : StringBuilder) =
                 dumpExpression o
                 append ", "
                 dumpExpression a)
+        | ReadObjectChildExpr(e) ->
+            append "obj-child"
+            parenthesize (fun () ->
+                dumpExpression e)
+        | ReadObjectParentExpr(e) ->
+            append "obj-parent"
+            parenthesize (fun () ->
+                dumpExpression e)
+        | ReadObjectSiblingExpr(e) ->
+            append "obj-sibling"
+            parenthesize (fun () ->
+                dumpExpression e)
         | GenerateRandomNumberExpr(e) ->
             append "random"
             parenthesize (fun () ->

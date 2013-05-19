@@ -587,6 +587,7 @@ and Memory private (stream : Stream) =
 module Header =
 
     let private offset_InitialPC = ByteAddress(0x06us)
+    let private offset_ObjectTableAddress = ByteAddress(0x0aus)
     let private offset_GlobalVariableTableAddress = ByteAddress(0x0cus)
     let private offset_AbbreviationTableAddress = ByteAddress(0x18us)
     let private offset_RoutinesOffset = ByteAddress(0x28us)
@@ -599,6 +600,9 @@ module Header =
             ByteAddress(initialPC - 1us)
         else
             RoutineAddress(initialPC)
+
+    let readObjectTableAddress (memory: Memory) =
+        offset_ObjectTableAddress |> memory.ReadWord |> ByteAddress
 
     let readGlobalVariableTableAddress (memory: Memory) =
         offset_GlobalVariableTableAddress |> memory.ReadWord |> ByteAddress

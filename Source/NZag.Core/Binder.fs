@@ -336,6 +336,19 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
             store (left ./. right)
 
+        | "get_child", Any, Op1(objNum) ->
+            let result = initTemp (ReadObjectChildExpr(objNum))
+            store result
+            branchIf (result .<>. zero)
+
+        | "get_parent", Any, Op1(objNum) ->
+            store (ReadObjectParentExpr(objNum))
+
+        | "get_sibling", Any, Op1(objNum) ->
+            let result = initTemp (ReadObjectSiblingExpr(objNum))
+            store result
+            branchIf (result .<>. zero)
+
         | "inc", Any, Op1(varIndex) ->
             let read, write = byRefVariable varIndex
 
@@ -602,6 +615,45 @@ type RoutineBinder(memory: Memory, debugging: bool) =
 
             updater.AddStatement(s'))
 
+    let lower_ObjectNumbersToAddresses tree =
+        let objectTableAddress = (memory |> Header.readObjectTableAddress |> (fun a -> a.IntValue)) |> int32Const
+        let propertyDefaultsSize = (if memory.Version <= 3 then 31 else 63) |> int32Const
+        let objectEntriesAddress = objectTableAddress .+. (propertyDefaultsSize .*. two)
+        let objectEntrySize = (if memory.Version <= 3 then 9 else 14) |> int32Const
+        let objectParentOffset = (if memory.Version <= 3 then 4 else 6) |> int32Const
+        let objectSiblingOffset = (if memory.Version <= 3 then 5 else 8) |> int32Const
+        let objectChildOffset = (if memory.Version <= 3 then 6 else 10) |> int32Const
+        let objectPropertyTableOffset = (if memory.Version <= 3 then 7 else 12) |> int32Const
+
+        let readObjectNumber address =
+            if memory.Version <= 3 then readByte address
+            else readWord address
+
+        let computeObjectAddress objNum =
+            ((objNum .-. one) .*. objectEntrySize) .+. objectEntriesAddress
+
+        let readObjectChild objNum =
+            (computeObjectAddress objNum) .+. objectChildOffset |> readObjectNumber
+
+        let readObjectParent objNum =
+            (computeObjectAddress objNum) .+. objectParentOffset |> readObjectNumber
+
+        let readObjectSibling objNum =
+            (computeObjectAddress objNum) .+. objectSiblingOffset |> readObjectNumber
+
+        tree |> updateTree (fun s updater ->
+            let s' =
+                s |> rewriteStatement
+                    (fun s -> s)
+                    (fun e -> 
+                        match e with
+                        | ReadObjectChildExpr(o) -> readObjectChild o
+                        | ReadObjectParentExpr(o) -> readObjectParent o
+                        | ReadObjectSiblingExpr(o) -> readObjectSibling o
+                        | e -> e)
+
+            updater.AddStatement(s'))
+
     let optimize_PropagateConstants tree =
         let graph = Graphs.buildControlFlowGraph tree
         let reachingDefinitions = Graphs.computeReachingDefinitions graph
@@ -811,6 +863,7 @@ type RoutineBinder(memory: Memory, debugging: bool) =
     let lower tree =
         tree
         |> lower_GlobalVariableReadsAndWrites
+        |> lower_ObjectNumbersToAddresses
 
     let optimize tree =
         tree |> fixedpoint (fun tree ->
