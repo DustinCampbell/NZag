@@ -625,9 +625,8 @@ type BoundNodeDumper (builder : StringBuilder) =
             append " <- "
             dumpExpression v
         | DiscardValueStmt(e) ->
-            append "discard"
-            parenthesize (fun () ->
-                dumpExpression e)
+            append "discard: "
+            dumpExpression e
         | PrintTextStmt(e) ->
             append "print: "
             dumpExpression e

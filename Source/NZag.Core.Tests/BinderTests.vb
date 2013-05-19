@@ -62,7 +62,7 @@ LABEL 02
     print: read-text(temp05)
     print: ")"
 LABEL 03
-    discard(call 08ec ())
+    discard: call 08ec ()
     print: " Expected "
     temp06 <- L01
     print: number-to-text(int16(temp06))
@@ -72,7 +72,7 @@ LABEL 03
     print: "\n\n"
     jump-to: LABEL 05
 LABEL 04
-    discard(call 08e0 ())
+    discard: call 08e0 ()
 LABEL 05
     return: 1
 ]]>
@@ -189,126 +189,126 @@ LABEL 02
     print: "bad!"
     quit
 LABEL 03
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     print: "je"
     if (1) is false then
         jump-to: LABEL 1f
 LABEL 04
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (0) is true then
         jump-to: LABEL 1f
 LABEL 05
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (0) is true then
         jump-to: LABEL 1f
 LABEL 06
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (1) is false then
         jump-to: LABEL 1f
 LABEL 07
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (0) is true then
         jump-to: LABEL 1f
 LABEL 08
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (1) is false then
         jump-to: LABEL 1f
 LABEL 09
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (0001) is false then
         jump-to: LABEL 1f
 LABEL 0a
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (0001) is false then
         jump-to: LABEL 1f
 LABEL 0b
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (0001) is false then
         jump-to: LABEL 1f
 LABEL 0c
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (0000) is true then
         jump-to: LABEL 1f
 LABEL 0d
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     print: "jg"
     if (int16(05) > int16(05)) is true then
         jump-to: LABEL 1f
 LABEL 0e
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (int16(01) > int16(00)) is false then
         jump-to: LABEL 1f
 LABEL 0f
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (int16(00) > int16(01)) is true then
         jump-to: LABEL 1f
 LABEL 10
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (int16(ffff) > int16(fffe)) is false then
         jump-to: LABEL 1f
 LABEL 11
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (int16(fffe) > int16(ffff)) is true then
         jump-to: LABEL 1f
 LABEL 12
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (int16(01) > int16(ffff)) is false then
         jump-to: LABEL 1f
 LABEL 13
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (int16(ffff) > int16(01)) is true then
         jump-to: LABEL 1f
 LABEL 14
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     print: "jl"
     if (int16(05) < int16(05)) is true then
         jump-to: LABEL 1f
 LABEL 15
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (int16(01) < int16(00)) is true then
         jump-to: LABEL 1f
 LABEL 16
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (int16(00) < int16(01)) is false then
         jump-to: LABEL 1f
 LABEL 17
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (int16(ffff) < int16(fffe)) is true then
         jump-to: LABEL 1f
 LABEL 18
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (int16(fffe) < int16(ffff)) is false then
         jump-to: LABEL 1f
 LABEL 19
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (int16(01) < int16(ffff)) is true then
         jump-to: LABEL 1f
 LABEL 1a
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (int16(ffff) < int16(01)) is false then
         jump-to: LABEL 1f
 LABEL 1b
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     print: "jz"
     if (1) is false then
         jump-to: LABEL 1f
 LABEL 1c
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (0) is true then
         jump-to: LABEL 1f
 LABEL 1d
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     if (0) is true then
         jump-to: LABEL 1f
 LABEL 1e
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     print: "offsets"
     L01 <- call 0a8c (00)
     temp03 <- L01
-    discard(call 07e4 (temp03, 00, 0b1f))
+    discard: call 07e4 (temp03, 00, 0b1f)
     L01 <- call 0a8c (01)
     temp04 <- L01
-    discard(call 07e4 (temp04, 01, 0b21))
+    discard: call 07e4 (temp04, 01, 0b21)
     return: 1
 LABEL 1f
     print: "\nbad ["
@@ -461,15 +461,15 @@ LABEL 02
     temp03 <- pop-SP
     L01 <- temp03
     temp04 <- L01
-    discard(call 07e4 (temp04, 08, 0b23))
+    discard: call 07e4 (temp04, 08, 0b23)
     temp05 <- pop-SP
     write-word(04fa) <- temp05
     temp06 <- read-byte(04fa)
-    discard(call 07e4 (temp06, 09, 0b26))
+    discard: call 07e4 (temp06, 09, 0b26)
     print: "store"
     L01 <- 05
     temp07 <- L01
-    discard(call 07e4 (temp07, 05))
+    discard: call 07e4 (temp07, 05)
     print: "load"
     L02 <- 05
     L01 <- 06
@@ -480,12 +480,12 @@ LABEL 02
     L02 <- temp0a
     temp0b <- L01
     temp0c <- L02
-    discard(call 07e4 (temp0b, temp0c))
+    discard: call 07e4 (temp0b, temp0c)
     print: "dec"
-    discard(call 0cc0 (05, 04))
-    discard(call 0cc0 (00, ffff))
-    discard(call 0cc0 (fff8, fff7))
-    discard(call 0cc0 (8000, 7fff))
+    discard: call 0cc0 (05, 04)
+    discard: call 0cc0 (00, ffff)
+    discard: call 0cc0 (fff8, fff7)
+    discard: call 0cc0 (8000, 7fff)
     push-SP: 01
     push-SP: 0a
     temp0d <- peek-SP
@@ -493,21 +493,21 @@ LABEL 02
     temp0e <- pop-SP
     L02 <- temp0e
     temp0f <- L02
-    discard(call 07e4 (temp0f, 09, 0b29))
+    discard: call 07e4 (temp0f, 09, 0b29)
     temp10 <- pop-SP
     L02 <- temp10
     temp11 <- L02
-    discard(call 07e4 (temp11, 01, 0b2a))
+    discard: call 07e4 (temp11, 01, 0b2a)
     write-word(04f0) <- 03
     temp12 <- read-byte(04f0)
     write-word(04f0) <- (int16(temp12) - int16(1))
     temp13 <- read-byte(04f0)
-    discard(call 07e4 (temp13, 02, 0b2b))
+    discard: call 07e4 (temp13, 02, 0b2b)
     print: "inc"
-    discard(call 0cb0 (05, 06))
-    discard(call 0cb0 (ffff, 00))
-    discard(call 0cb0 (fff8, fff9))
-    discard(call 0cb0 (7fff, 8000))
+    discard: call 0cb0 (05, 06)
+    discard: call 0cb0 (ffff, 00)
+    discard: call 0cb0 (fff8, fff9)
+    discard: call 0cb0 (7fff, 8000)
     push-SP: 01
     push-SP: 0a
     temp14 <- peek-SP
@@ -515,16 +515,16 @@ LABEL 02
     temp15 <- pop-SP
     L02 <- temp15
     temp16 <- L02
-    discard(call 07e4 (temp16, 0b, 0b2d))
+    discard: call 07e4 (temp16, 0b, 0b2d)
     temp17 <- pop-SP
     L02 <- temp17
     temp18 <- L02
-    discard(call 07e4 (temp18, 01, 0b2e))
+    discard: call 07e4 (temp18, 01, 0b2e)
     write-word(04f0) <- 03
     temp19 <- read-byte(04f0)
     write-word(04f0) <- (int16(temp19) + int16(1))
     temp1a <- read-byte(04f0)
-    discard(call 07e4 (temp1a, 04, 0b2f))
+    discard: call 07e4 (temp1a, 04, 0b2f)
     print: "\n    dec_chk"
     L02 <- 03
     temp1b <- L02
@@ -533,56 +533,56 @@ LABEL 02
     if (int16(temp1c) < int16(03e8)) is false then
         jump-to: LABEL 0c
 LABEL 03
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     temp1d <- L02
     temp1e <- (int16(temp1d) - int16(1))
     L02 <- temp1e
     if (int16(temp1e) < int16(01)) is true then
         jump-to: LABEL 0c
 LABEL 04
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     temp1f <- L02
     temp20 <- (int16(temp1f) - int16(1))
     L02 <- temp20
     if (int16(temp20) < int16(01)) is false then
         jump-to: LABEL 0c
 LABEL 05
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     temp21 <- L02
     temp22 <- (int16(temp21) - int16(1))
     L02 <- temp22
     if (int16(temp22) < int16(00)) is false then
         jump-to: LABEL 0c
 LABEL 06
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     temp23 <- L02
     temp24 <- (int16(temp23) - int16(1))
     L02 <- temp24
     if (int16(temp24) < int16(fffe)) is true then
         jump-to: LABEL 0c
 LABEL 07
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     temp25 <- L02
     temp26 <- (int16(temp25) - int16(1))
     L02 <- temp26
     if (int16(temp26) < int16(fffe)) is false then
         jump-to: LABEL 0c
 LABEL 08
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     temp27 <- L02
     temp28 <- (int16(temp27) - int16(1))
     L02 <- temp28
     if (int16(temp28) < int16(03e8)) is false then
         jump-to: LABEL 0c
 LABEL 09
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     temp29 <- L02
     temp2a <- (int16(temp29) - int16(1))
     L02 <- temp2a
     if (int16(temp2a) < int16(fe0c)) is true then
         jump-to: LABEL 0c
 LABEL 0a
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     push-SP: 01
     push-SP: 0a
     temp2b <- peek-SP
@@ -591,22 +591,22 @@ LABEL 0a
     if (int16(temp2c) < int16(05)) is true then
         jump-to: LABEL 0c
 LABEL 0b
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     temp2d <- pop-SP
     L02 <- temp2d
     temp2e <- L02
-    discard(call 07e4 (temp2e, 09, 0b31))
+    discard: call 07e4 (temp2e, 09, 0b31)
     temp2f <- pop-SP
     L02 <- temp2f
     temp30 <- L02
-    discard(call 07e4 (temp30, 01, 0b33))
+    discard: call 07e4 (temp30, 01, 0b33)
     jump-to: LABEL 0d
 LABEL 0c
     print: "\nbad ["
     temp31 <- read-byte(04f2)
     print: number-to-text(int16(temp31))
     print: "]\n"
-    discard(call 08ec ())
+    discard: call 08ec ()
 LABEL 0d
     print: "inc_chk"
     L02 <- fffa
@@ -616,70 +616,70 @@ LABEL 0d
     if (int16(temp33) > int16(fe0c)) is false then
         jump-to: LABEL 17
 LABEL 0e
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     temp34 <- L02
     temp35 <- (int16(temp34) + int16(1))
     L02 <- temp35
     if (int16(temp35) > int16(03e8)) is true then
         jump-to: LABEL 17
 LABEL 0f
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     temp36 <- L02
     temp37 <- (int16(temp36) + int16(1))
     L02 <- temp37
     if (int16(temp37) > int16(fffd)) is true then
         jump-to: LABEL 17
 LABEL 10
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     temp38 <- L02
     temp39 <- (int16(temp38) + int16(1))
     L02 <- temp39
     if (int16(temp39) > int16(fffd)) is false then
         jump-to: LABEL 17
 LABEL 11
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     temp3a <- L02
     temp3b <- (int16(temp3a) + int16(1))
     L02 <- temp3b
     if (int16(temp3b) > int16(00)) is true then
         jump-to: LABEL 17
 LABEL 12
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     temp3c <- L02
     temp3d <- (int16(temp3c) + int16(1))
     L02 <- temp3d
     if (int16(temp3d) > int16(01)) is true then
         jump-to: LABEL 17
 LABEL 13
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     temp3e <- L02
     temp3f <- (int16(temp3e) + int16(1))
     L02 <- temp3f
     if (int16(temp3f) > int16(01)) is true then
         jump-to: LABEL 17
 LABEL 14
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     temp40 <- L02
     temp41 <- (int16(temp40) + int16(1))
     L02 <- temp41
     if (int16(temp41) > int16(01)) is false then
         jump-to: LABEL 17
 LABEL 15
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     temp42 <- L02
     temp43 <- (int16(temp42) + int16(1))
     L02 <- temp43
     if (int16(temp43) > int16(03e8)) is true then
         jump-to: LABEL 17
 LABEL 16
-    discard(call 08e0 ())
+    discard: call 08e0 ()
     jump-to: LABEL 18
 LABEL 17
     print: "\nbad ["
     temp44 <- read-byte(04f2)
     print: number-to-text(int16(temp44))
     print: "]!\n"
-    discard(call 08ec ())
+    discard: call 08ec ()
 LABEL 18
     return: 1]]>
 
@@ -750,29 +750,29 @@ LABEL 00
     print: "CZECH: the Comprehensive Z-machine Emulation CHecker, version "
     print: read-text(2c78)
     print: "\nTest numbers appear in [brackets].\n"
-    discard(call 08d8 ())
+    discard: call 08d8 ()
     print: "\nprint works or you wouldn't be seeing this.\n\n"
-    discard(call 08f4 (00))
+    discard: call 08f4 (00)
     print: "\n"
-    discard(call 0aa4 (00))
+    discard: call 0aa4 (00)
     print: "\n"
-    discard(call 0cd0 (00))
+    discard: call 0cd0 (00)
     print: "\n"
-    discard(call 0ee0 (00))
+    discard: call 0ee0 (00)
     print: "\n"
-    discard(call 108c (00))
+    discard: call 108c (00)
     print: "\n"
-    discard(call 13a4 (00))
+    discard: call 13a4 (00)
     print: "\n"
-    discard(call 16c8 (00))
+    discard: call 16c8 (00)
     print: "\n"
-    discard(call 1af4 (00))
+    discard: call 1af4 (00)
     print: "\n"
-    discard(call 201c (00))
+    discard: call 201c (00)
     print: "\n"
-    discard(call 20c4 (00))
+    discard: call 20c4 (00)
     print: "\n"
-    discard(call 1150 (00))
+    discard: call 1150 (00)
     print: "\n"
     print: "\n\nPerformed "
     temp00 <- read-byte(04f2)
