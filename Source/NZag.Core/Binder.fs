@@ -379,6 +379,11 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
             branchIf (left .>. right)
 
+        | "jin", Any, Op2(objNum1, objNum2) ->
+            let obj1Parent = ReadObjectParentExpr(objNum1)
+
+            branchIf (obj1Parent .=. objNum2)
+
         | "jl", Any, Op2(left, right) ->
             let left = left |> toInt16
             let right = right |> toInt16

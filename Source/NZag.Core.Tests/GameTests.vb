@@ -48,7 +48,8 @@ Subroutines [152]: call_1s.call_2s..call_vs2...call_vs.....ret.
     rtrue.rfalse.ret_popped.
     Computed call...
     check_arg_count................
-Objects [193]: get_parent....get_sibling.......get_child......jin
+Objects [193]: get_parent....get_sibling.......get_child......jin.......
+    test_attr
 ]]>
 
         Test(CZech, expected)
