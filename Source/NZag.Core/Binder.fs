@@ -191,6 +191,20 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
     let stringsOffset =
         int32Const (memory |> Header.readStringOffset).IntValue
 
+    let unpackRoutineAddress address =
+        let baseAddress = address .*. packedMultiplier
+        if memory.Version = 6 || memory.Version = 7 then
+            baseAddress .+. routinesOffset
+        else
+            baseAddress
+
+    let unpackStringAddress address =
+        let baseAddress = address .*. packedMultiplier
+        if memory.Version = 6 || memory.Version = 7 then
+            baseAddress .+. stringsOffset
+        else
+            baseAddress
+
     let addStatement s =
         builder.AddStatement(s)
 
@@ -219,6 +233,14 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
     let loopWhile condition whenTrue =
         builder.LoopWhile condition whenTrue
+
+    let call address args processResult =
+        ifThenElse (address .=. zero)
+            (fun () ->
+                processResult zero)
+            (fun () ->
+                let unpackedAddress = unpackRoutineAddress address
+                processResult (CallExpr(unpackedAddress, args)))
 
     let bindOperand = function
         | LargeConstantOperand(v) -> wordConst v
@@ -330,36 +352,14 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         | "call_vs", Any, OpAndList(address, args)
         | "call_vs2", AtLeast 4uy, OpAndList(address, args) ->
 
-            ifThenElse (address .=. zero)
-                (fun () ->
-                    store zero)
-                (fun () ->
-                    let baseAddress = address .*. packedMultiplier
-                    let address = 
-                        if memory.Version = 6 || memory.Version = 7 then
-                            baseAddress .+. routinesOffset
-                        else
-                            baseAddress
-
-                    store (CallExpr(address, args)))
+            call address args store
 
         | "call_1n", AtLeast 5uy, OpAndList(address, args)
         | "call_2n", AtLeast 5uy, OpAndList(address, args)
         | "call_vn", AtLeast 5uy, OpAndList(address, args)
         | "call_vn2", AtLeast 4uy, OpAndList(address, args) ->
 
-            ifThenElse (address .=. zero)
-                (fun () ->
-                    discard zero)
-                (fun () ->
-                    let baseAddress = address .*. packedMultiplier
-                    let address = 
-                        if memory.Version = 6 || memory.Version = 7 then
-                            baseAddress .+. routinesOffset
-                        else
-                            baseAddress
-
-                    discard (CallExpr(address, args)))
+            call address args discard
 
         | "check_arg_count", AtLeast 5uy, Op1(number) ->
             branchIf (number .<=. ArgCountExpr)
@@ -515,22 +515,20 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         | "print_num", Any, Op1(number) ->
             number
             |> toInt16
-            |> NumberToTextExpr
+            |> numberToText
             |> printText
             |> addStatement
 
         | "print_obj", Any, Op1(obj) ->
-            objectName obj |> printText |> addStatement
+            objectName obj
+            |> printText
+            |> addStatement
 
         | "print_paddr", Any, Op1(address) ->
-            let baseAddress = address .*. packedMultiplier
-            let address = 
-                if memory.Version = 6 || memory.Version = 7 then
-                    baseAddress .+. stringsOffset
-                else
-                    baseAddress
-
-            ReadMemoryTextExpr(address) |> printText |> addStatement
+            unpackStringAddress address
+            |> readText 
+            |> printText
+            |> addStatement
 
         | "pull", Any, Op1(varIndex) ->
             let read, write = byRefVariable varIndex

@@ -247,6 +247,7 @@ module BoundNodeConstruction =
     let toByte v = ConversionExpr(ConversionKind.ToByte, v)
     let toInt16 v = ConversionExpr(ConversionKind.ToInt16, v)
     let toUInt16 v = ConversionExpr(ConversionKind.ToUInt16, v)
+    let numberToText v = NumberToTextExpr(v)
 
     let readVar v =
         match v with
@@ -262,6 +263,7 @@ module BoundNodeConstruction =
 
     let readByte a = ReadMemoryByteExpr(a)
     let readWord a = ReadMemoryWordExpr(a)
+    let readText a = ReadMemoryTextExpr(a)
 
     let writeByte a v = WriteMemoryByteStmt(a, v)
     let writeWord a v = WriteMemoryWordStmt(a, v)
