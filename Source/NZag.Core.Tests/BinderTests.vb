@@ -687,7 +687,7 @@ LABEL 18
 
         Dim expected =
 <![CDATA[
-# temps: 17
+# temps: 22
 
 LABEL 00
     temp00 <- L00
@@ -702,25 +702,41 @@ LABEL 00
     temp09 <- (temp07 * 2)
     temp0a <- (temp08 + temp09)
     temp0b <- uint16(temp0a)
-    temp0c <- 0
     if (temp01 <> 0) is false then
-        jump-to: LABEL 03
+        jump-to: LABEL 07
 LABEL 01
-    if ((temp0c & 3f) > temp01) is false then
+    temp0c <- read-byte(temp0b)
+    if ((temp0c & 80) <> 80) is false then
         jump-to: LABEL 03
 LABEL 02
-    temp0c <- read-byte(temp0b)
-    temp0b <- obj-next-property-address(temp0b)
-    jump-to: LABEL 01
+    temp0d <- (temp0c >> 6)
+    jump-to: LABEL 06
 LABEL 03
-    L03 <- uint16(read-byte(temp0b) & 3f)
-    temp0d <- L00
-    write-word(04fc) <- temp0d
-    temp0e <- L01
-    write-word(04fe) <- temp0e
-    temp0f <- L03
-    temp10 <- L02
-    discard: call 0884 (temp0f, temp10, 0b6b)
+    temp0e <- (temp0b + 1)
+    if ((read-byte(temp0e) & 3f) = 0) is false then
+        jump-to: LABEL 05
+LABEL 04
+    temp0d <- 40
+    jump-to: LABEL 06
+LABEL 05
+    temp0d <- (read-byte(temp0e) & 3f)
+LABEL 06
+    temp0f <- ((temp0b + 1) + (temp0d + 1))
+    temp0b <- uint16(temp0f)
+    temp10 <- read-byte(temp0b)
+    if ((temp10 & 3f) < temp01) is true then
+        jump-to: LABEL 07
+    jump-to: LABEL 01
+LABEL 07
+    temp11 <- (read-byte(temp0b) & 3f)
+    L03 <- temp11
+    temp12 <- L00
+    write-word(04fc) <- temp12
+    temp13 <- L01
+    write-word(04fe) <- temp13
+    temp14 <- L03
+    temp15 <- L02
+    discard: call 0884 (temp14, temp15, 0b6b)
     return: 1
 ]]>
 

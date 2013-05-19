@@ -51,6 +51,18 @@ type BinaryOperationKind =
     | AtLeast = 14
     | GreaterThan = 15
 
+[<AutoOpen>]
+module BinaryOperationKindPatterns =
+
+    let (|IsLogical|_|) = function
+        | BinaryOperationKind.Equal
+        | BinaryOperationKind.NotEqual
+        | BinaryOperationKind.LessThan
+        | BinaryOperationKind.AtMost
+        | BinaryOperationKind.AtLeast
+        | BinaryOperationKind.GreaterThan -> Some()
+        | _ -> None
+
 type ConversionKind =
     | ToByte = 1
     | ToInt16 = 2
@@ -170,7 +182,7 @@ type Statement =
     | SetRandomNumberSeedStmt of Expression
 
     /// Outputs the text represented by the given expression for debugging
-    | DebugOutputStmt of Expression
+    | DebugOutputStmt of Expression * list<Expression>
 
     /// Throws a runtime exception
     | RuntimeExceptionStmt of string
@@ -251,8 +263,8 @@ module BoundNodeConstruction =
     let random range = GenerateRandomNumberExpr(range)
     let randomize seed = SetRandomNumberSeedStmt(seed)
 
-    let debugOut s =
-        DebugOutputStmt(textConst s)
+    let debugOut s args =
+        DebugOutputStmt(textConst s, args)
 
     let runtimeException message =
         Printf.ksprintf (fun s -> RuntimeExceptionStmt(s)) message
@@ -341,8 +353,8 @@ module BoundNodeVisitors =
             fstmt (PrintTextStmt(rewriteExpr e))
         | SetRandomNumberSeedStmt(e) ->
             fstmt (SetRandomNumberSeedStmt(rewriteExpr e))
-        | DebugOutputStmt(e) ->
-            fstmt (DebugOutputStmt(rewriteExpr e))
+        | DebugOutputStmt(e, elist) ->
+            fstmt (DebugOutputStmt(rewriteExpr e, elist |> List.map rewriteExpr))
         | RuntimeExceptionStmt(s) ->
             fstmt (RuntimeExceptionStmt(s))
 
@@ -401,8 +413,7 @@ module BoundNodeVisitors =
             | StackUpdateStmt(e)
             | DiscardValueStmt(e)
             | PrintTextStmt(e)
-            | SetRandomNumberSeedStmt(e)
-            | DebugOutputStmt(e) ->
+            | SetRandomNumberSeedStmt(e) ->
                 visitExpr e
             | BranchStmt(_,e,s) ->
                 visitExpr e
@@ -414,6 +425,9 @@ module BoundNodeVisitors =
             | WriteMemoryWordStmt(e1,e2) ->
                 visitExpr e1
                 visitExpr e2
+            | DebugOutputStmt(e, elist) ->
+                visitExpr e
+                elist |> List.iter visitExpr
 
     let visitTree fstmt fexpr tree =
         let visitStmt = visitStatement fstmt fexpr
@@ -660,9 +674,13 @@ type BoundNodeDumper (builder : StringBuilder) =
                 dumpExpression e)
         | RuntimeExceptionStmt(s) ->
             appendf "RUNTIME EXCEPTION: %s" s
-        | DebugOutputStmt(e) ->
+        | DebugOutputStmt(e, args) ->
             append "DEBUG: "
             dumpExpression e
+            append " "
+            parenthesize (fun () ->
+                args |> List.iteri (fun i v -> if i > 0 then append ", "
+                                               dumpExpression v))
 
     member x.Dump tree =
         appendf "# temps: %d" tree.TempCount

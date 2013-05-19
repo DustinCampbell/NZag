@@ -22,7 +22,7 @@ type BoundTreeBuilder() =
         x.AssignTemp temp value
 
         let read = TempExpr(temp)
-        let write v = WriteTempStmt(temp, v)
+        let write v = WriteTempStmt(temp, v) |> x.AddStatement
 
         read, write
 
@@ -76,16 +76,15 @@ type BoundTreeBuilder() =
 
         x.MarkLabel(doneLabel)
 
-    member x.LoopWhile condition whenTrue =
+    member x.LoopUntil condition whileFalse =
         let startLabel = x.NewLabel()
-        let whenTrueLabel = x.NewLabel()
         let doneLabel = x.NewLabel()
 
         x.MarkLabel(startLabel)
-        doneLabel |> x.BranchIfFalse condition
+        whileFalse()
 
-        x.MarkLabel(whenTrueLabel)
-        whenTrue()
+        doneLabel |> x.BranchIfTrue condition
+
         x.JumpTo(startLabel)
 
         x.MarkLabel(doneLabel)
@@ -231,8 +230,8 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
     let ifThen condition whenTrue =
         builder.IfThen condition whenTrue
 
-    let loopWhile condition whenTrue =
-        builder.LoopWhile condition whenTrue
+    let loopUntil condition whileFalse =
+        builder.LoopUntil condition whileFalse
 
     let call address args processResult =
         ifThenElse (address .=. zero)
@@ -313,22 +312,48 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
     let readObjectName objNum =
         let objAddress = computeObjectAddress objNum
         let propTableAddress = initTemp (objAddress .+. objectPropertyTableOffset)
-        let propAddress = initTemp (readWord propTableAddress)
-        let nameLength = initTemp (readByte propAddress)
-        let nameAddress = initTemp (propAddress .+. one)
+        let propsAddress = initTemp (readWord propTableAddress)
+        let nameLength = initTemp (readByte propsAddress)
+        let nameAddress = initTemp (propsAddress .+. one)
         let result = readTextOfLength nameAddress nameLength
         result
 
     let readObjectFirstPropertyAddress objNum =
         let objAddress = computeObjectAddress objNum
         let propTableAddress = initTemp (objAddress .+. objectPropertyTableOffset)
-        let propAddress = initTemp (readWord propTableAddress)
-        let nameLength = initTemp (readByte propAddress)
+        let propsAddress = initTemp (readWord propTableAddress)
 
-        let t1 = initTemp (propAddress .+. one)
+        // First property is address after object name
+        let nameLength = initTemp (readByte propsAddress)
+        let t1 = initTemp (propsAddress .+. one)
         let t2 = initTemp (nameLength .*. two)
         let result = initTemp (t1 .+. t2)
 
+        result |> toUInt16
+
+    let readObjectNextPropertyAddress propAddress =
+        let propSizeByte = initTemp (readByte propAddress)
+
+        let propSize = 
+            if memory.Version <= 3 then
+                propSizeByte .>>. five
+            else
+                let read,write = initMutableTemp zero
+                ifThenElse ((propSizeByte .&. (int32Const 0x80)) .<>. (int32Const 0x80))
+                    (fun () ->
+                        write (propSizeByte .>>. six))
+                    (fun () -> 
+                        let nextByteAddress = initTemp (propAddress .+. one)
+                        let nextPropSizeByte = readByte nextByteAddress
+                        let nextPropSizeByte' = nextPropSizeByte .&. (int32Const 0x3f)
+                        ifThenElse (nextPropSizeByte' .=. zero)
+                            (fun () ->
+                                write (int32Const 64))
+                            (fun () -> 
+                                write nextPropSizeByte'))
+                read
+
+        let result = initTemp ((propAddress .+. one) .+. (propSize .+. one))
         result |> toUInt16
 
     let bindOperand = function
@@ -375,7 +400,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
         // If debugging, write the instruction to the debug output
         if debugging then
-            debugOut (instruction.ToString()) |> addStatement
+            debugOut (instruction.ToString()) [] |> addStatement
 
         // Create temps for all operands
         let operandValues = instruction.Operands |> List.map bindOperand
@@ -484,16 +509,18 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         | "get_next_prop", Any, Op2(objNum, propNum) ->
             let firstPropertyAddress = readObjectFirstPropertyAddress(objNum)
             let propAddressRead, propAddressWrite = initMutableTemp firstPropertyAddress
-            let propValueRead, propValueWrite = initMutableTemp zero
+            let firstByteRead, firstByteWrite = initMutableTemp (readByte propAddressRead)
             let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
 
             ifThen (propNum .<>. zero) (fun () ->
-                loopWhile ((propValueRead .&. mask) .>. propNum) (fun () ->
-                    propValueWrite (readByte propAddressRead) |> addStatement
-                    propAddressWrite (ReadObjectNextPropertyAddressExpr(propAddressRead)) |> addStatement
+                loopUntil ((firstByteRead .&. mask) .<. propNum) (fun () ->
+                    let nextPropAddress = readObjectNextPropertyAddress propAddressRead
+                    propAddressWrite nextPropAddress
+                    firstByteWrite (readByte propAddressRead)
                 ))
 
-            store (((readByte propAddressRead) .&. mask) |> toUInt16)
+            let result = initTemp ((readByte propAddressRead) .&. mask)
+            store result
 
         | "get_parent", Any, Op1(objNum) ->
             let parent = readObjectParent objNum

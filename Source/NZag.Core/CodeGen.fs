@@ -428,10 +428,25 @@ type ILBuilder (generator: ILGenerator) =
     member x.Return() =
         generator.Emit(OpCodes.Ret)
 
-    member x.DebugOutput(loadMessage: unit -> unit) =
-        let writeLine = typeof<System.Diagnostics.Debug>.GetMethod("WriteLine", [|typeof<string>|])
-        loadMessage()
-        x.Call(writeLine)
+    member x.DebugOutput (loadFormat: unit -> unit, argCount: int, loadArg: int -> unit) =
+        let argsArray : IArrayLocal = x.NewArrayLocal(typeof<obj>)
+        argsArray.Create(argCount)
+
+        for i = 0 to argCount - 1 do
+            argsArray.StoreElement(
+                (fun () -> x.EvaluationStack.Load(i)),
+                (fun () ->
+                    loadArg(i)
+                    generator.Emit(OpCodes.Box, typeof<uint16>)))
+
+        loadFormat()
+        argsArray.Load()
+
+        let stringFormat = typeof<System.String>.GetMethod("Format", [|typeof<string>; typeof<obj[]>|])
+        x.Call(stringFormat)
+
+        let debugWriteLine = typeof<System.Diagnostics.Debug>.GetMethod("WriteLine", [|typeof<string>|])
+        x.Call(debugWriteLine)
 
     member x.ThrowException<'T when 'T :> Exception>() =
         let exceptionType = typeof<'T>
@@ -766,9 +781,11 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
         | PrintTextStmt(e) ->
             builder.RuntimeFunctions.WriteOutputText
                 (fun () -> emitExpression e)
-        | DebugOutputStmt(e) ->
-            builder.DebugOutput
-                (fun () -> emitExpression e)
+        | DebugOutputStmt(e, elist) ->
+            builder.DebugOutput(
+                (fun () -> emitExpression e),
+                elist.Length,
+                (fun i -> elist.[i] |> emitExpression))
         | RuntimeExceptionStmt(s) ->
             builder.ThrowException<RuntimeException>(s)
         | s ->
