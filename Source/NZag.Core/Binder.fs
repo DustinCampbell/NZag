@@ -242,6 +242,95 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
                 let unpackedAddress = unpackRoutineAddress address
                 processResult (CallExpr(unpackedAddress, args)))
 
+    let objectTableAddress = (memory |> Header.readObjectTableAddress |> (fun a -> a.IntValue)) |> int32Const
+    let propertyDefaultsSize = (if memory.Version <= 3 then 31 else 63) |> int32Const
+    let objectEntriesAddress = objectTableAddress .+. (propertyDefaultsSize .*. two)
+    let objectEntrySize = (if memory.Version <= 3 then 9 else 14) |> int32Const
+    let objectParentOffset = (if memory.Version <= 3 then 4 else 6) |> int32Const
+    let objectSiblingOffset = (if memory.Version <= 3 then 5 else 8) |> int32Const
+    let objectChildOffset = (if memory.Version <= 3 then 6 else 10) |> int32Const
+    let objectPropertyTableOffset = (if memory.Version <= 3 then 7 else 12) |> int32Const
+
+    let readObjectNumber address =
+        let objNum = if memory.Version <= 3 then readByte address
+                     else readWord address
+        initTemp objNum
+
+    let computeObjectAddress objNum =
+        let t1 = initTemp (objNum .-. one)
+        let t2 = initTemp (t1 .*. objectEntrySize)
+        let result = initTemp (t2 .+. objectEntriesAddress)
+        result
+
+    let readObjectChild objNum =
+        let objAddress = computeObjectAddress objNum
+        let result = initTemp (objAddress .+. objectChildOffset)
+        result |> readObjectNumber
+
+    let readObjectParent objNum =
+        let objAddress = computeObjectAddress objNum
+        let result = initTemp (objAddress .+. objectParentOffset)
+        result |> readObjectNumber
+
+    let readObjectSibling objNum =
+        let objAddress = computeObjectAddress objNum
+        let result = initTemp (objAddress .+. objectSiblingOffset)
+        result |> readObjectNumber
+
+    let computeAttributeByteAddress objNum attrNum =
+        let objAddress = computeObjectAddress objNum
+        let byteIndex = initTemp (attrNum ./. eight)
+        let result = initTemp (objAddress .+. byteIndex)
+        result
+
+    let computeAttributeBitMask attrNum =
+        let bit = initTemp (attrNum .%. eight)
+        let t1 = initTemp (seven .-. bit)
+        let t2 = initTemp (t1 .&. int32Const 0x1f)
+        let result = initTemp (one .<<. t2)
+        result
+
+    let readObjectAttribute objNum attrNum =
+        let bitMask = computeAttributeBitMask attrNum
+        let attrByteAddress = initTemp (computeAttributeByteAddress objNum attrNum)
+        let attrByte = initTemp (readByte attrByteAddress)
+        let t1 = initTemp (attrByte .&. bitMask)
+        let result = initTemp (t1 .<>. zero)
+        result
+
+    let writeObjectAttribute objNum attrNum value =
+        let bitMask = initTemp (computeAttributeBitMask attrNum)
+        let attrByteAddress = initTemp (computeAttributeByteAddress objNum attrNum)
+        let attrByte = initTemp (readByte attrByteAddress)
+        let newAttrByte =
+            if value then
+                (attrByte .|. bitMask) |> toByte
+            else
+                (attrByte .&. (bitNot bitMask)) |> toByte
+
+        writeByte attrByteAddress newAttrByte |> addStatement
+
+    let readObjectName objNum =
+        let objAddress = computeObjectAddress objNum
+        let propTableAddress = initTemp (objAddress .+. objectPropertyTableOffset)
+        let propAddress = initTemp (readWord propTableAddress)
+        let nameLength = initTemp (readByte propAddress)
+        let nameAddress = initTemp (propAddress .+. one)
+        let result = readTextOfLength nameAddress nameLength
+        result
+
+    let readObjectFirstPropertyAddress objNum =
+        let objAddress = computeObjectAddress objNum
+        let propTableAddress = initTemp (objAddress .+. objectPropertyTableOffset)
+        let propAddress = initTemp (readWord propTableAddress)
+        let nameLength = initTemp (readByte propAddress)
+
+        let t1 = initTemp (propAddress .+. one)
+        let t2 = initTemp (nameLength .*. two)
+        let result = initTemp (t1 .+. t2)
+
+        result |> toUInt16
+
     let bindOperand = function
         | LargeConstantOperand(v) -> wordConst v
         | SmallConstantOperand(v) -> byteConst v
@@ -365,7 +454,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             branchIf (number .<=. ArgCountExpr)
 
         | "clear_attr", Any, Op2(objNum, attrNum) ->
-            WriteObjectAttributeStmt(objNum, attrNum, false) |> addStatement
+            writeObjectAttribute objNum attrNum false
 
         | "dec", Any, Op1(varIndex) ->
             let read, write = byRefVariable varIndex
@@ -388,12 +477,13 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             store (left ./. right)
 
         | "get_child", Any, Op1(objNum) ->
-            let result = initTemp (ReadObjectChildExpr(objNum))
-            store result
-            branchIf (result .<>. zero)
+            let child = readObjectChild objNum
+            store child
+            branchIf (child .<>. zero)
 
         | "get_next_prop", Any, Op2(objNum, propNum) ->
-            let propAddressRead, propAddressWrite = initMutableTemp (ReadObjectFirstPropertyAddressExpr(objNum))
+            let firstPropertyAddress = readObjectFirstPropertyAddress(objNum)
+            let propAddressRead, propAddressWrite = initMutableTemp firstPropertyAddress
             let propValueRead, propValueWrite = initMutableTemp zero
             let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
 
@@ -406,12 +496,13 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             store (((readByte propAddressRead) .&. mask) |> toUInt16)
 
         | "get_parent", Any, Op1(objNum) ->
-            store (ReadObjectParentExpr(objNum))
+            let parent = readObjectParent objNum
+            store parent
 
         | "get_sibling", Any, Op1(objNum) ->
-            let result = initTemp (ReadObjectSiblingExpr(objNum))
-            store result
-            branchIf (result .<>. zero)
+            let sibling = readObjectSibling objNum
+            store sibling
+            branchIf (sibling .<>. zero)
 
         | "inc", Any, Op1(varIndex) ->
             let read, write = byRefVariable varIndex
@@ -444,7 +535,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             branchIf (left .>. right)
 
         | "jin", Any, Op2(objNum1, objNum2) ->
-            let obj1Parent = ReadObjectParentExpr(objNum1)
+            let obj1Parent = readObjectParent objNum1
 
             branchIf (obj1Parent .=. objNum2)
 
@@ -519,8 +610,8 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             |> printText
             |> addStatement
 
-        | "print_obj", Any, Op1(obj) ->
-            objectName obj
+        | "print_obj", Any, Op1(objNum) ->
+            readObjectName objNum
             |> printText
             |> addStatement
 
@@ -565,7 +656,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             ret one
 
         | "set_attr", Any, Op2(objNum, attrNum) ->
-            WriteObjectAttributeStmt(objNum, attrNum, true) |> addStatement
+            writeObjectAttribute objNum attrNum true
 
         | "store", Any, Op2(varIndex, value) ->
             let read, write = byRefVariable varIndex
@@ -590,7 +681,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             store (left .-. right)
 
         | "test_attr", Any, Op2(objNum, attrNum) ->
-            let attributeValue = ReadObjectAttributeExpr(objNum, attrNum)
+            let attributeValue = readObjectAttribute objNum attrNum
 
             branchIf (attributeValue .=. one)
 
@@ -704,76 +795,6 @@ type RoutineBinder(memory: Memory, debugging: bool) =
                     (fun e ->
                         match e with
                         | ReadGlobalExpr(i) -> readWord (computeGlobalVariableAddress i)
-                        | e -> e)
-
-            updater.AddStatement(s'))
-
-    let lower_ObjectReadsAndWrites tree =
-        let objectTableAddress = (memory |> Header.readObjectTableAddress |> (fun a -> a.IntValue)) |> int32Const
-        let propertyDefaultsSize = (if memory.Version <= 3 then 31 else 63) |> int32Const
-        let objectEntriesAddress = objectTableAddress .+. (propertyDefaultsSize .*. two)
-        let objectEntrySize = (if memory.Version <= 3 then 9 else 14) |> int32Const
-        let objectParentOffset = (if memory.Version <= 3 then 4 else 6) |> int32Const
-        let objectSiblingOffset = (if memory.Version <= 3 then 5 else 8) |> int32Const
-        let objectChildOffset = (if memory.Version <= 3 then 6 else 10) |> int32Const
-        let objectPropertyTableOffset = (if memory.Version <= 3 then 7 else 12) |> int32Const
-
-        let readObjectNumber address =
-            if memory.Version <= 3 then readByte address
-            else readWord address
-
-        let computeObjectAddress objNum =
-            ((objNum .-. one) .*. objectEntrySize) .+. objectEntriesAddress
-
-        let readObjectChild objNum =
-            (computeObjectAddress objNum) .+. objectChildOffset |> readObjectNumber
-
-        let readObjectParent objNum =
-            (computeObjectAddress objNum) .+. objectParentOffset |> readObjectNumber
-
-        let readObjectSibling objNum =
-            (computeObjectAddress objNum) .+. objectSiblingOffset |> readObjectNumber
-
-        let computeAttributeByteAddress objNum attrNum =
-            (computeObjectAddress objNum) .+. (attrNum ./. eight)
-
-        let computeAttributeBitMask attrNum =
-            one .<<. ((seven .-. (attrNum .%. eight)) .&. (int32Const 0x1f))
-
-        let readObjectAttribute objNum attrNum =
-            ((computeAttributeBitMask attrNum) .&. (readByte (computeAttributeByteAddress objNum attrNum)) .<>. zero)
-
-        let writeObjectAttribute objNum attrNum value =
-            let byteAddress = computeAttributeByteAddress objNum attrNum
-            let bitMask = computeAttributeBitMask attrNum
-            let newAttributeByte =
-                if value then
-                    ((readByte byteAddress) .|. bitMask) |> toByte
-                else
-                    ((readByte byteAddress) .&. (bitNot bitMask)) |> toByte
-
-            writeByte byteAddress newAttributeByte
-
-        let readObjectFirstPropertyAddress objNum =
-            let propAddress = readWord ((computeObjectAddress objNum) .+. objectPropertyTableOffset)
-            let nameLength = readByte propAddress
-
-            ((propAddress .+. one) .+. (nameLength .*. two)) |> toUInt16
-
-        tree |> updateTree (fun s updater ->
-            let s' =
-                s |> rewriteStatement
-                    (fun s -> 
-                        match s with
-                        | WriteObjectAttributeStmt(o,a,v) -> writeObjectAttribute o a v
-                        | s -> s)
-                    (fun e -> 
-                        match e with
-                        | ReadObjectAttributeExpr(o,a) -> readObjectAttribute o a
-                        | ReadObjectChildExpr(o) -> readObjectChild o
-                        | ReadObjectParentExpr(o) -> readObjectParent o
-                        | ReadObjectSiblingExpr(o) -> readObjectSibling o
-                        | ReadObjectFirstPropertyAddressExpr(o) -> readObjectFirstPropertyAddress o
                         | e -> e)
 
             updater.AddStatement(s'))
@@ -987,7 +1008,6 @@ type RoutineBinder(memory: Memory, debugging: bool) =
     let lower tree =
         tree
         |> lower_GlobalVariableReadsAndWrites
-        |> lower_ObjectReadsAndWrites
 
     let optimize tree =
         tree |> fixedpoint (fun tree ->

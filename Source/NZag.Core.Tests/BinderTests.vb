@@ -687,31 +687,40 @@ LABEL 18
 
         Dim expected =
 <![CDATA[
-# temps: 8
+# temps: 17
 
 LABEL 00
     temp00 <- L00
     temp01 <- L01
-    temp02 <- uint16((read-word((((temp00 - 1) * e) + 018c) + c) + 1) + (read-byte(read-word((((temp00 - 1) * e) + 018c) + c)) * 2))
-    temp03 <- 0
+    temp02 <- (temp00 - 1)
+    temp03 <- (temp02 * e)
+    temp04 <- (temp03 + 018c)
+    temp05 <- (temp04 + c)
+    temp06 <- read-word(temp05)
+    temp07 <- read-byte(temp06)
+    temp08 <- (temp06 + 1)
+    temp09 <- (temp07 * 2)
+    temp0a <- (temp08 + temp09)
+    temp0b <- uint16(temp0a)
+    temp0c <- 0
     if (temp01 <> 0) is false then
         jump-to: LABEL 03
 LABEL 01
-    if ((temp03 & 3f) > temp01) is false then
+    if ((temp0c & 3f) > temp01) is false then
         jump-to: LABEL 03
 LABEL 02
-    temp03 <- read-byte(temp02)
-    temp02 <- obj-next-property-address(temp02)
+    temp0c <- read-byte(temp0b)
+    temp0b <- obj-next-property-address(temp0b)
     jump-to: LABEL 01
 LABEL 03
-    L03 <- uint16(read-byte(temp02) & 3f)
-    temp04 <- L00
-    write-word(04fc) <- temp04
-    temp05 <- L01
-    write-word(04fe) <- temp05
-    temp06 <- L03
-    temp07 <- L02
-    discard: call 0884 (temp06, temp07, 0b6b)
+    L03 <- uint16(read-byte(temp0b) & 3f)
+    temp0d <- L00
+    write-word(04fc) <- temp0d
+    temp0e <- L01
+    write-word(04fe) <- temp0e
+    temp0f <- L03
+    temp10 <- L02
+    discard: call 0884 (temp0f, temp10, 0b6b)
     return: 1
 ]]>
 
@@ -851,12 +860,19 @@ LABEL 02
 
         Dim expected =
 <![CDATA[
-# temps: 1
+# temps: 8
 
 LABEL 00
     print: "a "
     temp00 <- L00
-    print: obj-name(temp00)
+    temp01 <- (temp00 - 1)
+    temp02 <- (temp01 * 9)
+    temp03 <- (temp02 + 02ee)
+    temp04 <- (temp03 + 7)
+    temp05 <- read-word(temp04)
+    temp06 <- read-byte(temp05)
+    temp07 <- (temp05 + 1)
+    print: read-text(temp07, temp06)
     return: 1
 ]]>
 
@@ -1072,14 +1088,17 @@ LABEL 01
 
         Dim expected =
 <![CDATA[
-# temps: 1
+# temps: 4
 
 LABEL 00
     temp00 <- read-word(22cd)
     if (temp00 = 0) is true then
         jump-to: LABEL 04
 LABEL 01
-    if (((0010 & read-byte(0904)) <> 0) = 1) is false then
+    temp01 <- read-byte(0904)
+    temp02 <- (temp01 & 0010)
+    temp03 <- (temp02 <> 0)
+    if (temp03 = 1) is false then
         jump-to: LABEL 03
 LABEL 02
     return: 39
@@ -1171,7 +1190,7 @@ LABEL 03
 
         Dim expected =
 <![CDATA[
-# temps: 22
+# temps: 30
 
 LABEL 00
     push-SP: call 5472 (8010, ffff)
@@ -1217,7 +1236,15 @@ LABEL 00
     write-word(2271) <- b4
     push-SP: call 9530 (a0)
     temp14 <- read-word(2271)
-    if (((0010 & read-byte((((temp14 - 1) * 9) + 02ee) + 0000)) <> 0) = 1) is true then
+    temp15 <- (temp14 - 1)
+    temp16 <- (temp15 * 9)
+    temp17 <- (temp16 + 02ee)
+    temp18 <- temp17
+    temp19 <- temp18
+    temp1a <- read-byte(temp19)
+    temp1b <- (temp1a & 0010)
+    temp1c <- (temp1b <> 0)
+    if (temp1c = 1) is true then
         jump-to: LABEL 02
 LABEL 01
     push-SP: call 6ee0 ()
@@ -1225,13 +1252,12 @@ LABEL 01
 LABEL 02
     write-word(22f5) <- 01
     write-word(234f) <- 04
-    temp15 <- read-word(234f)
-    write-word(2371) <- temp15
+    temp1d <- read-word(234f)
+    write-word(2371) <- temp1d
     RUNTIME EXCEPTION: Unsupported opcode: insert_obj (v.3) with 2 operands
     push-SP: call 7e04 ()
     push-SP: call 552a ()
-    jump-to: LABEL 00
-]]>
+    jump-to: LABEL 00]]>
 
         Test(Zork1, &H4F04, expected)
     End Sub

@@ -108,22 +108,9 @@ type Expression =
     /// Reads the text from game memory at the specified address
     | ReadMemoryTextExpr of Expression
 
-    /// Reads name of the object whose number is represented by the given expression
-    | ReadObjectNameExpr of Expression
+    /// Reads the text from game memory at the specified address with the given length
+    | ReadMemoryTextOfLengthExpr of Expression * Expression
 
-    /// Reads the specified attribute of the object whose number is represented by the given expression
-    | ReadObjectAttributeExpr of Expression * Expression
-
-    /// Reads the child of the object whose number is represented by the given expression
-    | ReadObjectChildExpr of Expression
-
-    /// Reads the parent of the object whose number is represented by the given expression
-    | ReadObjectParentExpr of Expression
-
-    /// Reads the sibling of the object whose number is represented by the given expression
-    | ReadObjectSiblingExpr of Expression
-
-    | ReadObjectFirstPropertyAddressExpr of Expression
     | ReadObjectNextPropertyAddressExpr of Expression
     | ReadObjectPropertyDefaultExpr of Expression
 
@@ -172,18 +159,6 @@ type Statement =
 
     /// Writes a word from game memory at the specified address
     | WriteMemoryWordStmt of Expression * Expression
-
-    /// Write the specified attribute of an object with the given value
-    | WriteObjectAttributeStmt of Expression * Expression * bool
-
-    /// Writes the child of an object with the given value
-    | WriteObjectChildStmt of Expression * Expression
-
-    /// Writes the parent of an object with the given value
-    | WriteObjectParentStmt of Expression * Expression
-
-    /// Writes the sibling of an object with the given value
-    | WriteObjectSiblingStmt of Expression * Expression
 
     /// Discards a value (i.e. does nothing with it).
     | DiscardValueStmt of Expression
@@ -264,6 +239,7 @@ module BoundNodeConstruction =
     let readByte a = ReadMemoryByteExpr(a)
     let readWord a = ReadMemoryWordExpr(a)
     let readText a = ReadMemoryTextExpr(a)
+    let readTextOfLength a l = ReadMemoryTextOfLengthExpr(a, l)
 
     let writeByte a v = WriteMemoryByteStmt(a, v)
     let writeWord a v = WriteMemoryWordStmt(a, v)
@@ -271,8 +247,6 @@ module BoundNodeConstruction =
     let discardValue e = DiscardValueStmt(e)
 
     let printText text = PrintTextStmt(text)
-
-    let objectName objNum = ReadObjectNameExpr(objNum)
 
     let random range = GenerateRandomNumberExpr(range)
     let randomize seed = SetRandomNumberSeedStmt(seed)
@@ -321,18 +295,8 @@ module BoundNodeVisitors =
             fexpr (ReadMemoryWordExpr(rewriteExpr e))
         | ReadMemoryTextExpr(e) ->
             fexpr (ReadMemoryTextExpr(rewriteExpr e))
-        | ReadObjectNameExpr(e) ->
-            fexpr (ReadObjectNameExpr(rewriteExpr e))
-        | ReadObjectAttributeExpr(e1, e2) ->
-            fexpr (ReadObjectAttributeExpr(rewriteExpr e1, rewriteExpr e2))
-        | ReadObjectChildExpr(e) ->
-            fexpr (ReadObjectChildExpr(rewriteExpr e))
-        | ReadObjectParentExpr(e) ->
-            fexpr (ReadObjectParentExpr(rewriteExpr e))
-        | ReadObjectSiblingExpr(e) ->
-            fexpr (ReadObjectSiblingExpr(rewriteExpr e))
-        | ReadObjectFirstPropertyAddressExpr(e) ->
-            fexpr (ReadObjectFirstPropertyAddressExpr(rewriteExpr e))
+        | ReadMemoryTextOfLengthExpr(e,l) ->
+            fexpr (ReadMemoryTextOfLengthExpr(rewriteExpr e, rewriteExpr l))
         | ReadObjectNextPropertyAddressExpr(e) ->
             fexpr (ReadObjectNextPropertyAddressExpr(rewriteExpr e))
         | ReadObjectPropertyDefaultExpr(e) ->
@@ -371,14 +335,6 @@ module BoundNodeVisitors =
             fstmt (WriteMemoryByteStmt(rewriteExpr e1, rewriteExpr e2))
         | WriteMemoryWordStmt(e1,e2) ->
             fstmt (WriteMemoryWordStmt(rewriteExpr e1, rewriteExpr e2))
-        | WriteObjectAttributeStmt(o,a,v) ->
-            fstmt (WriteObjectAttributeStmt(rewriteExpr o, rewriteExpr a, v))
-        | WriteObjectChildStmt(o,v) ->
-            fstmt (WriteObjectChildStmt(rewriteExpr o, rewriteExpr v))
-        | WriteObjectParentStmt(o,v) ->
-            fstmt (WriteObjectParentStmt(rewriteExpr o, rewriteExpr v))
-        | WriteObjectSiblingStmt(o,v) ->
-            fstmt (WriteObjectSiblingStmt(rewriteExpr o, rewriteExpr v))
         | DiscardValueStmt(e) ->
             fstmt (DiscardValueStmt(rewriteExpr e))
         | PrintTextStmt(e) ->
@@ -416,17 +372,12 @@ module BoundNodeVisitors =
             | ReadMemoryByteExpr(e)
             | ReadMemoryWordExpr(e)
             | ReadMemoryTextExpr(e)
-            | ReadObjectNameExpr(e)
-            | ReadObjectChildExpr(e)
-            | ReadObjectParentExpr(e)
-            | ReadObjectSiblingExpr(e)
-            | ReadObjectFirstPropertyAddressExpr(e)
             | ReadObjectNextPropertyAddressExpr(e)
             | ReadObjectPropertyDefaultExpr(e)
             | GenerateRandomNumberExpr(e) ->
                 visitExpr e
             | BinaryOperationExpr(_,e1,e2)
-            | ReadObjectAttributeExpr(e1, e2) ->
+            | ReadMemoryTextOfLengthExpr(e1,e2) ->
                 visitExpr e1
                 visitExpr e2
             | CallExpr(e,elist) ->
@@ -460,11 +411,7 @@ module BoundNodeVisitors =
             | WriteGlobalStmt(e1,e2)
             | WriteComputedVarStmt(e1,e2)
             | WriteMemoryByteStmt(e1,e2)
-            | WriteMemoryWordStmt(e1,e2)
-            | WriteObjectAttributeStmt(e1,e2,_)
-            | WriteObjectChildStmt(e1,e2)
-            | WriteObjectParentStmt(e1,e2)
-            | WriteObjectSiblingStmt(e1,e2) ->
+            | WriteMemoryWordStmt(e1,e2) ->
                 visitExpr e1
                 visitExpr e2
 
@@ -623,32 +570,12 @@ type BoundNodeDumper (builder : StringBuilder) =
             append "read-text"
             parenthesize (fun () ->
                 dumpExpression e)
-        | ReadObjectNameExpr(e) ->
-            append "obj-name"
+        | ReadMemoryTextOfLengthExpr(e,l) ->
+            append "read-text"
             parenthesize (fun () ->
-                dumpExpression e)
-        | ReadObjectAttributeExpr(o,a) ->
-            append "obj-attribute"
-            parenthesize (fun () ->
-                dumpExpression o
+                dumpExpression e
                 append ", "
-                dumpExpression a)
-        | ReadObjectChildExpr(e) ->
-            append "obj-child"
-            parenthesize (fun () ->
-                dumpExpression e)
-        | ReadObjectParentExpr(e) ->
-            append "obj-parent"
-            parenthesize (fun () ->
-                dumpExpression e)
-        | ReadObjectSiblingExpr(e) ->
-            append "obj-sibling"
-            parenthesize (fun () ->
-                dumpExpression e)
-        | ReadObjectFirstPropertyAddressExpr(e) ->
-            append "obj-first-property-address"
-            parenthesize (fun () ->
-                dumpExpression e)
+                dumpExpression l)
         | ReadObjectNextPropertyAddressExpr(e) ->
             append "obj-next-property-address"
             parenthesize (fun () ->
@@ -719,32 +646,6 @@ type BoundNodeDumper (builder : StringBuilder) =
             append "write-word"
             parenthesize (fun () ->
                 dumpExpression a)
-            append " <- "
-            dumpExpression v
-        | WriteObjectAttributeStmt(o,a,v) ->
-            append "write-obj-attribute"
-            parenthesize (fun () ->
-                dumpExpression o
-                append ", "
-                dumpExpression a)
-            append " <- "
-            appendf "%b" v
-        | WriteObjectChildStmt(o,v) ->
-            append "write-obj-child"
-            parenthesize (fun () ->
-                dumpExpression o)
-            append " <- "
-            dumpExpression v
-        | WriteObjectParentStmt(o,v) ->
-            append "write-obj-parent"
-            parenthesize (fun () ->
-                dumpExpression o)
-            append " <- "
-            dumpExpression v
-        | WriteObjectSiblingStmt(o,v) ->
-            append "write-obj-sibling"
-            parenthesize (fun () ->
-                dumpExpression o)
             append " <- "
             dumpExpression v
         | DiscardValueStmt(e) ->
