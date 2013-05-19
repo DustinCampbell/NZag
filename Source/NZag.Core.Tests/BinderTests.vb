@@ -50,7 +50,7 @@ LABEL 00
         jump-to: LABEL 04
 LABEL 01
     print: "\n\nERROR ["
-    temp03 <- read-byte(04f2)
+    temp03 <- read-word(04f2)
     print: number-to-text(int16(temp03))
     print: "] "
     if (03 <= arg-count) is false then
@@ -178,7 +178,7 @@ LABEL 01
     return: 0
 LABEL 02
     print: " ["
-    temp01 <- read-byte(04f2)
+    temp01 <- read-word(04f2)
     push-SP: (int16(temp01) + int16(01))
     temp02 <- pop-SP
     print: number-to-text(int16(temp02))
@@ -311,7 +311,7 @@ LABEL 1e
     return: 1
 LABEL 1f
     print: "\nbad ["
-    temp05 <- read-byte(04f2)
+    temp05 <- read-word(04f2)
     print: number-to-text(int16(temp05))
     print: "]!\n"
     print: "Quitting tests because jumps don't work!"
@@ -449,7 +449,7 @@ LABEL 01
     return: 0
 LABEL 02
     print: " ["
-    temp01 <- read-byte(04f2)
+    temp01 <- read-word(04f2)
     push-SP: (int16(temp01) + int16(01))
     temp02 <- pop-SP
     print: number-to-text(int16(temp02))
@@ -461,7 +461,7 @@ LABEL 02
     temp03 <- L01
     discard: call 07e4 (temp03, 08, 0b23)
     write-word(04fa) <- pop-SP
-    temp04 <- read-byte(04fa)
+    temp04 <- read-word(04fa)
     discard: call 07e4 (temp04, 09, 0b26)
     print: "store"
     L01 <- 05
@@ -493,9 +493,9 @@ LABEL 02
     temp0c <- L02
     discard: call 07e4 (temp0c, 01, 0b2a)
     write-word(04f0) <- 03
-    temp0d <- read-byte(04f0)
+    temp0d <- read-word(04f0)
     write-word(04f0) <- (int16(temp0d) - int16(1))
-    temp0e <- read-byte(04f0)
+    temp0e <- read-word(04f0)
     discard: call 07e4 (temp0e, 02, 0b2b)
     print: "inc"
     discard: call 0cb0 (05, 06)
@@ -513,9 +513,9 @@ LABEL 02
     temp11 <- L02
     discard: call 07e4 (temp11, 01, 0b2e)
     write-word(04f0) <- 03
-    temp12 <- read-byte(04f0)
+    temp12 <- read-word(04f0)
     write-word(04f0) <- (int16(temp12) + int16(1))
-    temp13 <- read-byte(04f0)
+    temp13 <- read-word(04f0)
     discard: call 07e4 (temp13, 04, 0b2f)
     print: "\n    dec_chk"
     L02 <- 03
@@ -593,7 +593,7 @@ LABEL 0b
     jump-to: LABEL 0d
 LABEL 0c
     print: "\nbad ["
-    temp28 <- read-byte(04f2)
+    temp28 <- read-word(04f2)
     print: number-to-text(int16(temp28))
     print: "]\n"
     discard: call 08ec ()
@@ -666,7 +666,7 @@ LABEL 16
     jump-to: LABEL 18
 LABEL 17
     print: "\nbad ["
-    temp3b <- read-byte(04f2)
+    temp3b <- read-word(04f2)
     print: number-to-text(int16(temp3b))
     print: "]!\n"
     discard: call 08ec ()
@@ -692,7 +692,7 @@ LABEL 18
 LABEL 00
     temp00 <- L00
     temp01 <- L01
-    temp02 <- obj-first-property-address(temp00)
+    temp02 <- uint16((read-word((((temp00 - 1) * e) + 018c) + c) + 1) + (read-byte(read-word((((temp00 - 1) * e) + 018c) + c)) * 2))
     temp03 <- 0
     if (temp01 <> 0) is false then
         jump-to: LABEL 03
@@ -807,27 +807,27 @@ LABEL 00
     discard: call 1150 (00)
     print: "\n"
     print: "\n\nPerformed "
-    temp00 <- read-byte(04f2)
+    temp00 <- read-word(04f2)
     print: number-to-text(int16(temp00))
     print: " tests.\n"
     print: "Passed: "
-    temp01 <- read-byte(04f4)
+    temp01 <- read-word(04f4)
     print: number-to-text(int16(temp01))
     print: ", Failed: "
-    temp02 <- read-byte(04f6)
+    temp02 <- read-word(04f6)
     print: number-to-text(int16(temp02))
     print: ", Print tests: "
-    temp03 <- read-byte(04f8)
+    temp03 <- read-word(04f8)
     print: number-to-text(int16(temp03))
     print: "\n"
-    temp04 <- read-byte(04f4)
-    temp05 <- read-byte(04f6)
+    temp04 <- read-word(04f4)
+    temp05 <- read-word(04f6)
     push-SP: (int16(temp04) + int16(temp05))
     temp06 <- pop-SP
-    temp07 <- read-byte(04f8)
+    temp07 <- read-word(04f8)
     push-SP: (int16(temp06) + int16(temp07))
     temp08 <- pop-SP
-    temp09 <- read-byte(04f2)
+    temp09 <- read-word(04f2)
     temp0a <- (temp08 = temp09)
     if (temp0a) is true then
         jump-to: LABEL 02
@@ -878,7 +878,7 @@ LABEL 00
 # temps: 5
 
 LABEL 00
-    temp00 <- read-byte(22e9)
+    temp00 <- read-word(22e9)
     if (temp00 = 0) is true then
         jump-to: LABEL 06
 LABEL 01
@@ -931,7 +931,7 @@ LABEL 0a
 
 LABEL 00
     temp00 <- L00
-    push-SP: read-byte(temp00)
+    push-SP: read-word(temp00)
     temp01 <- pop-SP
     if (int16(temp01) > 0) is false then
         jump-to: LABEL 02
@@ -944,7 +944,7 @@ LABEL 02
 LABEL 03
     temp02 <- L00
     temp03 <- pop-SP
-    push-SP: read-byte(temp02 + (temp03 * 2))
+    push-SP: read-word(temp02 + (temp03 * 2))
     return: pop-SP
 ]]>
 
@@ -977,9 +977,9 @@ LABEL 03
 
 LABEL 00
     temp00 <- L00
-    L01 <- read-byte(temp00)
+    L01 <- read-word(temp00)
     temp01 <- L00
-    L02 <- read-byte(temp01 + 0002)
+    L02 <- read-word(temp01 + 0002)
     temp02 <- L01
     L01 <- (int16(temp02) - int16(1))
     temp03 <- L00
@@ -1004,9 +1004,9 @@ LABEL 02
 LABEL 03
     temp0a <- L05
     temp0b <- L03
-    L04 <- read-byte(temp0a + (temp0b * 2))
+    L04 <- read-word(temp0a + (temp0b * 2))
     temp0c <- L05
-    push-SP: read-byte(temp0c + 0002)
+    push-SP: read-word(temp0c + 0002)
     temp0d <- L05
     temp0e <- L03
     temp0f <- pop-SP
@@ -1045,7 +1045,7 @@ LABEL 05
 # temps: 2
 
 LABEL 00
-    temp00 <- read-byte(2361)
+    temp00 <- read-word(2361)
     temp01 <- (temp00 = 2b)
     if (temp01) is false then
         return: 0
@@ -1075,7 +1075,7 @@ LABEL 01
 # temps: 1
 
 LABEL 00
-    temp00 <- read-byte(22cd)
+    temp00 <- read-word(22cd)
     if (temp00 = 0) is true then
         jump-to: LABEL 04
 LABEL 01
@@ -1115,12 +1115,12 @@ LABEL 00
     if (temp01) is false then
         return: 0
 LABEL 01
-    temp02 <- read-byte(2361)
+    temp02 <- read-word(2361)
     temp03 <- (temp02 = 45)
     if (temp03) is false then
         return: 0
 LABEL 02
-    temp04 <- read-byte(235d)
+    temp04 <- read-word(235d)
     if (temp04 = 0) is false then
         return: 0
 LABEL 03
@@ -1184,39 +1184,39 @@ LABEL 00
     push-SP: call 5472 (6f6a, 28)
     push-SP: call 5472 (6f55, c8)
     RUNTIME EXCEPTION: Unsupported opcode: put_prop (v.3) with 3 operands
-    temp02 <- read-byte(2291)
+    temp02 <- read-word(2291)
     push-SP: (int16(temp02) + int16(02))
-    temp03 <- read-byte(2285)
+    temp03 <- read-word(2285)
     temp04 <- pop-SP
     write-word(temp03 + 0002) <- temp04
-    temp05 <- read-byte(2291)
+    temp05 <- read-word(2291)
     push-SP: (int16(temp05) + int16(04))
-    temp06 <- read-byte(2285)
+    temp06 <- read-word(2285)
     temp07 <- pop-SP
     write-word(temp06 + 0004) <- temp07
-    temp08 <- read-byte(228d)
+    temp08 <- read-word(228d)
     push-SP: (int16(temp08) + int16(02))
-    temp09 <- read-byte(2283)
+    temp09 <- read-word(2283)
     temp0a <- pop-SP
     write-word(temp09 + 0004) <- temp0a
-    temp0b <- read-byte(228d)
+    temp0b <- read-word(228d)
     push-SP: (int16(temp0b) + int16(04))
-    temp0c <- read-byte(2283)
+    temp0c <- read-word(2283)
     temp0d <- pop-SP
     write-word(temp0c + 0006) <- temp0d
-    temp0e <- read-byte(228b)
+    temp0e <- read-word(228b)
     push-SP: (int16(temp0e) + int16(02))
-    temp0f <- read-byte(2281)
+    temp0f <- read-word(2281)
     temp10 <- pop-SP
     write-word(temp0f + 0002) <- temp10
-    temp11 <- read-byte(2289)
+    temp11 <- read-word(2289)
     push-SP: (int16(temp11) + int16(02))
-    temp12 <- read-byte(2281)
+    temp12 <- read-word(2281)
     temp13 <- pop-SP
     write-word(temp12 + 0006) <- temp13
     write-word(2271) <- b4
     push-SP: call 9530 (a0)
-    temp14 <- read-byte(2271)
+    temp14 <- read-word(2271)
     if (((0010 & read-byte((((temp14 - 1) * 9) + 02ee) + 0000)) <> 0) = 1) is true then
         jump-to: LABEL 02
 LABEL 01
@@ -1225,7 +1225,7 @@ LABEL 01
 LABEL 02
     write-word(22f5) <- 01
     write-word(234f) <- 04
-    temp15 <- read-byte(234f)
+    temp15 <- read-word(234f)
     write-word(2371) <- temp15
     RUNTIME EXCEPTION: Unsupported opcode: insert_obj (v.3) with 2 operands
     push-SP: call 7e04 ()

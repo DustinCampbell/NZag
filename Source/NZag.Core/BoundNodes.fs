@@ -614,7 +614,7 @@ type BoundNodeDumper (builder : StringBuilder) =
             parenthesize (fun () ->
                 dumpExpression e)
         | ReadMemoryWordExpr(e) ->
-            append "read-byte"
+            append "read-word"
             parenthesize (fun () ->
                 dumpExpression e)
         | ReadMemoryTextExpr(e) ->

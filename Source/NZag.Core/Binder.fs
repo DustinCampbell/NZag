@@ -710,7 +710,7 @@ type RoutineBinder(memory: Memory, debugging: bool) =
 
             updater.AddStatement(s'))
 
-    let lower_ObjectNumbersToAddresses tree =
+    let lower_ObjectReadsAndWrites tree =
         let objectTableAddress = (memory |> Header.readObjectTableAddress |> (fun a -> a.IntValue)) |> int32Const
         let propertyDefaultsSize = (if memory.Version <= 3 then 31 else 63) |> int32Const
         let objectEntriesAddress = objectTableAddress .+. (propertyDefaultsSize .*. two)
@@ -756,6 +756,12 @@ type RoutineBinder(memory: Memory, debugging: bool) =
 
             writeByte byteAddress newAttributeByte
 
+        let readObjectFirstPropertyAddress objNum =
+            let propAddress = readWord ((computeObjectAddress objNum) .+. objectPropertyTableOffset)
+            let nameLength = readByte propAddress
+
+            ((propAddress .+. one) .+. (nameLength .*. two)) |> toUInt16
+
         tree |> updateTree (fun s updater ->
             let s' =
                 s |> rewriteStatement
@@ -769,6 +775,7 @@ type RoutineBinder(memory: Memory, debugging: bool) =
                         | ReadObjectChildExpr(o) -> readObjectChild o
                         | ReadObjectParentExpr(o) -> readObjectParent o
                         | ReadObjectSiblingExpr(o) -> readObjectSibling o
+                        | ReadObjectFirstPropertyAddressExpr(o) -> readObjectFirstPropertyAddress o
                         | e -> e)
 
             updater.AddStatement(s'))
@@ -982,7 +989,7 @@ type RoutineBinder(memory: Memory, debugging: bool) =
     let lower tree =
         tree
         |> lower_GlobalVariableReadsAndWrites
-        |> lower_ObjectNumbersToAddresses
+        |> lower_ObjectReadsAndWrites
 
     let optimize tree =
         tree |> fixedpoint (fun tree ->
