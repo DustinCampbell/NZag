@@ -54,6 +54,7 @@ type BinaryOperationKind =
 type ConversionKind =
     | ToByte = 1
     | ToInt16 = 2
+    | ToUInt16 = 3
 
 type Expression =
 
@@ -121,6 +122,10 @@ type Expression =
 
     /// Reads the sibling of the object whose number is represented by the given expression
     | ReadObjectSiblingExpr of Expression
+
+    | ReadObjectFirstPropertyAddressExpr of Expression
+    | ReadObjectNextPropertyAddressExpr of Expression
+    | ReadObjectPropertyDefaultExpr of Expression
 
     /// Generates a random number using the given range expression
     | GenerateRandomNumberExpr of Expression
@@ -241,6 +246,7 @@ module BoundNodeConstruction =
 
     let toByte v = ConversionExpr(ConversionKind.ToByte, v)
     let toInt16 v = ConversionExpr(ConversionKind.ToInt16, v)
+    let toUInt16 v = ConversionExpr(ConversionKind.ToUInt16, v)
 
     let readVar v =
         match v with
@@ -323,6 +329,12 @@ module BoundNodeVisitors =
             fexpr (ReadObjectParentExpr(rewriteExpr e))
         | ReadObjectSiblingExpr(e) ->
             fexpr (ReadObjectSiblingExpr(rewriteExpr e))
+        | ReadObjectFirstPropertyAddressExpr(e) ->
+            fexpr (ReadObjectFirstPropertyAddressExpr(rewriteExpr e))
+        | ReadObjectNextPropertyAddressExpr(e) ->
+            fexpr (ReadObjectNextPropertyAddressExpr(rewriteExpr e))
+        | ReadObjectPropertyDefaultExpr(e) ->
+            fexpr (ReadObjectPropertyDefaultExpr(rewriteExpr e))
         | GenerateRandomNumberExpr(e) ->
             fexpr (GenerateRandomNumberExpr(rewriteExpr e))
 
@@ -406,6 +418,9 @@ module BoundNodeVisitors =
             | ReadObjectChildExpr(e)
             | ReadObjectParentExpr(e)
             | ReadObjectSiblingExpr(e)
+            | ReadObjectFirstPropertyAddressExpr(e)
+            | ReadObjectNextPropertyAddressExpr(e)
+            | ReadObjectPropertyDefaultExpr(e)
             | GenerateRandomNumberExpr(e) ->
                 visitExpr e
             | BinaryOperationExpr(_,e1,e2)
@@ -536,8 +551,9 @@ type BoundNodeDumper (builder : StringBuilder) =
         | x -> failcompilef "Unknown binary operator kind: %A" x
 
     let dumpConversionKind = function
-        | ConversionKind.ToInt16 -> append "int16"
         | ConversionKind.ToByte -> append "byte"
+        | ConversionKind.ToInt16 -> append "int16"
+        | ConversionKind.ToUInt16 -> append "uint16"
         | x -> failcompilef "Unknown conversion kind: %A" x
 
     let rec dumpExpression = function
@@ -625,6 +641,18 @@ type BoundNodeDumper (builder : StringBuilder) =
                 dumpExpression e)
         | ReadObjectSiblingExpr(e) ->
             append "obj-sibling"
+            parenthesize (fun () ->
+                dumpExpression e)
+        | ReadObjectFirstPropertyAddressExpr(e) ->
+            append "obj-first-property-address"
+            parenthesize (fun () ->
+                dumpExpression e)
+        | ReadObjectNextPropertyAddressExpr(e) ->
+            append "obj-next-property-address"
+            parenthesize (fun () ->
+                dumpExpression e)
+        | ReadObjectPropertyDefaultExpr(e) ->
+            append "obj-property-default"
             parenthesize (fun () ->
                 dumpExpression e)
         | GenerateRandomNumberExpr(e) ->

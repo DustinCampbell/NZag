@@ -678,6 +678,47 @@ LABEL 18
     End Sub
 
     <Fact>
+    Sub CZech_1AC8()
+        ' 1ac9:  73 01 02 04             get_next_prop   local0 local1 -> local3
+        ' 1acd:  2d 16 01                store           g06 local0
+        ' 1ad0:  2d 17 02                store           g07 local1
+        ' 1ad3:  f9 28 02 21 04 03 0b 6b call_vn         884 local3 local2 s035
+        ' 1adb:  b0                      rtrue
+
+        Dim expected =
+<![CDATA[
+# temps: 8
+
+LABEL 00
+    temp00 <- L00
+    temp01 <- L01
+    temp02 <- obj-first-property-address(temp00)
+    temp03 <- 0
+    if (temp01 <> 0) is false then
+        jump-to: LABEL 03
+LABEL 01
+    if ((temp03 & 3f) > temp01) is false then
+        jump-to: LABEL 03
+LABEL 02
+    temp03 <- read-byte(temp02)
+    temp02 <- obj-next-property-address(temp02)
+    jump-to: LABEL 01
+LABEL 03
+    L03 <- uint16(read-byte(temp02) & 3f)
+    temp04 <- L00
+    write-word(04fc) <- temp04
+    temp05 <- L01
+    write-word(04fe) <- temp05
+    temp06 <- L03
+    temp07 <- L02
+    discard: call 0884 (temp06, temp07, 0b6b)
+    return: 1
+]]>
+
+        Test(CZech, &H1AC8, expected)
+    End Sub
+
+    <Fact>
     Sub CZech_2448()
         ' 2449:  0d 11 00                store           g01 #00
         ' 244c:  0d 12 00                store           g02 #00

@@ -17,6 +17,15 @@ type BoundTreeBuilder() =
         x.AssignTemp temp value
         TempExpr(temp)
 
+    member x.InitMutableTemp value =
+        let temp = x.NewTemp()
+        x.AssignTemp temp value
+
+        let read = TempExpr(temp)
+        let write v = WriteTempStmt(temp, v)
+
+        read, write
+
     member x.MarkLabel label =
         let label = LabelStmt(label)
         x.AddStatement(label)
@@ -40,6 +49,17 @@ type BoundTreeBuilder() =
         let ret = ReturnStmt(expression)
         x.AddStatement(ret)
 
+    member x.IfThen condition whenTrue =
+        let whenTrueLabel = x.NewLabel()
+        let doneLabel = x.NewLabel()
+
+        doneLabel |> x.BranchIfFalse condition
+
+        x.MarkLabel(whenTrueLabel)
+        whenTrue()
+
+        x.MarkLabel(doneLabel)
+
     member x.IfThenElse condition whenTrue whenFalse =
         let whenTrueLabel = x.NewLabel()
         let whenFalseLabel = x.NewLabel()
@@ -53,6 +73,20 @@ type BoundTreeBuilder() =
 
         x.MarkLabel(whenFalseLabel)
         whenFalse()
+
+        x.MarkLabel(doneLabel)
+
+    member x.LoopWhile condition whenTrue =
+        let startLabel = x.NewLabel()
+        let whenTrueLabel = x.NewLabel()
+        let doneLabel = x.NewLabel()
+
+        x.MarkLabel(startLabel)
+        doneLabel |> x.BranchIfFalse condition
+
+        x.MarkLabel(whenTrueLabel)
+        whenTrue()
+        x.JumpTo(startLabel)
 
         x.MarkLabel(doneLabel)
 
@@ -163,14 +197,28 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
     let ret expression =
         builder.Return(expression)
 
+    let getTempIndex t =
+        match t with
+        | TempExpr(t) -> t
+        | _ -> failcompile "Expected temp"
+
     let assignTemp t v =
         builder.AssignTemp t v
 
     let initTemp expression =
         builder.InitTemp expression
 
+    let initMutableTemp expression =
+        builder.InitMutableTemp expression
+
     let ifThenElse condition whenTrue whenFalse =
         builder.IfThenElse condition whenTrue whenFalse
+
+    let ifThen condition whenTrue =
+        builder.IfThen condition whenTrue
+
+    let loopWhile condition whenTrue =
+        builder.LoopWhile condition whenTrue
 
     let bindOperand = function
         | LargeConstantOperand(v) -> wordConst v
@@ -343,6 +391,19 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             let result = initTemp (ReadObjectChildExpr(objNum))
             store result
             branchIf (result .<>. zero)
+
+        | "get_next_prop", Any, Op2(objNum, propNum) ->
+            let propAddressRead, propAddressWrite = initMutableTemp (ReadObjectFirstPropertyAddressExpr(objNum))
+            let propValueRead, propValueWrite = initMutableTemp zero
+            let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
+
+            ifThen (propNum .<>. zero) (fun () ->
+                loopWhile ((propValueRead .&. mask) .>. propNum) (fun () ->
+                    propValueWrite (readByte propAddressRead) |> addStatement
+                    propAddressWrite (ReadObjectNextPropertyAddressExpr(propAddressRead)) |> addStatement
+                ))
+
+            store (((readByte propAddressRead) .&. mask) |> toUInt16)
 
         | "get_parent", Any, Op1(objNum) ->
             store (ReadObjectParentExpr(objNum))
@@ -540,31 +601,61 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
 type RoutineBinder(memory: Memory, debugging: bool) =
 
-    let sortLabels tree =
+    let updateTree f tree =
+        let updater = new BoundTreeUpdater(tree)
+        updater.Update f
+        updater.GetTree()
+
+    let cleanupLabels tree =
+        // There are two goals here:
+        //
+        // * First, we want to reorder the labels so that the label numbers
+        //   are in ascending order.
+        //
+        // * Second, we want to remove any redundant labels where a label
+        //   immediately follows another one. This ensures that a sensible
+        //   control flow graph can be created.
+
         let nextLabelIndex = ref 0
         let labels = Dictionary.create()
+        let lastLabel = ref None
 
         // First, collect the existing labels and create new ones
         tree |> walkTree
             (fun s ->
                 match s with
                 | LabelStmt(l) ->
-                    let newLabel = !nextLabelIndex
-                    labels |> Dictionary.add l newLabel
-                    incr nextLabelIndex
-                | _ -> ())
+                    match !lastLabel with
+                    | Some(newLabel) -> 
+                        labels |> Dictionary.add l newLabel
+                    | None ->
+                        let newLabel = !nextLabelIndex
+                        labels |> Dictionary.add l newLabel
+                        incr nextLabelIndex
+                        lastLabel := Some(newLabel)
+                | _ ->
+                    lastLabel := None)
             (fun e -> ())
 
         // Next, rewrite the tree, replacing the old labels with new ones
-        tree |> rewriteTree
-            (fun s -> 
-                match s with
-                | LabelStmt(l) -> LabelStmt(labels.[l])
-                | JumpStmt(l) -> JumpStmt(labels.[l])
-                | s -> s)
-            (fun e -> e)
+        let createdLabels = ref Set.empty
 
-    let sortTemps tree =
+        tree |> updateTree (fun s updater ->
+            match s with
+            | LabelStmt(l) ->
+                // Be careful not to add duplicate labels
+                let l' = labels.[l]
+                if not (!createdLabels |> Set.contains l') then
+                    LabelStmt(l') |> updater.AddStatement
+                    createdLabels := !createdLabels |> Set.add l'
+            | JumpStmt(l) ->
+                JumpStmt(labels.[l]) |> updater.AddStatement
+            | BranchStmt(c,e,JumpStmt(l)) ->
+                BranchStmt(c,e,JumpStmt(labels.[l])) |> updater.AddStatement
+            | s ->
+                updater.AddStatement(s))
+
+    let cleanupTemps tree =
         let nextTempIndex = ref 0
         let temps = Dictionary.create()
 
@@ -595,13 +686,6 @@ type RoutineBinder(memory: Memory, debugging: bool) =
         let newStatements = tree.Statements |> List.map rewriteTemps
 
         { Statements = newStatements; TempCount = !nextTempIndex; LabelCount = tree.LabelCount }
-
-    let updateTree f tree =
-        let updater = new BoundTreeUpdater(tree)
-
-        updater.Update f
-
-        updater.GetTree()
 
     let lower_GlobalVariableReadsAndWrites tree =
         let globalVariableTableAddress =
@@ -919,7 +1003,9 @@ type RoutineBinder(memory: Memory, debugging: bool) =
             binder.BindInstruction(i)
 
         builder.GetTree()
+            |> cleanupLabels
+            |> cleanupTemps
             |> lower
             |> optimize
-            |> sortLabels
-            |> sortTemps
+            |> cleanupLabels
+            |> cleanupTemps

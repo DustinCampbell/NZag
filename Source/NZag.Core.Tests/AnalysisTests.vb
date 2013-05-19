@@ -6,6 +6,38 @@ Imports DefinitionsBlock = NZag.Core.Graphs.Block(Of NZag.Core.Graphs.Definition
 Public Module AnalysisTests
 
     <Fact>
+    Sub CZech_1AC8_ReachingDefinitions()
+        ' 1ac9:  73 01 02 04             get_next_prop   local0 local1 -> local3
+        ' 1acd:  2d 16 01                store           g06 local0
+        ' 1ad0:  2d 17 02                store           g07 local1
+        ' 1ad3:  f9 28 02 21 04 03 0b 6b call_vn         884 local3 local2 s035
+        ' 1adb:  b0                      rtrue
+
+        Dim expected =
+            DefinitionsGraph(
+                DefinitionsBlock(Graphs.Entry,
+                                 NoInDefs,
+                                 NoOutDefs),
+                DefinitionsBlock(0,
+                                 NoInDefs,
+                                 Outs(0, 1, 2, 3)),
+                DefinitionsBlock(1,
+                                 Ins(0, 1, 2, 2, 3, 3),
+                                 Outs(0, 1, 2, 2, 3, 3)),
+                DefinitionsBlock(2,
+                                 Ins(0, 1, 2, 2, 3, 3),
+                                 Outs(0, 1, 2, 3)),
+                DefinitionsBlock(3,
+                                 Ins(0, 1, 2, 2, 3, 3),
+                                 Outs(0, 1, 2, 2, 3, 3, 4, 5, 6, 7)),
+                DefinitionsBlock(Graphs.Exit,
+                                 Ins(0, 1, 2, 2, 3, 3, 4, 5, 6, 7),
+                                 Outs(0, 1, 2, 2, 3, 3, 4, 5, 6, 7)))
+
+        Test(CZech, &H1AC8, expected)
+    End Sub
+
+    <Fact>
     Sub Zork1_4E3B_ControlFlow()
         ' 4e3b:  b2 ...                  PRINT           "a "
         ' 4e3e:  aa 01                   PRINT_OBJ       L00

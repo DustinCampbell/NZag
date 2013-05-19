@@ -209,9 +209,9 @@ module Graphs =
                 insMap.[b.ID] <- ins
 
             let statements = statementsMap.[b.ID]
-            let generated = ref Set.empty
-            let killed = ref Set.empty
-            let currentOuts = ref (Set.union !generated (Set.difference ins !killed))
+            statements.Clear()
+
+            let currentOuts = ref ins
 
             b.Data.Statements |> List.iteri (fun i s ->
                 let currentIns = !currentOuts
@@ -231,10 +231,9 @@ module Graphs =
 
                         tempToDefinitionsMap.[t] <- definitionSet |> Set.add definition
 
-                        generated := !generated |> Set.filter (fun d -> d.Temp <> t)
-                        killed := !killed |> Set.filter (fun d -> d.Temp = t)
-                        generated := !generated |> Set.add definition
-                        currentOuts := Set.union !generated (Set.difference currentIns !killed)
+                        currentOuts := !currentOuts
+                            |> Set.filter (fun d -> d.Temp <> t)
+                            |> Set.add definition
                     | s -> ()
 
                     {Statement = s; InDefinitions = currentIns; OutDefinitions = !currentOuts}
