@@ -286,10 +286,10 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
                 (fun () ->
                     store zero)
                 (fun () ->
-                    let baseAddress = initTemp (address .*. packedMultiplier)
+                    let baseAddress = address .*. packedMultiplier
                     let address = 
                         if memory.Version = 6 || memory.Version = 7 then
-                            initTemp (baseAddress .+. routinesOffset)
+                            baseAddress .+. routinesOffset
                         else
                             baseAddress
 
@@ -304,10 +304,10 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
                 (fun () ->
                     discard zero)
                 (fun () ->
-                    let baseAddress = initTemp (address .*. packedMultiplier)
+                    let baseAddress = address .*. packedMultiplier
                     let address = 
                         if memory.Version = 6 || memory.Version = 7 then
-                            initTemp (baseAddress .+. routinesOffset)
+                            baseAddress .+. routinesOffset
                         else
                             baseAddress
 
@@ -404,13 +404,13 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             store value
 
         | "loadb", Any, Op2(address,offset) ->
-            let address = initTemp (address .+. offset)
+            let address = address .+. offset
 
             store (ReadMemoryByteExpr(address))
 
         | "loadw", Any, Op2(address,offset) ->
-            let offset = initTemp (offset .*. two)
-            let address = initTemp (address .+. offset)
+            let offset = offset .*. two
+            let address = address .+. offset
 
             store (ReadMemoryWordExpr(address))
 
@@ -459,10 +459,10 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             objectName obj |> printText |> addStatement
 
         | "print_paddr", Any, Op1(address) ->
-            let baseAddress = initTemp (address .*. packedMultiplier)
+            let baseAddress = address .*. packedMultiplier
             let address = 
                 if memory.Version = 6 || memory.Version = 7 then
-                    initTemp (baseAddress .+. stringsOffset)
+                    baseAddress .+. stringsOffset
                 else
                     baseAddress
 
@@ -471,7 +471,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         | "pull", Any, Op1(varIndex) ->
             let read, write = byRefVariable varIndex
 
-            let value = initTemp StackPopExpr
+            let value = StackPopExpr
             write value |> addStatement
 
         | "push", Any, Op1(value) ->
@@ -508,13 +508,13 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             write value |> addStatement
 
         | "storeb", Any, Op3(address, offset, value) ->
-            let address = initTemp (address .+. offset)
+            let address = address .+. offset
 
             WriteMemoryByteStmt(address, value) |> addStatement
 
         | "storew", Any, Op3(address, offset, value) ->
-            let offset = initTemp (offset .*. two)
-            let address = initTemp (address .+. offset)
+            let offset = offset .*. two
+            let address = address .+. offset
 
             WriteMemoryWordStmt(address, value) |> addStatement
 
@@ -525,7 +525,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             store (left .-. right)
 
         | "test_attr", Any, Op2(obj, attribute) ->
-            let attributeValue = initTemp (ReadObjectAttributeExpr(obj, attribute))
+            let attributeValue = ReadObjectAttributeExpr(obj, attribute)
 
             branchIf (attributeValue .=. one)
 
