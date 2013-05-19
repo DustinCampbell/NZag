@@ -142,7 +142,7 @@ type BoundTreeUpdater(tree : BoundTree) =
     override x.GetTree() =
         { Statements = statements |> Seq.toList; TempCount = tempCount; LabelCount = labelCount }
 
-type InstructionBinder(memory: Memory, builder: BoundTreeCreator) =
+type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: bool) =
 
     let packedMultiplier =
         match memory.Version with
@@ -214,6 +214,10 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator) =
             let label = builder.GetJumpTargetLabel(instruction.Address)
             builder.MarkLabel(label)
 
+        // If debugging, write the instruction to the debug output
+        if debugging then
+            debugOut (instruction.ToString()) |> addStatement
+
         // Create temps for all operands
         let operandValues = instruction.Operands |> List.map bindOperand
         let operandTemps = operandValues |> List.map (fun v -> initTemp v)
@@ -254,12 +258,13 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator) =
         // Bind the instruction
         match (instruction.Opcode.Name, instruction.Opcode.Version, operandTemps) with
         | "add", Any, Op2(left, right) ->
-            let left = initTemp (left |> toInt16)
-            let right = initTemp (right |> toInt16)
+            let left = left |> toInt16
+            let right = right |> toInt16
 
             store (left .+. right)
 
         | "call", Any, OpAndList(address, args)
+        | "call_2s", AtLeast 4uy, OpAndList(address, args)
         | "call_vs", Any, OpAndList(address, args) ->
 
             ifThenElse (address .=. zero)
@@ -276,7 +281,8 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator) =
                     store (CallExpr(address, args)))
 
         | "call_1n", AtLeast 5uy, OpAndList(address, args)
-        | "call_2n", AtLeast 5uy, OpAndList(address, args) ->
+        | "call_2n", AtLeast 5uy, OpAndList(address, args)
+        | "call_vn", AtLeast 5uy, OpAndList(address, args) ->
 
             ifThenElse (address .=. zero)
                 (fun () ->
@@ -294,19 +300,19 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator) =
         | "dec", Any, Op1(varIndex) ->
             let read, write = byRefVariable varIndex
 
-            let read = initTemp (read |> toInt16)
+            let read = read |> toInt16
             write (read .-. (one |> toInt16)) |> addStatement
 
         | "div", Any, Op2(left, right) ->
-            let left = initTemp (left |> toInt16)
-            let right = initTemp (right |> toInt16)
+            let left = left |> toInt16
+            let right = right |> toInt16
 
             store (left ./. right)
 
         | "inc", Any, Op1(varIndex) ->
             let read, write = byRefVariable varIndex
 
-            let read = initTemp (read |> toInt16)
+            let read = read |> toInt16
             write (read .+. (one |> toInt16)) |> addStatement
 
         | "je", Any, OpAndList(left, values) ->
@@ -320,14 +326,14 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator) =
                     (List.head conditions))
 
         | "jg", Any, Op2(left, right) ->
-            let left = initTemp (left |> toInt16)
-            let right = initTemp (right |> toInt16)
+            let left = left |> toInt16
+            let right = right |> toInt16
 
             branchIf (left .>. right)
 
         | "jl", Any, Op2(left, right) ->
-            let left = initTemp (left |> toInt16)
-            let right = initTemp (right |> toInt16)
+            let left = left |> toInt16
+            let right = right |> toInt16
 
             branchIf (left .<. right)
 
@@ -350,14 +356,14 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator) =
             store (ReadMemoryWordExpr(address))
 
         | "mod", Any, Op2(left, right) ->
-            let left = initTemp (left |> toInt16)
-            let right = initTemp (right |> toInt16)
+            let left = left |> toInt16
+            let right = right |> toInt16
 
             store (left .%. right)
 
         | "mul", Any, Op2(left, right) ->
-            let left = initTemp (left |> toInt16)
-            let right = initTemp (right |> toInt16)
+            let left = left |> toInt16
+            let right = right |> toInt16
 
             store (left .*. right)
 
@@ -391,7 +397,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator) =
             QuitStmt |> addStatement
 
         | "random", Any, Op1(range) ->
-            let range = initTemp (range |> toInt16)
+            let range = range |> toInt16
 
             ifThenElse (range .>. zero)
                 (fun () ->
@@ -429,8 +435,8 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator) =
             WriteMemoryWordStmt(address, value) |> addStatement
 
         | "sub", Any, Op2(left, right) ->
-            let left = initTemp (left |> toInt16)
-            let right = initTemp (right |> toInt16)
+            let left = left |> toInt16
+            let right = right |> toInt16
 
             store (left .-. right)
 
@@ -442,7 +448,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator) =
         | (n,k,ops) ->
             runtimeException "Unsupported opcode: %s (v.%d) with %d operands" n k ops.Length |> addStatement
 
-type RoutineBinder(memory: Memory) =
+type RoutineBinder(memory: Memory, debugging: bool) =
 
     let sortLabels tree =
         let nextLabelIndex = ref 0
@@ -753,7 +759,7 @@ type RoutineBinder(memory: Memory) =
     member x.BindRoutine(routine: Routine) =
 
         let builder = new BoundTreeCreator(routine)
-        let binder = new InstructionBinder(memory, builder)
+        let binder = new InstructionBinder(memory, builder, debugging)
 
         for i in routine.Instructions do
             binder.BindInstruction(i)

@@ -587,7 +587,7 @@ and Memory private (stream : Stream) =
 module Header =
 
     let private offset_InitialPC = ByteAddress(0x06us)
-    let private offset_GlobalVariableTableAddress = ByteAddress(0x06us)
+    let private offset_GlobalVariableTableAddress = ByteAddress(0x0cus)
     let private offset_AbbreviationTableAddress = ByteAddress(0x18us)
     let private offset_RoutinesOffset = ByteAddress(0x28us)
     let private offset_StringsOffset = ByteAddress(0x2aus)

@@ -36,22 +36,31 @@ Test numbers appear in [brackets].
 
 print works or you wouldn't be seeing this.
 
-Jumps [2]: jump.je..........jg.....
-bad [17]!
-Quitting tests because jumps don't work!
+Jumps [2]: jump.je..........jg.......jl.......jz...offsets..
+Variables [32]: push/pull
 ]]>
 
         Test(CZech, expected)
     End Sub
 
+    <Fact()>
+    Sub RunZork1()
+        Dim expected =
+<![CDATA[
+]]>
+
+        Test(Zork1, expected)
+    End Sub
+
     Private Sub Test(gameName As String, expected As XCData)
         Dim memory = GameMemory(gameName)
-        Dim machine = New Machine(memory)
+        Dim machine = New Machine(memory, debugging:=True)
         Dim screen = New Screen()
         machine.RegisterScreen(screen)
         Try
             machine.Run()
         Catch ex As Exceptions.ZMachineQuitException
+        Catch
         End Try
 
         Dim expectedText = expected.Value.Trim()

@@ -12,7 +12,7 @@ Public Module BinderTests
 # temps: 0
 
 LABEL 00
-    write-word(09bb) <- call 2448 ()
+    write-word(06ce) <- call 2448 ()
     quit
 ]]>
 
@@ -20,11 +20,69 @@ LABEL 00
     End Sub
 
     <Fact>
-    Sub CZech_8f4()
+    Sub CZech_7E4()
+        ' 7e5:  61 02 01 80 46          je              local1 local0 82e
+        ' 7ea:  b2 ...                  print           "^^ERROR ["
+        ' 7f9:  e6 bf 11                print_num       g01
+        ' 7fc:  b2 ...                  print           "] "
+        ' 801:  ff 7f 03 4a             check_arg_count #03 ~80d
+        ' 805:  b2 ...                  print           "("
+        ' 808:  ad 03                   print_paddr     local2
+        ' 80a:  b2 ...                  print           ")"
+        ' 80d:  8f 02 3b                call_1n         8ec
+        ' 810:  b2 ...                  print           " Expected "
+        ' 819:  e6 bf 02                print_num       local1
+        ' 81c:  b2 ...                  print           "; got "
+        ' 823:  e6 bf 01                print_num       local0
+        ' 826:  b2 ...                  print           "^^"
+        ' 82b:  8c 00 05                jump            831
+        ' 82e:  8f 02 38                call_1n         8e0
+        ' 831:  b0                      rtrue
+        Dim expected =
+<![CDATA[
+# temps: 8
+
+LABEL 00
+    temp00 <- L01
+    temp01 <- L00
+    temp02 <- (temp00 = temp01)
+    if (temp02) is true then
+        jump-to: LABEL 02
+LABEL 01
+    print: "\n\nERROR ["
+    temp03 <- read-byte(04f2)
+    print: number-to-text(int16(temp03))
+    print: "] "
+    RUNTIME EXCEPTION: Unsupported opcode: check_arg_count (v.5) with 1 operands
+    print: "("
+    temp04 <- L02
+    temp05 <- (temp04 * 4)
+    print: read-text(temp05)
+    print: ")"
+    discard(call 08ec ())
+    print: " Expected "
+    temp06 <- L01
+    print: number-to-text(int16(temp06))
+    print: "; got "
+    temp07 <- L00
+    print: number-to-text(int16(temp07))
+    print: "\n\n"
+    jump-to: LABEL 03
+LABEL 02
+    discard(call 08e0 ())
+LABEL 03
+    return: 1
+]]>
+
+        Test(CZech, &H7E4, expected)
+    End Sub
+
+    <Fact>
+    Sub CZech_8F4()
         ' 8f5:  b2 ...                  print           "Jumps"
         ' 8fa:  a0 01 ca                jz              local0 905
         ' 8fd:  b2 ...                  print           " skipped"
-        ' 904:    b1 rfalse
+        ' 904:  b1                      rfalse
         ' 905:  b2 ...                  print           " ["
         ' 90a:  54 11 01 00             add             g01 #01 -> sp
         ' 90e:  e6 bf 00                print_num       sp
@@ -32,7 +90,7 @@ LABEL 00
         ' 918:  b2 ...                  print           "jump"
         ' 91d:  8c 00 08                jump            926
         ' 920:  b2 ...                  print           "bad!"
-        ' 925:  ba quit
+        ' 925:  ba                      quit
         ' 926:  8f 02 38                call_1n         8e0
         ' 929:  b2 ...                  print           "je"
         ' 92c:  01 05 05 01 29          je              #05 #05 ~a58
@@ -102,11 +160,11 @@ LABEL 00
         ' a61:  e6 bf 11                print_num       g01
         ' a64:  b2 ...                  print           "]!^"
         ' a6b:  b2 ...                  print           "Quitting tests because jumps don't work!"
-        ' a8a:  ba quit
+        ' a8a:  ba                      quit
 
         Dim expected =
 <![CDATA[
-# temps: 34
+# temps: 6
 
 LABEL 00
     print: "Jumps"
@@ -118,12 +176,10 @@ LABEL 01
     return: 0
 LABEL 02
     print: " ["
-    temp01 <- read-byte(07df)
-    temp02 <- int16(temp01)
-    temp03 <- int16(01)
-    push-SP: (temp02 + temp03)
-    temp04 <- pop-SP
-    print: number-to-text(int16(temp04))
+    temp01 <- read-byte(04f2)
+    push-SP: (int16(temp01) + int16(01))
+    temp02 <- pop-SP
+    print: number-to-text(int16(temp02))
     print: "]: "
     print: "jump"
     jump-to: LABEL 03
@@ -173,88 +229,60 @@ LABEL 0c
 LABEL 0d
     discard(call 08e0 ())
     print: "jg"
-    temp05 <- int16(05)
-    temp06 <- int16(05)
-    if (temp05 > temp06) is true then
+    if (int16(05) > int16(05)) is true then
         jump-to: LABEL 1f
 LABEL 0e
     discard(call 08e0 ())
-    temp07 <- int16(01)
-    temp08 <- int16(00)
-    if (temp07 > temp08) is false then
+    if (int16(01) > int16(00)) is false then
         jump-to: LABEL 1f
 LABEL 0f
     discard(call 08e0 ())
-    temp09 <- int16(00)
-    temp0a <- int16(01)
-    if (temp09 > temp0a) is true then
+    if (int16(00) > int16(01)) is true then
         jump-to: LABEL 1f
 LABEL 10
     discard(call 08e0 ())
-    temp0b <- int16(ffff)
-    temp0c <- int16(fffe)
-    if (temp0b > temp0c) is false then
+    if (int16(ffff) > int16(fffe)) is false then
         jump-to: LABEL 1f
 LABEL 11
     discard(call 08e0 ())
-    temp0d <- int16(fffe)
-    temp0e <- int16(ffff)
-    if (temp0d > temp0e) is true then
+    if (int16(fffe) > int16(ffff)) is true then
         jump-to: LABEL 1f
 LABEL 12
     discard(call 08e0 ())
-    temp0f <- int16(01)
-    temp10 <- int16(ffff)
-    if (temp0f > temp10) is false then
+    if (int16(01) > int16(ffff)) is false then
         jump-to: LABEL 1f
 LABEL 13
     discard(call 08e0 ())
-    temp11 <- int16(ffff)
-    temp12 <- int16(01)
-    if (temp11 > temp12) is true then
+    if (int16(ffff) > int16(01)) is true then
         jump-to: LABEL 1f
 LABEL 14
     discard(call 08e0 ())
     print: "jl"
-    temp13 <- int16(05)
-    temp14 <- int16(05)
-    if (temp13 < temp14) is true then
+    if (int16(05) < int16(05)) is true then
         jump-to: LABEL 1f
 LABEL 15
     discard(call 08e0 ())
-    temp15 <- int16(01)
-    temp16 <- int16(00)
-    if (temp15 < temp16) is true then
+    if (int16(01) < int16(00)) is true then
         jump-to: LABEL 1f
 LABEL 16
     discard(call 08e0 ())
-    temp17 <- int16(00)
-    temp18 <- int16(01)
-    if (temp17 < temp18) is false then
+    if (int16(00) < int16(01)) is false then
         jump-to: LABEL 1f
 LABEL 17
     discard(call 08e0 ())
-    temp19 <- int16(ffff)
-    temp1a <- int16(fffe)
-    if (temp19 < temp1a) is true then
+    if (int16(ffff) < int16(fffe)) is true then
         jump-to: LABEL 1f
 LABEL 18
     discard(call 08e0 ())
-    temp1b <- int16(fffe)
-    temp1c <- int16(ffff)
-    if (temp1b < temp1c) is false then
+    if (int16(fffe) < int16(ffff)) is false then
         jump-to: LABEL 1f
 LABEL 19
     discard(call 08e0 ())
-    temp1d <- int16(01)
-    temp1e <- int16(ffff)
-    if (temp1d < temp1e) is true then
+    if (int16(01) < int16(ffff)) is true then
         jump-to: LABEL 1f
 LABEL 1a
     discard(call 08e0 ())
-    temp1f <- int16(ffff)
-    temp20 <- int16(01)
-    if (temp1f < temp20) is false then
+    if (int16(ffff) < int16(01)) is false then
         jump-to: LABEL 1f
 LABEL 1b
     discard(call 08e0 ())
@@ -272,15 +300,17 @@ LABEL 1d
 LABEL 1e
     discard(call 08e0 ())
     print: "offsets"
-    RUNTIME EXCEPTION: Unsupported opcode: call_2s (v.5) with 2 operands
-    RUNTIME EXCEPTION: Unsupported opcode: call_vn (v.5) with 4 operands
-    RUNTIME EXCEPTION: Unsupported opcode: call_2s (v.5) with 2 operands
-    RUNTIME EXCEPTION: Unsupported opcode: call_vn (v.5) with 4 operands
+    L01 <- call 0a8c (00)
+    temp03 <- L01
+    discard(call 07e4 (temp03, 00, 0b1f))
+    L01 <- call 0a8c (01)
+    temp04 <- L01
+    discard(call 07e4 (temp04, 01, 0b21))
     return: 1
 LABEL 1f
     print: "\nbad ["
-    temp21 <- read-byte(07df)
-    print: number-to-text(int16(temp21))
+    temp05 <- read-byte(04f2)
+    print: number-to-text(int16(temp05))
     print: "]!\n"
     print: "Quitting tests because jumps don't work!"
     quit
@@ -343,13 +373,13 @@ LABEL 1f
 
         Dim expected =
 <![CDATA[
-# temps: 15
+# temps: 11
 
 LABEL 00
-    write-word(07df) <- 00
-    write-word(07e1) <- 00
-    write-word(07e3) <- 00
-    write-word(07e5) <- 00
+    write-word(04f2) <- 00
+    write-word(04f4) <- 00
+    write-word(04f6) <- 00
+    write-word(04f8) <- 00
     print: "CZECH: the Comprehensive Z-machine Emulation CHecker, version "
     print: read-text(2c78)
     print: "\nTest numbers appear in [brackets].\n"
@@ -378,33 +408,29 @@ LABEL 00
     discard(call 1150 (00))
     print: "\n"
     print: "\n\nPerformed "
-    temp00 <- read-byte(07df)
+    temp00 <- read-byte(04f2)
     print: number-to-text(int16(temp00))
     print: " tests.\n"
     print: "Passed: "
-    temp01 <- read-byte(07e1)
+    temp01 <- read-byte(04f4)
     print: number-to-text(int16(temp01))
     print: ", Failed: "
-    temp02 <- read-byte(07e3)
+    temp02 <- read-byte(04f6)
     print: number-to-text(int16(temp02))
     print: ", Print tests: "
-    temp03 <- read-byte(07e5)
+    temp03 <- read-byte(04f8)
     print: number-to-text(int16(temp03))
     print: "\n"
-    temp04 <- read-byte(07e1)
-    temp05 <- read-byte(07e3)
-    temp06 <- int16(temp04)
-    temp07 <- int16(temp05)
-    push-SP: (temp06 + temp07)
+    temp04 <- read-byte(04f4)
+    temp05 <- read-byte(04f6)
+    push-SP: (int16(temp04) + int16(temp05))
+    temp06 <- pop-SP
+    temp07 <- read-byte(04f8)
+    push-SP: (int16(temp06) + int16(temp07))
     temp08 <- pop-SP
-    temp09 <- read-byte(07e5)
-    temp0a <- int16(temp08)
-    temp0b <- int16(temp09)
-    push-SP: (temp0a + temp0b)
-    temp0c <- pop-SP
-    temp0d <- read-byte(07df)
-    temp0e <- (temp0c = temp0d)
-    if (temp0e) is true then
+    temp09 <- read-byte(04f2)
+    temp0a <- (temp08 = temp09)
+    if (temp0a) is true then
         jump-to: LABEL 02
 LABEL 01
     print: "\nERROR - Total number of tests should equal"
@@ -450,47 +476,41 @@ LABEL 00
 
         Dim expected =
 <![CDATA[
-# temps: 11
+# temps: 5
 
 LABEL 00
-    temp00 <- read-byte(4f7d)
+    temp00 <- read-byte(22e9)
     if (temp00 = 0) is true then
         jump-to: LABEL 06
 LABEL 01
-    temp01 <- int16(64)
-    if (temp01 > 0) is false then
+    if (int16(64) > 0) is false then
         jump-to: LABEL 03
 LABEL 02
-    push-SP: random(temp01)
+    push-SP: random(int16(64))
     jump-to: LABEL 04
 LABEL 03
-    randomize(temp01)
+    randomize(int16(64))
     push-SP: 0
 LABEL 04
-    temp02 <- L00
-    temp03 <- pop-SP
-    temp04 <- int16(temp02)
-    temp05 <- int16(temp03)
-    if (temp04 > temp05) is true then
+    temp01 <- L00
+    temp02 <- pop-SP
+    if (int16(temp01) > int16(temp02)) is true then
         return: 1
 LABEL 05
     return: 0
 LABEL 06
-    temp06 <- int16(012c)
-    if (temp06 > 0) is false then
+    if (int16(012c) > 0) is false then
         jump-to: LABEL 08
 LABEL 07
-    push-SP: random(temp06)
+    push-SP: random(int16(012c))
     jump-to: LABEL 09
 LABEL 08
-    randomize(temp06)
+    randomize(int16(012c))
     push-SP: 0
 LABEL 09
-    temp07 <- L00
-    temp08 <- pop-SP
-    temp09 <- int16(temp07)
-    temp0a <- int16(temp08)
-    if (temp09 > temp0a) is true then
+    temp03 <- L00
+    temp04 <- pop-SP
+    if (int16(temp03) > int16(temp04)) is true then
         return: 1
 LABEL 0a
     return: 0
@@ -508,28 +528,27 @@ LABEL 0a
 
         Dim expected =
 <![CDATA[
-# temps: 8
+# temps: 7
 
 LABEL 00
     temp00 <- L00
     temp01 <- temp00
     push-SP: read-byte(temp01)
     temp02 <- pop-SP
-    temp03 <- int16(temp02)
-    if (temp03 > 0) is false then
+    if (int16(temp02) > 0) is false then
         jump-to: LABEL 02
 LABEL 01
-    push-SP: random(temp03)
+    push-SP: random(int16(temp02))
     jump-to: LABEL 03
 LABEL 02
-    randomize(temp03)
+    randomize(int16(temp02))
     push-SP: 0
 LABEL 03
-    temp04 <- L00
-    temp05 <- pop-SP
-    temp06 <- (temp05 * 2)
-    temp07 <- (temp04 + temp06)
-    push-SP: read-byte(temp07)
+    temp03 <- L00
+    temp04 <- pop-SP
+    temp05 <- (temp04 * 2)
+    temp06 <- (temp03 + temp05)
+    push-SP: read-byte(temp06)
     return: pop-SP
 ]]>
 
@@ -558,7 +577,7 @@ LABEL 03
 
         Dim expected =
 <![CDATA[
-# temps: 45
+# temps: 34
 
 LABEL 00
     temp00 <- L00
@@ -568,72 +587,61 @@ LABEL 00
     temp03 <- (temp02 + 0002)
     L02 <- read-byte(temp03)
     temp04 <- L01
-    temp05 <- int16(temp04)
-    L01 <- (temp05 - int16(1))
-    temp06 <- L00
-    temp07 <- int16(temp06)
-    temp08 <- int16(02)
-    L00 <- (temp07 + temp08)
-    temp09 <- L02
-    temp0a <- int16(temp09)
-    temp0b <- int16(02)
-    push-SP: (temp0a * temp0b)
-    temp0c <- L00
-    temp0d <- pop-SP
-    temp0e <- int16(temp0c)
-    temp0f <- int16(temp0d)
-    L05 <- (temp0e + temp0f)
-    temp10 <- L01
-    temp11 <- L02
-    temp12 <- int16(temp10)
-    temp13 <- int16(temp11)
-    push-SP: (temp12 - temp13)
-    temp14 <- pop-SP
-    temp15 <- int16(temp14)
-    if (temp15 > 0) is false then
+    L01 <- (int16(temp04) - int16(1))
+    temp05 <- L00
+    L00 <- (int16(temp05) + int16(02))
+    temp06 <- L02
+    push-SP: (int16(temp06) * int16(02))
+    temp07 <- L00
+    temp08 <- pop-SP
+    L05 <- (int16(temp07) + int16(temp08))
+    temp09 <- L01
+    temp0a <- L02
+    push-SP: (int16(temp09) - int16(temp0a))
+    temp0b <- pop-SP
+    if (int16(temp0b) > 0) is false then
         jump-to: LABEL 02
 LABEL 01
-    L03 <- random(temp15)
+    L03 <- random(int16(temp0b))
     jump-to: LABEL 03
 LABEL 02
-    randomize(temp15)
+    randomize(int16(temp0b))
     L03 <- 0
 LABEL 03
-    temp16 <- L05
-    temp17 <- L03
-    temp18 <- (temp17 * 2)
-    temp19 <- (temp16 + temp18)
-    L04 <- read-byte(temp19)
-    temp1a <- L05
-    temp1b <- (temp1a + 0002)
-    push-SP: read-byte(temp1b)
-    temp1c <- L05
-    temp1d <- L03
-    temp1e <- pop-SP
-    temp1f <- (temp1d * 2)
-    temp20 <- (temp1c + temp1f)
-    write-word(temp20) <- temp1e
-    temp21 <- L05
-    temp22 <- L04
-    temp23 <- (temp21 + 0002)
-    write-word(temp23) <- temp22
-    temp24 <- L02
-    temp25 <- int16(temp24)
-    L02 <- (temp25 + int16(1))
-    temp26 <- L02
-    temp27 <- L01
-    temp28 <- (temp26 = temp27)
-    if (temp28) is false then
+    temp0c <- L05
+    temp0d <- L03
+    temp0e <- (temp0d * 2)
+    temp0f <- (temp0c + temp0e)
+    L04 <- read-byte(temp0f)
+    temp10 <- L05
+    temp11 <- (temp10 + 0002)
+    push-SP: read-byte(temp11)
+    temp12 <- L05
+    temp13 <- L03
+    temp14 <- pop-SP
+    temp15 <- (temp13 * 2)
+    temp16 <- (temp12 + temp15)
+    write-word(temp16) <- temp14
+    temp17 <- L05
+    temp18 <- L04
+    temp19 <- (temp17 + 0002)
+    write-word(temp19) <- temp18
+    temp1a <- L02
+    L02 <- (int16(temp1a) + int16(1))
+    temp1b <- L02
+    temp1c <- L01
+    temp1d <- (temp1b = temp1c)
+    if (temp1d) is false then
         jump-to: LABEL 05
 LABEL 04
     L02 <- 00
 LABEL 05
-    temp29 <- L00
-    temp2a <- L02
-    temp2b <- temp29
-    write-word(temp2b) <- temp2a
-    temp2c <- L04
-    return: temp2c
+    temp1e <- L00
+    temp1f <- L02
+    temp20 <- temp1e
+    write-word(temp20) <- temp1f
+    temp21 <- L04
+    return: temp21
 ]]>
 
         Test(Zork1, &H4E6C, expected)
@@ -650,7 +658,7 @@ LABEL 05
 # temps: 2
 
 LABEL 00
-    temp00 <- read-byte(4ff5)
+    temp00 <- read-byte(2361)
     temp01 <- (temp00 = 2b)
     if (temp01) is false then
         return: 0
@@ -680,7 +688,7 @@ LABEL 01
 # temps: 2
 
 LABEL 00
-    temp00 <- read-byte(4f61)
+    temp00 <- read-byte(22cd)
     if (temp00 = 0) is true then
         jump-to: LABEL 04
 LABEL 01
@@ -721,12 +729,12 @@ LABEL 00
     if (temp01) is false then
         return: 0
 LABEL 01
-    temp02 <- read-byte(4ff5)
+    temp02 <- read-byte(2361)
     temp03 <- (temp02 = 45)
     if (temp03) is false then
         return: 0
 LABEL 02
-    temp04 <- read-byte(4ff1)
+    temp04 <- read-byte(235d)
     if (temp04 = 0) is false then
         return: 0
 LABEL 03
@@ -777,7 +785,7 @@ LABEL 03
 
         Dim expected =
 <![CDATA[
-# temps: 43
+# temps: 31
 
 LABEL 00
     push-SP: call 5472 (8010, ffff)
@@ -792,68 +800,56 @@ LABEL 00
     push-SP: call 5472 (6f6a, 28)
     push-SP: call 5472 (6f55, c8)
     RUNTIME EXCEPTION: Unsupported opcode: put_prop (v.3) with 3 operands
-    temp04 <- read-byte(4f25)
-    temp05 <- int16(temp04)
-    temp06 <- int16(02)
-    push-SP: (temp05 + temp06)
-    temp07 <- read-byte(4f19)
-    temp08 <- pop-SP
-    temp09 <- (temp07 + 0002)
-    write-word(temp09) <- temp08
-    temp0a <- read-byte(4f25)
-    temp0b <- int16(temp0a)
-    temp0c <- int16(04)
-    push-SP: (temp0b + temp0c)
-    temp0d <- read-byte(4f19)
+    temp04 <- read-byte(2291)
+    push-SP: (int16(temp04) + int16(02))
+    temp05 <- read-byte(2285)
+    temp06 <- pop-SP
+    temp07 <- (temp05 + 0002)
+    write-word(temp07) <- temp06
+    temp08 <- read-byte(2291)
+    push-SP: (int16(temp08) + int16(04))
+    temp09 <- read-byte(2285)
+    temp0a <- pop-SP
+    temp0b <- (temp09 + 0004)
+    write-word(temp0b) <- temp0a
+    temp0c <- read-byte(228d)
+    push-SP: (int16(temp0c) + int16(02))
+    temp0d <- read-byte(2283)
     temp0e <- pop-SP
     temp0f <- (temp0d + 0004)
     write-word(temp0f) <- temp0e
-    temp10 <- read-byte(4f21)
-    temp11 <- int16(temp10)
-    temp12 <- int16(02)
-    push-SP: (temp11 + temp12)
-    temp13 <- read-byte(4f17)
-    temp14 <- pop-SP
-    temp15 <- (temp13 + 0004)
-    write-word(temp15) <- temp14
-    temp16 <- read-byte(4f21)
-    temp17 <- int16(temp16)
-    temp18 <- int16(04)
-    push-SP: (temp17 + temp18)
-    temp19 <- read-byte(4f17)
+    temp10 <- read-byte(228d)
+    push-SP: (int16(temp10) + int16(04))
+    temp11 <- read-byte(2283)
+    temp12 <- pop-SP
+    temp13 <- (temp11 + 0006)
+    write-word(temp13) <- temp12
+    temp14 <- read-byte(228b)
+    push-SP: (int16(temp14) + int16(02))
+    temp15 <- read-byte(2281)
+    temp16 <- pop-SP
+    temp17 <- (temp15 + 0002)
+    write-word(temp17) <- temp16
+    temp18 <- read-byte(2289)
+    push-SP: (int16(temp18) + int16(02))
+    temp19 <- read-byte(2281)
     temp1a <- pop-SP
     temp1b <- (temp19 + 0006)
     write-word(temp1b) <- temp1a
-    temp1c <- read-byte(4f1f)
-    temp1d <- int16(temp1c)
-    temp1e <- int16(02)
-    push-SP: (temp1d + temp1e)
-    temp1f <- read-byte(4f15)
-    temp20 <- pop-SP
-    temp21 <- (temp1f + 0002)
-    write-word(temp21) <- temp20
-    temp22 <- read-byte(4f1d)
-    temp23 <- int16(temp22)
-    temp24 <- int16(02)
-    push-SP: (temp23 + temp24)
-    temp25 <- read-byte(4f15)
-    temp26 <- pop-SP
-    temp27 <- (temp25 + 0006)
-    write-word(temp27) <- temp26
-    write-word(4f05) <- b4
+    write-word(2271) <- b4
     push-SP: call 9530 (a0)
-    temp28 <- read-byte(4f05)
-    temp29 <- obj-attribute(temp28, 03)
-    if (temp29 = 1) is true then
+    temp1c <- read-byte(2271)
+    temp1d <- obj-attribute(temp1c, 03)
+    if (temp1d = 1) is true then
         jump-to: LABEL 02
 LABEL 01
     push-SP: call 6ee0 ()
     print: "\n"
 LABEL 02
-    write-word(4f89) <- 01
-    write-word(4fe3) <- 04
-    temp2a <- read-byte(4fe3)
-    write-word(5005) <- temp2a
+    write-word(22f5) <- 01
+    write-word(234f) <- 04
+    temp1e <- read-byte(234f)
+    write-word(2371) <- temp1e
     RUNTIME EXCEPTION: Unsupported opcode: insert_obj (v.3) with 2 operands
     push-SP: call 7e04 ()
     push-SP: call 552a ()
@@ -872,7 +868,7 @@ LABEL 02
 
         Assert.Equal(a, r.Address)
 
-        Dim binder = New RoutineBinder(memory)
+        Dim binder = New RoutineBinder(memory, debugging:=False)
         Dim tree = binder.BindRoutine(r)
 
         Dim builder = New StringBuilder()

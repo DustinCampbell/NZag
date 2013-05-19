@@ -3,7 +3,7 @@
 open System
 open NZag.Utilities
 
-type Machine (memory : Memory) as this =
+type Machine (memory: Memory, debugging: bool) as this =
 
     let mainRoutineAddress = memory |> Header.readMainRoutineAddress
     let zfuncMap = Dictionary.create()
@@ -38,7 +38,7 @@ type Machine (memory : Memory) as this =
             let builder = new ILBuilder(generator)
             let callSites = ResizeArray.create()
 
-            CodeGenerator.Compile(memory, routine, this, builder, callSites)
+            CodeGenerator.Compile(memory, routine, this, builder, callSites, debugging)
 
             let zfunc = dynamicMethod.CreateDelegate(typeof<ZFunc>, this) :?> ZFunc
 

@@ -69,37 +69,37 @@ Public Module AnalysisTests
                                  Outs(0)),
                 DefinitionsBlock(1,
                                  Ins(0),
-                                 Outs(0, 1)),
+                                 Outs(0)),
                 DefinitionsBlock(2,
-                                 Ins(0, 1),
-                                 Outs(0, 1)),
+                                 Ins(0),
+                                 Outs(0)),
                 DefinitionsBlock(3,
-                                 Ins(0, 1),
-                                 Outs(0, 1)),
+                                 Ins(0),
+                                 Outs(0)),
                 DefinitionsBlock(4,
-                                 Ins(0, 1),
-                                 Outs(0, 1, 2, 3, 4, 5)),
+                                 Ins(0),
+                                 Outs(0, 1, 2)),
                 DefinitionsBlock(5,
-                                 Ins(0, 1, 2, 3, 4, 5),
-                                 Outs(0, 1, 2, 3, 4, 5)),
+                                 Ins(0, 1, 2),
+                                 Outs(0, 1, 2)),
                 DefinitionsBlock(6,
                                  Ins(0),
-                                 Outs(0, 6)),
+                                 Outs(0)),
                 DefinitionsBlock(7,
-                                 Ins(0, 6),
-                                 Outs(0, 6)),
+                                 Ins(0),
+                                 Outs(0)),
                 DefinitionsBlock(8,
-                                 Ins(0, 6),
-                                 Outs(0, 6)),
+                                 Ins(0),
+                                 Outs(0)),
                 DefinitionsBlock(9,
-                                 Ins(0, 6),
-                                 Outs(0, 6, 7, 8, 9, 10)),
+                                 Ins(0),
+                                 Outs(0, 3, 4)),
                 DefinitionsBlock(10,
-                                 Ins(0, 6, 7, 8, 9, 10),
-                                 Outs(0, 6, 7, 8, 9, 10)),
+                                 Ins(0, 3, 4),
+                                 Outs(0, 3, 4)),
                 DefinitionsBlock(Graphs.Exit,
-                                 Ins(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                                 Outs(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)))
+                                 Ins(0, 1, 2, 3, 4),
+                                 Outs(0, 1, 2, 3, 4)))
 
         Test(Zork1, &H4E42, expected)
     End Sub
@@ -217,7 +217,7 @@ Public Module AnalysisTests
 
         Assert.Equal(a, r.Address)
 
-        Dim binder = New RoutineBinder(memory)
+        Dim binder = New RoutineBinder(memory, debugging:=False)
         Dim tree = binder.BindRoutine(r)
         Dim graph = Graphs.BuildControlFlowGraph(tree)
 
@@ -233,7 +233,7 @@ Public Module AnalysisTests
 
         Assert.Equal(a, r.Address)
 
-        Dim binder = New RoutineBinder(memory)
+        Dim binder = New RoutineBinder(memory, debugging:=False)
         Dim tree = binder.BindRoutine(r)
         Dim cfg = Graphs.BuildControlFlowGraph(tree)
         Dim rd = Graphs.ComputeReachingDefinitions(cfg)

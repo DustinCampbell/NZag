@@ -422,6 +422,11 @@ type ILBuilder (generator: ILGenerator) =
     member x.Return() =
         generator.Emit(OpCodes.Ret)
 
+    member x.DebugOutput(loadMessage: unit -> unit) =
+        let writeLine = typeof<System.Diagnostics.Debug>.GetMethod("WriteLine", [|typeof<string>|])
+        loadMessage()
+        x.Call(writeLine)
+
     member x.ThrowException<'T when 'T :> Exception>() =
         let exceptionType = typeof<'T>
         let exceptionCtor = exceptionType.GetConstructor([||])
@@ -749,6 +754,9 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
         | PrintTextStmt(e) ->
             builder.RuntimeFunctions.WriteOutputText
                 (fun () -> emitExpression e)
+        | DebugOutputStmt(e) ->
+            builder.DebugOutput
+                (fun () -> emitExpression e)
         | RuntimeExceptionStmt(s) ->
             builder.ThrowException<RuntimeException>(s)
         | s ->
@@ -758,8 +766,8 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
         for s in tree.Statements do
             emitStatement s
 
-    static member Compile (memory: Memory, routine: Routine, machine: IMachine, builder: ILBuilder, callSites: ResizeArray<ZFuncCallSite>) =
-        let binder = new RoutineBinder(memory)
+    static member Compile(memory: Memory, routine: Routine, machine: IMachine, builder: ILBuilder, callSites: ResizeArray<ZFuncCallSite>, debugging: bool) =
+        let binder = new RoutineBinder(memory, debugging)
         let tree = binder.BindRoutine(routine)
 
         let codeGenerator = new CodeGenerator(tree, machine, builder, callSites)

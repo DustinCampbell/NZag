@@ -334,6 +334,9 @@ type Instruction(address : Address, length : int, opcode : Opcode, operands: lis
 
     override x.ToString() =
         let builder = StringBuilder.create()
+
+        (builder |> StringBuilder.appendFormat "%x: ") address.IntValue
+
         builder |> StringBuilder.appendString opcode.Name
 
         operands

@@ -164,6 +164,9 @@ type Statement =
     /// Seeds the random number generator with the given expression
     | SetRandomNumberSeedStmt of Expression
 
+    /// Outputs the text represented by the given expression for debugging
+    | DebugOutputStmt of Expression
+
     /// Throws a runtime exception
     | RuntimeExceptionStmt of string
 
@@ -238,6 +241,9 @@ module BoundNodeConstruction =
 
     let random range = GenerateRandomNumberExpr(range)
     let randomize seed = SetRandomNumberSeedStmt(seed)
+
+    let debugOut s =
+        DebugOutputStmt(textConst s)
 
     let runtimeException message =
         Printf.ksprintf (fun s -> RuntimeExceptionStmt(s)) message
@@ -322,6 +328,8 @@ module BoundNodeVisitors =
             fstmt (PrintTextStmt(rewriteExpr e))
         | SetRandomNumberSeedStmt(e) ->
             fstmt (SetRandomNumberSeedStmt(rewriteExpr e))
+        | DebugOutputStmt(e) ->
+            fstmt (DebugOutputStmt(rewriteExpr e))
         | RuntimeExceptionStmt(s) ->
             fstmt (RuntimeExceptionStmt(s))
 
@@ -378,7 +386,8 @@ module BoundNodeVisitors =
             | StackUpdateStmt(e)
             | DiscardValueStmt(e)
             | PrintTextStmt(e)
-            | SetRandomNumberSeedStmt(e) ->
+            | SetRandomNumberSeedStmt(e)
+            | DebugOutputStmt(e) ->
                 visitExpr e
             | BranchStmt(_,e,s) ->
                 visitExpr e
@@ -620,6 +629,9 @@ type BoundNodeDumper (builder : StringBuilder) =
                 dumpExpression e)
         | RuntimeExceptionStmt(s) ->
             appendf "RUNTIME EXCEPTION: %s" s
+        | DebugOutputStmt(e) ->
+            append "DEBUG: "
+            dumpExpression e
 
     member x.Dump tree =
         appendf "# temps: %d" tree.TempCount
