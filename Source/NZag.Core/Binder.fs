@@ -393,6 +393,15 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
             ReadMemoryTextExpr(address) |> printText |> addStatement
 
+        | "pull", Any, Op1(varIndex) ->
+            let read, write = byRefVariable varIndex
+
+            let value = initTemp StackPopExpr
+            write value |> addStatement
+
+        | "push", Any, Op1(value) ->
+            StackPushStmt(value) |> addStatement
+
         | "quit", Any, NoOps ->
             QuitStmt |> addStatement
 

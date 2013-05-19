@@ -37,7 +37,7 @@ Test numbers appear in [brackets].
 print works or you wouldn't be seeing this.
 
 Jumps [2]: jump.je..........jg.......jl.......jz...offsets..
-Variables [32]: push/pull
+Variables [32]: push/pull..store.load
 ]]>
 
         Test(CZech, expected)
