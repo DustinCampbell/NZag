@@ -535,10 +535,19 @@ type BoundNodeDumper (builder : StringBuilder) =
             dumpUnaryOperationKind k
             dumpExpression e
         | BinaryOperationExpr(k,l,r) ->
+
+            let parenthesizeIfBinaryOp e =
+                match e with
+                | BinaryOperationExpr(_,_,_) -> 
+                    append "("
+                    dumpExpression e
+                    append ")"
+                | _ -> dumpExpression e
+
             parenthesize (fun () ->
-                dumpExpression l
+                parenthesizeIfBinaryOp l
                 dumpBinaryOperationKind  k
-                dumpExpression r)
+                parenthesizeIfBinaryOp r)
         | ConversionExpr(k,e) ->
             dumpConversionKind k
             parenthesize(fun () ->

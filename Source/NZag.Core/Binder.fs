@@ -646,12 +646,22 @@ type RoutineBinder(memory: Memory, debugging: bool) =
         let readObjectSibling objNum =
             (computeObjectAddress objNum) .+. objectSiblingOffset |> readObjectNumber
 
+        let computeAttributeByteAddress objNum attrNum =
+            (computeObjectAddress objNum) .+. (attrNum ./. eight)
+
+        let computeAttributeBitMask attrNum =
+            one .<<. ((seven .-. (attrNum .%. eight)) .&. (int32Const 0x1f))
+
+        let readObjectAttribute objNum attrNum =
+            ((computeAttributeBitMask attrNum) .&. (readByte (computeAttributeByteAddress objNum attrNum)) .<>. zero)
+
         tree |> updateTree (fun s updater ->
             let s' =
                 s |> rewriteStatement
                     (fun s -> s)
                     (fun e -> 
                         match e with
+                        | ReadObjectAttributeExpr(o,a) -> readObjectAttribute o a
                         | ReadObjectChildExpr(o) -> readObjectChild o
                         | ReadObjectParentExpr(o) -> readObjectParent o
                         | ReadObjectSiblingExpr(o) -> readObjectSibling o

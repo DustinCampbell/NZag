@@ -1038,7 +1038,7 @@ LABEL 00
     if (temp00 = 0) is true then
         jump-to: LABEL 04
 LABEL 01
-    if (obj-attribute(ae, 0b) = 1) is false then
+    if (((0010 & read-byte(0904)) <> 0) = 1) is false then
         jump-to: LABEL 03
 LABEL 02
     return: 39
@@ -1176,7 +1176,7 @@ LABEL 00
     write-word(2271) <- b4
     push-SP: call 9530 (a0)
     temp14 <- read-byte(2271)
-    if (obj-attribute(temp14, 03) = 1) is true then
+    if (((0010 & read-byte((((temp14 - 1) * 9) + 02ee) + 0000)) <> 0) = 1) is true then
         jump-to: LABEL 02
 LABEL 01
     push-SP: call 6ee0 ()
