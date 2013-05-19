@@ -344,6 +344,12 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         | "jz", Any, Op1(left) ->
             branchIf (left .=. zero)
 
+        | "load", Any, Op1(varIndex) ->
+            let read, write = byRefVariable varIndex
+
+            let value = initTemp read
+            store value
+
         | "loadb", Any, Op2(address,offset) ->
             let address = initTemp (address .+. offset)
 
