@@ -181,6 +181,7 @@ type ICompare =
     abstract member AtMost : unit -> unit
 
 type IConvert =
+    abstract member ToByte : unit -> unit
     abstract member ToInt16 : unit -> unit
 
 type IArrays =
@@ -402,6 +403,8 @@ type ILBuilder (generator: ILGenerator) =
 
     member x.Convert =
         { new IConvert with
+            member y.ToByte() =
+                generator.Emit(OpCodes.Conv_U1)
             member y.ToInt16() =
                 generator.Emit(OpCodes.Conv_I2) }
 
@@ -580,6 +583,8 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
         | Text(v)  -> builder.EvaluationStack.Load(v)
 
     let emitConversion = function
+        | ConversionKind.ToByte ->
+            builder.Convert.ToByte()
         | ConversionKind.ToInt16 ->
             builder.Convert.ToInt16()
         | kind ->

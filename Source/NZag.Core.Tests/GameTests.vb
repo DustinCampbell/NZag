@@ -49,7 +49,8 @@ Subroutines [152]: call_1s.call_2s..call_vs2...call_vs.....ret.
     Computed call...
     check_arg_count................
 Objects [193]: get_parent....get_sibling.......get_child......jin.......
-    test_attr......set_attr
+    test_attr......set_attr....clear_attr....set/clear/test_attr..
+    get_next_prop
 ]]>
 
         Test(CZech, expected)

@@ -52,7 +52,8 @@ type BinaryOperationKind =
     | GreaterThan = 15
 
 type ConversionKind =
-    | ToInt16 = 1
+    | ToByte = 1
+    | ToInt16 = 2
 
 type Expression =
 
@@ -167,6 +168,18 @@ type Statement =
     /// Writes a word from game memory at the specified address
     | WriteMemoryWordStmt of Expression * Expression
 
+    /// Write the specified attribute of an object with the given value
+    | WriteObjectAttributeStmt of Expression * Expression * bool
+
+    /// Writes the child of an object with the given value
+    | WriteObjectChildStmt of Expression * Expression
+
+    /// Writes the parent of an object with the given value
+    | WriteObjectParentStmt of Expression * Expression
+
+    /// Writes the sibling of an object with the given value
+    | WriteObjectSiblingStmt of Expression * Expression
+
     /// Discards a value (i.e. does nothing with it).
     | DiscardValueStmt of Expression
 
@@ -193,6 +206,7 @@ module BoundNodeConstruction =
     let binaryOp l r k = BinaryOperationExpr(k, l, r)
 
     let inline negate e = UnaryOperationKind.Negate |> unaryOp e
+    let inline bitNot e = UnaryOperationKind.Not |> unaryOp e
 
     let inline (.+.) l r = BinaryOperationKind.Add |> binaryOp l r
     let inline (.-.) l r = BinaryOperationKind.Subtract |> binaryOp l r
@@ -225,6 +239,7 @@ module BoundNodeConstruction =
     let seven = int32Const 7
     let eight = int32Const 8
 
+    let toByte v = ConversionExpr(ConversionKind.ToByte, v)
     let toInt16 v = ConversionExpr(ConversionKind.ToInt16, v)
 
     let readVar v =
@@ -342,6 +357,14 @@ module BoundNodeVisitors =
             fstmt (WriteMemoryByteStmt(rewriteExpr e1, rewriteExpr e2))
         | WriteMemoryWordStmt(e1,e2) ->
             fstmt (WriteMemoryWordStmt(rewriteExpr e1, rewriteExpr e2))
+        | WriteObjectAttributeStmt(o,a,v) ->
+            fstmt (WriteObjectAttributeStmt(rewriteExpr o, rewriteExpr a, v))
+        | WriteObjectChildStmt(o,v) ->
+            fstmt (WriteObjectChildStmt(rewriteExpr o, rewriteExpr v))
+        | WriteObjectParentStmt(o,v) ->
+            fstmt (WriteObjectParentStmt(rewriteExpr o, rewriteExpr v))
+        | WriteObjectSiblingStmt(o,v) ->
+            fstmt (WriteObjectSiblingStmt(rewriteExpr o, rewriteExpr v))
         | DiscardValueStmt(e) ->
             fstmt (DiscardValueStmt(rewriteExpr e))
         | PrintTextStmt(e) ->
@@ -420,7 +443,11 @@ module BoundNodeVisitors =
             | WriteGlobalStmt(e1,e2)
             | WriteComputedVarStmt(e1,e2)
             | WriteMemoryByteStmt(e1,e2)
-            | WriteMemoryWordStmt(e1,e2) ->
+            | WriteMemoryWordStmt(e1,e2)
+            | WriteObjectAttributeStmt(e1,e2,_)
+            | WriteObjectChildStmt(e1,e2)
+            | WriteObjectParentStmt(e1,e2)
+            | WriteObjectSiblingStmt(e1,e2) ->
                 visitExpr e1
                 visitExpr e2
 
@@ -510,6 +537,7 @@ type BoundNodeDumper (builder : StringBuilder) =
 
     let dumpConversionKind = function
         | ConversionKind.ToInt16 -> append "int16"
+        | ConversionKind.ToByte -> append "byte"
         | x -> failcompilef "Unknown conversion kind: %A" x
 
     let rec dumpExpression = function
@@ -661,6 +689,32 @@ type BoundNodeDumper (builder : StringBuilder) =
             append "write-word"
             parenthesize (fun () ->
                 dumpExpression a)
+            append " <- "
+            dumpExpression v
+        | WriteObjectAttributeStmt(o,a,v) ->
+            append "write-obj-attribute"
+            parenthesize (fun () ->
+                dumpExpression o
+                append ", "
+                dumpExpression a)
+            append " <- "
+            appendf "%b" v
+        | WriteObjectChildStmt(o,v) ->
+            append "write-obj-child"
+            parenthesize (fun () ->
+                dumpExpression o)
+            append " <- "
+            dumpExpression v
+        | WriteObjectParentStmt(o,v) ->
+            append "write-obj-parent"
+            parenthesize (fun () ->
+                dumpExpression o)
+            append " <- "
+            dumpExpression v
+        | WriteObjectSiblingStmt(o,v) ->
+            append "write-obj-sibling"
+            parenthesize (fun () ->
+                dumpExpression o)
             append " <- "
             dumpExpression v
         | DiscardValueStmt(e) ->

@@ -316,6 +316,9 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         | "check_arg_count", AtLeast 5uy, Op1(number) ->
             branchIf (number .<=. ArgCountExpr)
 
+        | "clear_attr", Any, Op2(objNum, attrNum) ->
+            WriteObjectAttributeStmt(objNum, attrNum, false) |> addStatement
+
         | "dec", Any, Op1(varIndex) ->
             let read, write = byRefVariable varIndex
 
@@ -502,6 +505,9 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         | "rtrue", Any, NoOps ->
             ret one
 
+        | "set_attr", Any, Op2(objNum, attrNum) ->
+            WriteObjectAttributeStmt(objNum, attrNum, true) |> addStatement
+
         | "store", Any, Op2(varIndex, value) ->
             let read, write = byRefVariable varIndex
 
@@ -524,8 +530,8 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
             store (left .-. right)
 
-        | "test_attr", Any, Op2(obj, attribute) ->
-            let attributeValue = ReadObjectAttributeExpr(obj, attribute)
+        | "test_attr", Any, Op2(objNum, attrNum) ->
+            let attributeValue = ReadObjectAttributeExpr(objNum, attrNum)
 
             branchIf (attributeValue .=. one)
 
@@ -655,10 +661,24 @@ type RoutineBinder(memory: Memory, debugging: bool) =
         let readObjectAttribute objNum attrNum =
             ((computeAttributeBitMask attrNum) .&. (readByte (computeAttributeByteAddress objNum attrNum)) .<>. zero)
 
+        let writeObjectAttribute objNum attrNum value =
+            let byteAddress = computeAttributeByteAddress objNum attrNum
+            let bitMask = computeAttributeBitMask attrNum
+            let newAttributeByte =
+                if value then
+                    ((readByte byteAddress) .|. bitMask) |> toByte
+                else
+                    ((readByte byteAddress) .&. (bitNot bitMask)) |> toByte
+
+            writeByte byteAddress newAttributeByte
+
         tree |> updateTree (fun s updater ->
             let s' =
                 s |> rewriteStatement
-                    (fun s -> s)
+                    (fun s -> 
+                        match s with
+                        | WriteObjectAttributeStmt(o,a,v) -> writeObjectAttribute o a v
+                        | s -> s)
                     (fun e -> 
                         match e with
                         | ReadObjectAttributeExpr(o,a) -> readObjectAttribute o a
