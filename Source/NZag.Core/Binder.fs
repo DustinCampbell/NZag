@@ -277,8 +277,10 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
                     store (number .>>. ((negate places) .&. (int32Const 0x1f))))
 
         | "call", Any, OpAndList(address, args)
+        | "call_1s", AtLeast 4uy, OpAndList(address, args)
         | "call_2s", AtLeast 4uy, OpAndList(address, args)
-        | "call_vs", Any, OpAndList(address, args) ->
+        | "call_vs", Any, OpAndList(address, args)
+        | "call_vs2", AtLeast 4uy, OpAndList(address, args) ->
 
             ifThenElse (address .=. zero)
                 (fun () ->
@@ -295,7 +297,8 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
         | "call_1n", AtLeast 5uy, OpAndList(address, args)
         | "call_2n", AtLeast 5uy, OpAndList(address, args)
-        | "call_vn", AtLeast 5uy, OpAndList(address, args) ->
+        | "call_vn", AtLeast 5uy, OpAndList(address, args)
+        | "call_vn2", AtLeast 4uy, OpAndList(address, args) ->
 
             ifThenElse (address .=. zero)
                 (fun () ->
