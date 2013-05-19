@@ -303,6 +303,14 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             let read = read |> toInt16
             write (read .-. (one |> toInt16)) |> addStatement
 
+        | "dec_chk", Any, Op2(varIndex,value) ->
+            let read, write = byRefVariable varIndex
+
+            let read = read |> toInt16
+            let newValue = initTemp (read .-. (one |> toInt16))
+            write newValue |> addStatement
+            branchIf (newValue |> toInt16 .<. (value |> toInt16))
+
         | "div", Any, Op2(left, right) ->
             let left = left |> toInt16
             let right = right |> toInt16
@@ -314,6 +322,14 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
             let read = read |> toInt16
             write (read .+. (one |> toInt16)) |> addStatement
+
+        | "inc_chk", Any, Op2(varIndex,value) ->
+            let read, write = byRefVariable varIndex
+
+            let read = read |> toInt16
+            let newValue = initTemp (read .+. (one |> toInt16))
+            write newValue |> addStatement
+            branchIf (newValue |> toInt16 .>. (value |> toInt16))
 
         | "je", Any, OpAndList(left, values) ->
             // je can have 2 to 4 operands to test for equality.

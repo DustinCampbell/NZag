@@ -320,6 +320,370 @@ LABEL 1f
     End Sub
 
     <Fact>
+    Sub CZech_AA4()
+        ' aa5:  b2 ...                  print           "Variables"
+        ' aae:  a0 01 ca                jz              local0 ab9
+        ' ab1:  b2 ...                  print           " skipped"
+        ' ab8:  b1                      rfalse
+        ' ab9:  b2 ...                  print           " ["
+        ' abe:  54 11 01 00             add             g01 #01 -> sp
+        ' ac2:  e6 bf 00                print_num       sp
+        ' ac5:  b2 ...                  print           "]: "
+        ' acc:  b2 ...                  print           "push/pull"
+        ' ad5:  e8 7f 09                push            #09
+        ' ad8:  e8 7f 08                push            #08
+        ' adb:  e9 7f 02                pull            local1
+        ' ade:  f9 24 01 f9 02 08 0b 23 call_vn         7e4 local1 #08 s004
+        ' ae6:  e9 7f 15                pull            g05
+        ' ae9:  f9 24 01 f9 15 09 0b 26 call_vn         7e4 g05 #09 s005
+        ' af1:  b2 ...                  print           "store"
+        ' af6:  0d 02 05                store           local1 #05
+        ' af9:  f9 27 01 f9 02 05       call_vn         7e4 local1 #05
+        ' aff:  b2 ...                  print           "load"
+        ' b04:  0d 03 05                store           local2 #05
+        ' b07:  0d 02 06                store           local1 #06
+        ' b0a:  9e 02 00                load            local1 -> sp
+        ' b0d:  e9 7f 03                pull            local2
+        ' b10:  f9 2b 01 f9 02 03       call_vn         7e4 local1 local2
+        ' b16:  b2 ...                  print           "dec"
+        ' b19:  f9 17 03 30 05 04       call_vn         cc0 #05 #04
+        ' b1f:  f9 13 03 30 00 ff ff    call_vn         cc0 #00 #ffff
+        ' b26:  f9 03 03 30 ff f8 ff f7 call_vn         cc0 #fff8 #fff7
+        ' b2e:  f9 03 03 30 80 00 7f ff call_vn         cc0 #8000 #7fff
+        ' b36:  e8 7f 01                push            #01
+        ' b39:  e8 7f 0a                push            #0a
+        ' b3c:  96 00                   dec             sp
+        ' b3e:  e9 7f 03                pull            local2
+        ' b41:  f9 24 01 f9 03 09 0b 29 call_vn         7e4 local2 #09 s006
+        ' b49:  e9 7f 03                pull            local2
+        ' b4c:  f9 24 01 f9 03 01 0b 2a call_vn         7e4 local2 #01 s007
+        ' b54:  0d 10 03                store           g00 #03
+        ' b57:  96 10                   dec             g00
+        ' b59:  f9 24 01 f9 10 02 0b 2b call_vn         7e4 g00 #02 s008
+        ' b61:  b2 ...                  print           "inc"
+        ' b64:  f9 17 03 2c 05 06       call_vn         cb0 #05 #06
+        ' b6a:  f9 07 03 2c ff ff 00    call_vn         cb0 #ffff #00
+        ' b71:  f9 03 03 2c ff f8 ff f9 call_vn         cb0 #fff8 #fff9
+        ' b79:  f9 03 03 2c 7f ff 80 00 call_vn         cb0 #7fff #8000
+        ' b81:  e8 7f 01                push            #01
+        ' b84:  e8 7f 0a                push            #0a
+        ' b87:  95 00                   inc             sp
+        ' b89:  e9 7f 03                pull            local2
+        ' b8c:  f9 24 01 f9 03 0b 0b 2d call_vn         7e4 local2 #0b s009
+        ' b94:  e9 7f 03                pull            local2
+        ' b97:  f9 24 01 f9 03 01 0b 2e call_vn         7e4 local2 #01 s010
+        ' b9f:  0d 10 03                store           g00 #03
+        ' ba2:  95 10                   inc             g00
+        ' ba4:  f9 24 01 f9 10 04 0b 2f call_vn         7e4 g00 #04 s011
+        ' bac:  b2 ...                  print           "^    dec_chk"
+        ' bb7:  0d 03 03                store           local2 #03
+        ' bba:  c4 4f 03 03 e8 00 69    dec_chk         local2 #03e8 ~c28
+        ' bc1:  8f 02 38                call_1n         8e0
+        ' bc4:  04 03 01 80 61          dec_chk         local2 #01 c28
+        ' bc9:  8f 02 38                call_1n         8e0
+        ' bcc:  04 03 01 00 59          dec_chk         local2 #01 ~c28
+        ' bd1:  8f 02 38                call_1n         8e0
+        ' bd4:  04 03 00 00 51          dec_chk         local2 #00 ~c28
+        ' bd9:  8f 02 38                call_1n         8e0
+        ' bdc:  c4 4f 03 ff fe 80 47    dec_chk         local2 #fffe c28
+        ' be3:  8f 02 38                call_1n         8e0
+        ' be6:  c4 4f 03 ff fe 00 3d    dec_chk         local2 #fffe ~c28
+        ' bed:  8f 02 38                call_1n         8e0
+        ' bf0:  c4 4f 03 03 e8 74       dec_chk         local2 #03e8 ~c28
+        ' bf6:  8f 02 38                call_1n         8e0
+        ' bf9:  c4 4f 03 fe 0c eb       dec_chk         local2 #fe0c c28
+        ' bff:  8f 02 38                call_1n         8e0
+        ' c02:  e8 7f 01                push            #01
+        ' c05:  e8 7f 0a                push            #0a
+        ' c08:  04 00 05 de             dec_chk         sp #05 c28
+        ' c0c:  8f 02 38                call_1n         8e0
+        ' c0f:  e9 7f 03                pull            local2
+        ' c12:  f9 24 01 f9 03 09 0b 31 call_vn         7e4 local2 #09 s012
+        ' c1a:  e9 7f 03                pull            local2
+        ' c1d:  f9 24 01 f9 03 01 0b 33 call_vn         7e4 local2 #01 s013
+        ' c25:  8c 00 16                jump            c3c
+        ' c28:  b2 ...                  print           "^bad ["
+        ' c31:  e6 bf 11                print_num       g01
+        ' c34:  b2 ...                  print           "]^"
+        ' c39:  8f 02 3b                call_1n         8ec
+        ' c3c:  b2 ...                  print           "inc_chk"
+        ' c43:  cd 4f 03 ff fa          store           local2 #fffa
+        ' c48:  c5 4f 03 fe 0c 00 49    inc_chk         local2 #fe0c ~c96
+        ' c4f:  8f 02 38                call_1n         8e0
+        ' c52:  c5 4f 03 03 e8 80 3f    inc_chk         local2 #03e8 c96
+        ' c59:  8f 02 38                call_1n         8e0
+        ' c5c:  c5 4f 03 ff fd f6       inc_chk         local2 #fffd c96
+        ' c62:  8f 02 38                call_1n         8e0
+        ' c65:  c5 4f 03 ff fd 6d       inc_chk         local2 #fffd ~c96
+        ' c6b:  8f 02 38                call_1n         8e0
+        ' c6e:  05 03 00 e6             inc_chk         local2 #00 c96
+        ' c72:  8f 02 38                call_1n         8e0
+        ' c75:  05 03 01 df             inc_chk         local2 #01 c96
+        ' c79:  8f 02 38                call_1n         8e0
+        ' c7c:  05 03 01 d8             inc_chk         local2 #01 c96
+        ' c80:  8f 02 38                call_1n         8e0
+        ' c83:  05 03 01 51             inc_chk         local2 #01 ~c96
+        ' c87:  8f 02 38                call_1n         8e0
+        ' c8a:  c5 4f 03 03 e8 c8       inc_chk         local2 #03e8 c96
+        ' c90:  8f 02 38                call_1n         8e0
+        ' c93:  8c 00 18                jump            cac
+        ' c96:  b2 ...                  print           "^bad ["
+        ' c9f:  e6 bf 11                print_num       g01
+        ' ca2:  b2 ...                  print           "]!^"
+        ' ca9:  8f 02 3b                call_1n         8ec
+        ' cac:  b0                      rtrue
+
+        Dim expected =
+<![CDATA[
+# temps: 69
+
+LABEL 00
+    print: "Variables"
+    temp00 <- L00
+    if (temp00 = 0) is true then
+        jump-to: LABEL 02
+LABEL 01
+    print: " skipped"
+    return: 0
+LABEL 02
+    print: " ["
+    temp01 <- read-byte(04f2)
+    push-SP: (int16(temp01) + int16(01))
+    temp02 <- pop-SP
+    print: number-to-text(int16(temp02))
+    print: "]: "
+    print: "push/pull"
+    push-SP: 09
+    push-SP: 08
+    temp03 <- pop-SP
+    L01 <- temp03
+    temp04 <- L01
+    discard(call 07e4 (temp04, 08, 0b23))
+    temp05 <- pop-SP
+    write-word(04fa) <- temp05
+    temp06 <- read-byte(04fa)
+    discard(call 07e4 (temp06, 09, 0b26))
+    print: "store"
+    L01 <- 05
+    temp07 <- L01
+    discard(call 07e4 (temp07, 05))
+    print: "load"
+    L02 <- 05
+    L01 <- 06
+    temp08 <- L01
+    temp09 <- temp08
+    push-SP: temp09
+    temp0a <- pop-SP
+    L02 <- temp0a
+    temp0b <- L01
+    temp0c <- L02
+    discard(call 07e4 (temp0b, temp0c))
+    print: "dec"
+    discard(call 0cc0 (05, 04))
+    discard(call 0cc0 (00, ffff))
+    discard(call 0cc0 (fff8, fff7))
+    discard(call 0cc0 (8000, 7fff))
+    push-SP: 01
+    push-SP: 0a
+    temp0d <- peek-SP
+    update-SP: (int16(temp0d) - int16(1))
+    temp0e <- pop-SP
+    L02 <- temp0e
+    temp0f <- L02
+    discard(call 07e4 (temp0f, 09, 0b29))
+    temp10 <- pop-SP
+    L02 <- temp10
+    temp11 <- L02
+    discard(call 07e4 (temp11, 01, 0b2a))
+    write-word(04f0) <- 03
+    temp12 <- read-byte(04f0)
+    write-word(04f0) <- (int16(temp12) - int16(1))
+    temp13 <- read-byte(04f0)
+    discard(call 07e4 (temp13, 02, 0b2b))
+    print: "inc"
+    discard(call 0cb0 (05, 06))
+    discard(call 0cb0 (ffff, 00))
+    discard(call 0cb0 (fff8, fff9))
+    discard(call 0cb0 (7fff, 8000))
+    push-SP: 01
+    push-SP: 0a
+    temp14 <- peek-SP
+    update-SP: (int16(temp14) + int16(1))
+    temp15 <- pop-SP
+    L02 <- temp15
+    temp16 <- L02
+    discard(call 07e4 (temp16, 0b, 0b2d))
+    temp17 <- pop-SP
+    L02 <- temp17
+    temp18 <- L02
+    discard(call 07e4 (temp18, 01, 0b2e))
+    write-word(04f0) <- 03
+    temp19 <- read-byte(04f0)
+    write-word(04f0) <- (int16(temp19) + int16(1))
+    temp1a <- read-byte(04f0)
+    discard(call 07e4 (temp1a, 04, 0b2f))
+    print: "\n    dec_chk"
+    L02 <- 03
+    temp1b <- L02
+    temp1c <- (int16(temp1b) - int16(1))
+    L02 <- temp1c
+    if (int16(temp1c) < int16(03e8)) is false then
+        jump-to: LABEL 0c
+LABEL 03
+    discard(call 08e0 ())
+    temp1d <- L02
+    temp1e <- (int16(temp1d) - int16(1))
+    L02 <- temp1e
+    if (int16(temp1e) < int16(01)) is true then
+        jump-to: LABEL 0c
+LABEL 04
+    discard(call 08e0 ())
+    temp1f <- L02
+    temp20 <- (int16(temp1f) - int16(1))
+    L02 <- temp20
+    if (int16(temp20) < int16(01)) is false then
+        jump-to: LABEL 0c
+LABEL 05
+    discard(call 08e0 ())
+    temp21 <- L02
+    temp22 <- (int16(temp21) - int16(1))
+    L02 <- temp22
+    if (int16(temp22) < int16(00)) is false then
+        jump-to: LABEL 0c
+LABEL 06
+    discard(call 08e0 ())
+    temp23 <- L02
+    temp24 <- (int16(temp23) - int16(1))
+    L02 <- temp24
+    if (int16(temp24) < int16(fffe)) is true then
+        jump-to: LABEL 0c
+LABEL 07
+    discard(call 08e0 ())
+    temp25 <- L02
+    temp26 <- (int16(temp25) - int16(1))
+    L02 <- temp26
+    if (int16(temp26) < int16(fffe)) is false then
+        jump-to: LABEL 0c
+LABEL 08
+    discard(call 08e0 ())
+    temp27 <- L02
+    temp28 <- (int16(temp27) - int16(1))
+    L02 <- temp28
+    if (int16(temp28) < int16(03e8)) is false then
+        jump-to: LABEL 0c
+LABEL 09
+    discard(call 08e0 ())
+    temp29 <- L02
+    temp2a <- (int16(temp29) - int16(1))
+    L02 <- temp2a
+    if (int16(temp2a) < int16(fe0c)) is true then
+        jump-to: LABEL 0c
+LABEL 0a
+    discard(call 08e0 ())
+    push-SP: 01
+    push-SP: 0a
+    temp2b <- peek-SP
+    temp2c <- (int16(temp2b) - int16(1))
+    update-SP: temp2c
+    if (int16(temp2c) < int16(05)) is true then
+        jump-to: LABEL 0c
+LABEL 0b
+    discard(call 08e0 ())
+    temp2d <- pop-SP
+    L02 <- temp2d
+    temp2e <- L02
+    discard(call 07e4 (temp2e, 09, 0b31))
+    temp2f <- pop-SP
+    L02 <- temp2f
+    temp30 <- L02
+    discard(call 07e4 (temp30, 01, 0b33))
+    jump-to: LABEL 0d
+LABEL 0c
+    print: "\nbad ["
+    temp31 <- read-byte(04f2)
+    print: number-to-text(int16(temp31))
+    print: "]\n"
+    discard(call 08ec ())
+LABEL 0d
+    print: "inc_chk"
+    L02 <- fffa
+    temp32 <- L02
+    temp33 <- (int16(temp32) + int16(1))
+    L02 <- temp33
+    if (int16(temp33) > int16(fe0c)) is false then
+        jump-to: LABEL 17
+LABEL 0e
+    discard(call 08e0 ())
+    temp34 <- L02
+    temp35 <- (int16(temp34) + int16(1))
+    L02 <- temp35
+    if (int16(temp35) > int16(03e8)) is true then
+        jump-to: LABEL 17
+LABEL 0f
+    discard(call 08e0 ())
+    temp36 <- L02
+    temp37 <- (int16(temp36) + int16(1))
+    L02 <- temp37
+    if (int16(temp37) > int16(fffd)) is true then
+        jump-to: LABEL 17
+LABEL 10
+    discard(call 08e0 ())
+    temp38 <- L02
+    temp39 <- (int16(temp38) + int16(1))
+    L02 <- temp39
+    if (int16(temp39) > int16(fffd)) is false then
+        jump-to: LABEL 17
+LABEL 11
+    discard(call 08e0 ())
+    temp3a <- L02
+    temp3b <- (int16(temp3a) + int16(1))
+    L02 <- temp3b
+    if (int16(temp3b) > int16(00)) is true then
+        jump-to: LABEL 17
+LABEL 12
+    discard(call 08e0 ())
+    temp3c <- L02
+    temp3d <- (int16(temp3c) + int16(1))
+    L02 <- temp3d
+    if (int16(temp3d) > int16(01)) is true then
+        jump-to: LABEL 17
+LABEL 13
+    discard(call 08e0 ())
+    temp3e <- L02
+    temp3f <- (int16(temp3e) + int16(1))
+    L02 <- temp3f
+    if (int16(temp3f) > int16(01)) is true then
+        jump-to: LABEL 17
+LABEL 14
+    discard(call 08e0 ())
+    temp40 <- L02
+    temp41 <- (int16(temp40) + int16(1))
+    L02 <- temp41
+    if (int16(temp41) > int16(01)) is false then
+        jump-to: LABEL 17
+LABEL 15
+    discard(call 08e0 ())
+    temp42 <- L02
+    temp43 <- (int16(temp42) + int16(1))
+    L02 <- temp43
+    if (int16(temp43) > int16(03e8)) is true then
+        jump-to: LABEL 17
+LABEL 16
+    discard(call 08e0 ())
+    jump-to: LABEL 18
+LABEL 17
+    print: "\nbad ["
+    temp44 <- read-byte(04f2)
+    print: number-to-text(int16(temp44))
+    print: "]!\n"
+    discard(call 08ec ())
+LABEL 18
+    return: 1]]>
+
+        Test(CZech, &HAA4, expected)
+    End Sub
+
+    <Fact>
     Sub CZech_2448()
         ' 2449:  0d 11 00                store           g01 #00
         ' 244c:  0d 12 00                store           g02 #00
