@@ -47,18 +47,21 @@ LABEL 00
     temp01 <- L00
     temp02 <- (temp00 = temp01)
     if (temp02) is true then
-        jump-to: LABEL 02
+        jump-to: LABEL 04
 LABEL 01
     print: "\n\nERROR ["
     temp03 <- read-byte(04f2)
     print: number-to-text(int16(temp03))
     print: "] "
-    RUNTIME EXCEPTION: Unsupported opcode: check_arg_count (v.5) with 1 operands
+    if (03 <= arg-count) is false then
+        jump-to: LABEL 03
+LABEL 02
     print: "("
     temp04 <- L02
     temp05 <- (temp04 * 4)
     print: read-text(temp05)
     print: ")"
+LABEL 03
     discard(call 08ec ())
     print: " Expected "
     temp06 <- L01
@@ -67,10 +70,10 @@ LABEL 01
     temp07 <- L00
     print: number-to-text(int16(temp07))
     print: "\n\n"
-    jump-to: LABEL 03
-LABEL 02
+    jump-to: LABEL 05
+LABEL 04
     discard(call 08e0 ())
-LABEL 03
+LABEL 05
     return: 1
 ]]>
 

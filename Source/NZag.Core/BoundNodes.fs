@@ -94,6 +94,9 @@ type Expression =
     /// Calls the routine at the specified address with the list of given arguments
     | CallExpr of Expression * list<Expression>
 
+    /// Returns the number of arguments passed to the current routine
+    | ArgCountExpr
+
     /// Reads a byte from game memory at the specified address
     | ReadMemoryByteExpr of Expression
 
@@ -278,6 +281,8 @@ module BoundNodeVisitors =
             fexpr (NumberToTextExpr(rewriteExpr e))
         | CallExpr(e,elist) ->
             fexpr (CallExpr(rewriteExpr e, elist |> List.map rewriteExpr))
+        | ArgCountExpr ->
+            fexpr ArgCountExpr
         | ReadMemoryByteExpr(e) ->
             fexpr (ReadMemoryByteExpr(rewriteExpr e))
         | ReadMemoryWordExpr(e) ->
@@ -347,7 +352,8 @@ module BoundNodeVisitors =
             | ConstantExpr(_)
             | TempExpr(_)
             | StackPopExpr
-            | StackPeekExpr ->
+            | StackPeekExpr
+            | ArgCountExpr ->
                 ()
             | ReadLocalExpr(e)
             | ReadGlobalExpr(e)
@@ -530,6 +536,8 @@ type BoundNodeDumper (builder : StringBuilder) =
             parenthesize (fun () ->
                 args |> List.iteri (fun i v -> if i > 0 then append ", "
                                                dumpExpression v))
+        | ArgCountExpr ->
+            append "arg-count"
         | ReadMemoryByteExpr(e) ->
             append "read-byte"
             parenthesize (fun () ->

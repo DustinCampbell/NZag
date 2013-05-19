@@ -313,6 +313,9 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
                     discard (CallExpr(address, args)))
 
+        | "check_arg_count", AtLeast 5uy, Op1(number) ->
+            branchIf (number .<=. ArgCountExpr)
+
         | "dec", Any, Op1(varIndex) ->
             let read, write = byRefVariable varIndex
 

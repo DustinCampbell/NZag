@@ -662,6 +662,8 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
             match a with
             | ConstantExpr(Int32Value a) -> emitDirectCall a args
             | _ -> emitComputedCall a args
+        | ArgCountExpr ->
+            builder.Arguments.LoadArgCount()
         | ReadMemoryByteExpr(a) ->
             builder.Arguments.LoadMemory()
             emitExpression a
