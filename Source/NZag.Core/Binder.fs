@@ -263,6 +263,9 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
             store (left .+. right)
 
+        | "and", Any, Op2(left, right) ->
+            store (left .&. right)
+
         | "call", Any, OpAndList(address, args)
         | "call_2s", AtLeast 4uy, OpAndList(address, args)
         | "call_vs", Any, OpAndList(address, args) ->
@@ -391,6 +394,13 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
         | "new_line", Any, NoOps ->
             textConst "\n" |> printText |> addStatement
+
+        | "not", AtLeast 5uy, Op1(value) ->
+            let result = UnaryOperationKind.Not |> unaryOp value
+            store result
+
+        | "or", Any, Op2(left, right) ->
+            store (left .|. right)
 
         | "print", Any, NoOps ->
             textConst instruction.Text.Value |> printText |> addStatement
