@@ -76,18 +76,13 @@ type BoundTreeBuilder() =
 
         x.MarkLabel(doneLabel)
 
-    member x.LoopUntil condition whileFalse =
+    member x.LoopWhile condition whileFalse =
         let startLabel = x.NewLabel()
-        let doneLabel = x.NewLabel()
 
         x.MarkLabel(startLabel)
         whileFalse()
 
-        doneLabel |> x.BranchIfTrue condition
-
-        x.JumpTo(startLabel)
-
-        x.MarkLabel(doneLabel)
+        startLabel |> x.BranchIfTrue condition
 
     abstract member AddStatement : statement:Statement -> unit
     abstract member NewTemp : unit -> int
@@ -230,8 +225,8 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
     let ifThen condition whenTrue =
         builder.IfThen condition whenTrue
 
-    let loopUntil condition whileFalse =
-        builder.LoopUntil condition whileFalse
+    let loopWhile condition whileFalse =
+        builder.LoopWhile condition whileFalse
 
     let call address args processResult =
         ifThenElse (address .=. zero)
@@ -513,14 +508,59 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
 
             ifThen (propNum .<>. zero) (fun () ->
-                loopUntil ((firstByteRead .&. mask) .<. propNum) (fun () ->
-                    let nextPropAddress = readObjectNextPropertyAddress propAddressRead
-                    propAddressWrite nextPropAddress
+                loopWhile ((firstByteRead .&. mask) .>. propNum) (fun () ->
                     firstByteWrite (readByte propAddressRead)
-                ))
+                    let nextPropAddress = readObjectNextPropertyAddress propAddressRead
+                    propAddressWrite nextPropAddress))
 
             let result = initTemp ((readByte propAddressRead) .&. mask)
             store result
+
+        | "get_prop_addr", Any, Op2(objNum, propNum) ->
+            let firstPropertyAddress = readObjectFirstPropertyAddress(objNum)
+            let propAddressRead, propAddressWrite = initMutableTemp firstPropertyAddress
+            let firstByteRead, firstByteWrite = initMutableTemp zero
+            let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
+            let stopLoopRead, stopLoopWrite = initMutableTemp zero
+
+            loopWhile (stopLoopRead .=. zero) (fun () ->
+                firstByteWrite (readByte propAddressRead)
+                ifThenElse ((firstByteRead .&. mask) .<=. propNum)
+                    (fun () -> stopLoopWrite one)
+                    (fun () -> propAddressWrite (readObjectNextPropertyAddress propAddressRead)))
+
+            ifThenElse ((firstByteRead .&. mask) .=. propNum)
+                (fun () ->
+                    if memory.Version >= 4 then
+                        ifThen ((firstByteRead .&. (int32Const 0x80)) .<>. zero)
+                            (fun() -> propAddressWrite (propAddressRead .+. one))
+
+                        store (propAddressRead .+. one))
+                (fun () ->
+                    store zero)
+
+        | "get_prop_len", Any, Op1(dataAddress) ->
+            let valueRead, valueWrite = initMutableTemp zero
+
+            ifThenElse (dataAddress .=. zero)
+                (fun () ->
+                    store zero)
+                (fun () ->
+                    valueWrite (readByte (dataAddress .-. one))
+
+                    if memory.Version <= 3 then
+                        valueWrite (((valueRead .>>. five) .+. one) |> toByte)
+                    else
+                        ifThenElse ((valueRead .&. (int32Const 0x80)) .=. zero)
+                            (fun () ->
+                                valueWrite (((valueRead .>>. six) .+. one) |> toByte))
+                            (fun () ->
+                                valueWrite (valueRead .&. (int32Const 0x3f)))
+                    ifThen (valueRead .=. zero)
+                        (fun () ->
+                            valueWrite (int32Const 64))
+
+                    store valueRead)
 
         | "get_parent", Any, Op1(objNum) ->
             let parent = readObjectParent objNum

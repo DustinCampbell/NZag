@@ -706,27 +706,26 @@ LABEL 00
         jump-to: LABEL 07
 LABEL 01
     temp0c <- read-byte(temp0b)
-    if ((temp0c & 80) <> 80) is false then
+    temp0d <- read-byte(temp0b)
+    if ((temp0d & 80) <> 80) is false then
         jump-to: LABEL 03
 LABEL 02
-    temp0d <- (temp0c >> 6)
+    temp0e <- (temp0d >> 6)
     jump-to: LABEL 06
 LABEL 03
-    temp0e <- (temp0b + 1)
-    if ((read-byte(temp0e) & 3f) = 0) is false then
+    temp0f <- (temp0b + 1)
+    if ((read-byte(temp0f) & 3f) = 0) is false then
         jump-to: LABEL 05
 LABEL 04
-    temp0d <- 40
+    temp0e <- 40
     jump-to: LABEL 06
 LABEL 05
-    temp0d <- (read-byte(temp0e) & 3f)
+    temp0e <- (read-byte(temp0f) & 3f)
 LABEL 06
-    temp0f <- ((temp0b + 1) + (temp0d + 1))
-    temp0b <- uint16(temp0f)
-    temp10 <- read-byte(temp0b)
-    if ((temp10 & 3f) < temp01) is true then
-        jump-to: LABEL 07
-    jump-to: LABEL 01
+    temp10 <- ((temp0b + 1) + (temp0e + 1))
+    temp0b <- uint16(temp10)
+    if ((temp0c & 3f) > temp01) is true then
+        jump-to: LABEL 01
 LABEL 07
     temp11 <- (read-byte(temp0b) & 3f)
     L03 <- temp11
