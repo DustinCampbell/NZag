@@ -1205,7 +1205,7 @@ LABEL 03
 
         Dim expected =
 <![CDATA[
-# temps: 40
+# temps: 99
 
 LABEL 00
     push-SP: call 5472 (8010, ffff)
@@ -1303,7 +1303,107 @@ LABEL 0b
     write-word(234f) <- 04
     temp27 <- read-word(234f)
     write-word(2371) <- temp27
-    RUNTIME EXCEPTION: Unsupported opcode: insert_obj (v.3) with 2 operands
+    temp28 <- read-word(234f)
+    temp29 <- read-word(2271)
+    temp2a <- 0
+    temp2b <- (temp28 - 1)
+    temp2c <- (temp2b * 9)
+    temp2d <- (temp2c + 02ee)
+    temp2e <- (temp2d + 5)
+    temp2f <- read-byte(temp2e)
+    temp30 <- (temp28 - 1)
+    temp31 <- (temp30 * 9)
+    temp32 <- (temp31 + 02ee)
+    temp33 <- (temp32 + 4)
+    temp34 <- read-byte(temp33)
+    if (temp34 = 0) is false then
+        jump-to: LABEL 0d
+LABEL 0c
+    temp35 <- 0
+    jump-to: LABEL 0e
+LABEL 0d
+    temp36 <- (temp34 - 1)
+    temp37 <- (temp36 * 9)
+    temp38 <- (temp37 + 02ee)
+    temp39 <- (temp38 + 6)
+    temp3a <- read-byte(temp39)
+    temp35 <- temp3a
+LABEL 0e
+    if (temp35 <> temp28) is false then
+        jump-to: LABEL 14
+LABEL 0f
+    temp3b <- temp35
+LABEL 10
+    temp3c <- (temp3b - 1)
+    temp3d <- (temp3c * 9)
+    temp3e <- (temp3d + 02ee)
+    temp3f <- (temp3e + 5)
+    temp40 <- read-byte(temp3f)
+    temp41 <- temp40
+    if (temp41 = temp28) is false then
+        jump-to: LABEL 12
+LABEL 11
+    temp2a <- temp3b
+    temp3b <- 0
+    jump-to: LABEL 13
+LABEL 12
+    temp3b <- temp41
+LABEL 13
+    if (temp3b <> 0) is true then
+        jump-to: LABEL 10
+LABEL 14
+    if (temp2a <> 0) is false then
+        jump-to: LABEL 16
+LABEL 15
+    temp42 <- (temp2a - 1)
+    temp43 <- (temp42 * 9)
+    temp44 <- (temp43 + 02ee)
+    temp45 <- (temp44 + 5)
+    write-byte(temp45) <- temp2f
+LABEL 16
+    if (temp35 = temp28) is false then
+        jump-to: LABEL 18
+LABEL 17
+    temp46 <- (temp34 - 1)
+    temp47 <- (temp46 * 9)
+    temp48 <- (temp47 + 02ee)
+    temp49 <- (temp48 + 6)
+    write-byte(temp49) <- temp2f
+LABEL 18
+    temp4a <- (temp28 - 1)
+    temp4b <- (temp4a * 9)
+    temp4c <- (temp4b + 02ee)
+    temp4d <- (temp4c + 4)
+    write-byte(temp4d) <- 0
+    temp4e <- (temp28 - 1)
+    temp4f <- (temp4e * 9)
+    temp50 <- (temp4f + 02ee)
+    temp51 <- (temp50 + 5)
+    write-byte(temp51) <- 0
+    if (temp29 <> 0) is false then
+        jump-to: LABEL 1a
+LABEL 19
+    temp52 <- (temp28 - 1)
+    temp53 <- (temp52 * 9)
+    temp54 <- (temp53 + 02ee)
+    temp55 <- (temp54 + 4)
+    write-byte(temp55) <- temp29
+    temp56 <- (temp29 - 1)
+    temp57 <- (temp56 * 9)
+    temp58 <- (temp57 + 02ee)
+    temp59 <- (temp58 + 6)
+    temp5a <- read-byte(temp59)
+    temp5b <- (temp28 - 1)
+    temp5c <- (temp5b * 9)
+    temp5d <- (temp5c + 02ee)
+    temp5e <- (temp5d + 5)
+    write-byte(temp5e) <- temp5a
+    temp5f <- (temp29 - 1)
+    temp60 <- (temp5f * 9)
+    temp61 <- (temp60 + 02ee)
+    temp62 <- (temp61 + 6)
+    write-byte(temp62) <- temp28
+LABEL 1a
     push-SP: call 7e04 ()
     push-SP: call 552a ()
     jump-to: LABEL 00]]>

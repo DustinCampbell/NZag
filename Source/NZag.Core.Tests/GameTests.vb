@@ -6,23 +6,23 @@ Public Module GameTests
     Class Screen
         Implements IScreen
 
-        Private builder As New Text.StringBuilder
+        Private ReadOnly _builder As New Text.StringBuilder
 
         Public Function WriteCharAsync(ch As Char) As Task Implements IOutputStream.WriteCharAsync
             Return Task.Factory.StartNew(Sub()
-                                             builder.Append(ch)
+                                             _builder.Append(ch)
                                          End Sub)
         End Function
 
         Public Function WriteTextAsync(s As String) As Task Implements IOutputStream.WriteTextAsync
             Return Task.Factory.StartNew(Sub()
-                                             builder.Append(s)
+                                             _builder.Append(s)
                                          End Sub)
         End Function
 
         Public ReadOnly Property Output As String
             Get
-                Return builder.ToString()
+                Return _builder.ToString()
             End Get
         End Property
     End Class
@@ -52,7 +52,9 @@ Objects [193]: get_parent....get_sibling.......get_child......jin.......
     test_attr......set_attr....clear_attr....set/clear/test_attr..
     get_next_prop......get_prop_len/get_prop_addr....
     get_prop..........put_prop ..........
-    remove
+    remove..insert.......
+    Spec1.0 length-64 props...........
+Indirect Opcodes [283]: 
 ]]>
 
         Test(CZech, expected)

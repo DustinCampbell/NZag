@@ -250,6 +250,10 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
                      else readWord address
         initTemp objNum
 
+    let writeObjectNumber address value =
+        if memory.Version <= 3 then writeByte address value
+        else writeWord address value
+
     let computeObjectAddress objNum =
         let t1 = initTemp (objNum .-. one)
         let t2 = initTemp (t1 .*. objectEntrySize)
@@ -261,15 +265,30 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         let result = initTemp (objAddress .+. objectChildOffset)
         result |> readObjectNumber
 
+    let writeObjectChild objNum value =
+        let objAddress = computeObjectAddress objNum
+        let childAddress = initTemp (objAddress .+. objectChildOffset)
+        writeObjectNumber childAddress value
+
     let readObjectParent objNum =
         let objAddress = computeObjectAddress objNum
         let result = initTemp (objAddress .+. objectParentOffset)
         result |> readObjectNumber
 
+    let writeObjectParent objNum value =
+        let objAddress = computeObjectAddress objNum
+        let parentAddress = initTemp (objAddress .+. objectParentOffset)
+        writeObjectNumber parentAddress value
+
     let readObjectSibling objNum =
         let objAddress = computeObjectAddress objNum
         let result = initTemp (objAddress .+. objectSiblingOffset)
         result |> readObjectNumber
+
+    let writeObjectSibling objNum value =
+        let objAddress = computeObjectAddress objNum
+        let siblingAddress = initTemp (objAddress .+. objectSiblingOffset)
+        writeObjectNumber siblingAddress value
 
     let computeAttributeByteAddress objNum attrNum =
         let objAddress = computeObjectAddress objNum
@@ -358,6 +377,53 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
         let result = initTemp (readWord t3)
         result |> toUInt16
+
+    let removeObject objNum =
+        let leftSiblingRead, leftSiblingWrite = initMutableTemp zero
+        let rightSibling = readObjectSibling objNum
+        let parent = readObjectParent objNum
+        let parentChildRead, parentChildWrite = initMutableTemp zero
+
+        ifThenElse (parent .=. zero)
+            (fun () ->
+                parentChildWrite zero)
+            (fun () ->
+                parentChildWrite (readObjectChild parent))
+
+        ifThen (parentChildRead .<>. objNum)
+            (fun () ->
+                let nextTempRead, nextTempWrite = initMutableTemp parentChildRead
+                let siblingTempRead, siblingTempWrite = initMutableTemp zero
+
+                loopWhile (nextTempRead .<>. zero)
+                    (fun () ->
+                        siblingTempWrite (readObjectSibling nextTempRead)
+                        ifThenElse (siblingTempRead .=. objNum)
+                            (fun () ->
+                                leftSiblingWrite nextTempRead
+                                nextTempWrite zero)
+                            (fun () ->
+                                nextTempWrite siblingTempRead)))
+
+        ifThen (leftSiblingRead .<>. zero)
+            (fun () ->
+                writeObjectSibling leftSiblingRead rightSibling |> addStatement)
+
+        ifThen (parentChildRead .=. objNum)
+            (fun () ->
+                writeObjectChild parent rightSibling |> addStatement)
+
+        writeObjectParent objNum zero |> addStatement
+        writeObjectSibling objNum zero |> addStatement
+
+    let insertObject objNum destObjNum =
+        removeObject objNum
+
+        ifThen (destObjNum .<>. zero)
+            (fun () ->
+                writeObjectParent objNum destObjNum |> addStatement
+                writeObjectSibling objNum (readObjectChild destObjNum) |> addStatement
+                writeObjectChild destObjNum objNum |> addStatement)
 
     let bindOperand = function
         | LargeConstantOperand(v) -> wordConst v
@@ -625,6 +691,9 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             write newValue |> addStatement
             branchIf (newValue |> toInt16 .>. (value |> toInt16))
 
+        | "insert_obj", Any, Op2(objNum, destObjNum) ->
+            insertObject objNum destObjNum
+
         | "je", Any, OpAndList(left, values) ->
             // je can have 2 to 4 operands to test for equality.
             let conditions = values |> List.map (fun v -> initTemp (left .=. v))
@@ -781,6 +850,9 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
                 (fun () ->
                     randomize range |> addStatement
                     store zero)
+
+        | "remove_obj", Any, Op1(objNum) ->
+            removeObject objNum
 
         | "ret", Any, Op1(value) ->
             ret value
