@@ -51,7 +51,8 @@ Subroutines [152]: call_1s.call_2s..call_vs2...call_vs.....ret.
 Objects [193]: get_parent....get_sibling.......get_child......jin.......
     test_attr......set_attr....clear_attr....set/clear/test_attr..
     get_next_prop......get_prop_len/get_prop_addr....
-    get_prop
+    get_prop..........put_prop ..........
+    remove
 ]]>
 
         Test(CZech, expected)
@@ -61,6 +62,10 @@ Objects [193]: get_parent....get_sibling.......get_child......jin.......
     Sub RunZork1()
         Dim expected =
 <![CDATA[
+ZORK I: The Great Underground Empire
+Copyright (c) 1981, 1982, 1983 Infocom, Inc. All rights reserved.
+ZORK is a registered trademark of Infocom, Inc.
+Revision 88 / Serial number 840726
 ]]>
 
         Test(Zork1, expected)
@@ -79,7 +84,7 @@ Objects [193]: get_parent....get_sibling.......get_child......jin.......
 
         Dim expectedText = expected.Value.Trim()
 
-        Assert.Equal(expectedText, screen.Output)
+        Assert.Equal(expectedText, screen.Output.Trim())
     End Sub
 
 End Module

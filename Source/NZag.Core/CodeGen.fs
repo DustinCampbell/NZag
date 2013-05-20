@@ -778,6 +778,9 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
         | DiscardValueStmt(e) ->
             emitExpression e
             builder.EvaluationStack.Pop()
+        | PrintCharStmt(e) ->
+            builder.RuntimeFunctions.WriteOutputChar
+                (fun () -> emitExpression e)
         | PrintTextStmt(e) ->
             builder.RuntimeFunctions.WriteOutputText
                 (fun () -> emitExpression e)

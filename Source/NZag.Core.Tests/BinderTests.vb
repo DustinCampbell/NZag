@@ -1205,7 +1205,7 @@ LABEL 03
 
         Dim expected =
 <![CDATA[
-# temps: 30
+# temps: 40
 
 LABEL 00
     push-SP: call 5472 (8010, ffff)
@@ -1217,58 +1217,92 @@ LABEL 00
     write-word(temp01) <- 01
     push-SP: call 5472 (6f6a, 28)
     push-SP: call 5472 (6f55, c8)
-    RUNTIME EXCEPTION: Unsupported opcode: put_prop (v.3) with 3 operands
-    temp02 <- read-word(2291)
-    push-SP: (int16(temp02) + int16(02))
-    temp03 <- read-word(2285)
-    temp04 <- pop-SP
-    write-word(temp03 + 0002) <- temp04
-    temp05 <- read-word(2291)
-    push-SP: (int16(temp05) + int16(04))
-    temp06 <- read-word(2285)
-    temp07 <- pop-SP
-    write-word(temp06 + 0004) <- temp07
-    temp08 <- read-word(228d)
-    push-SP: (int16(temp08) + int16(02))
-    temp09 <- read-word(2283)
-    temp0a <- pop-SP
-    write-word(temp09 + 0004) <- temp0a
-    temp0b <- read-word(228d)
-    push-SP: (int16(temp0b) + int16(04))
-    temp0c <- read-word(2283)
-    temp0d <- pop-SP
-    write-word(temp0c + 0006) <- temp0d
-    temp0e <- read-word(228b)
-    push-SP: (int16(temp0e) + int16(02))
-    temp0f <- read-word(2281)
-    temp10 <- pop-SP
-    write-word(temp0f + 0002) <- temp10
-    temp11 <- read-word(2289)
-    push-SP: (int16(temp11) + int16(02))
-    temp12 <- read-word(2281)
-    temp13 <- pop-SP
-    write-word(temp12 + 0006) <- temp13
+    temp02 <- read-word(0868)
+    temp03 <- read-byte(temp02)
+    temp04 <- (temp02 + 1)
+    temp05 <- (temp03 * 2)
+    temp06 <- (temp04 + temp05)
+    temp07 <- uint16(temp06)
+    temp08 <- 0
+LABEL 01
+    temp09 <- read-byte(temp07)
+    if ((temp09 & 1f) <= 06) is false then
+        jump-to: LABEL 03
+LABEL 02
+    temp08 <- 1
+    jump-to: LABEL 04
+LABEL 03
+    temp0a <- read-byte(temp07)
+    temp0b <- ((temp07 + 1) + ((temp0a >> 5) + 1))
+    temp07 <- uint16(temp0b)
+LABEL 04
+    if (temp08 = 0) is true then
+        jump-to: LABEL 01
+    if ((temp09 & 1f) <> 06) is false then
+        jump-to: LABEL 06
+LABEL 05
+    RUNTIME EXCEPTION: Property not found!
+LABEL 06
+    temp07 <- (temp07 + 1)
+    if ((temp09 & e0) = 0) is false then
+        jump-to: LABEL 08
+LABEL 07
+    write-byte(temp07) <- byte(04)
+    jump-to: LABEL 09
+LABEL 08
+    write-word(temp07) <- 04
+LABEL 09
+    temp0c <- read-word(2291)
+    push-SP: (int16(temp0c) + int16(02))
+    temp0d <- read-word(2285)
+    temp0e <- pop-SP
+    write-word(temp0d + 0002) <- temp0e
+    temp0f <- read-word(2291)
+    push-SP: (int16(temp0f) + int16(04))
+    temp10 <- read-word(2285)
+    temp11 <- pop-SP
+    write-word(temp10 + 0004) <- temp11
+    temp12 <- read-word(228d)
+    push-SP: (int16(temp12) + int16(02))
+    temp13 <- read-word(2283)
+    temp14 <- pop-SP
+    write-word(temp13 + 0004) <- temp14
+    temp15 <- read-word(228d)
+    push-SP: (int16(temp15) + int16(04))
+    temp16 <- read-word(2283)
+    temp17 <- pop-SP
+    write-word(temp16 + 0006) <- temp17
+    temp18 <- read-word(228b)
+    push-SP: (int16(temp18) + int16(02))
+    temp19 <- read-word(2281)
+    temp1a <- pop-SP
+    write-word(temp19 + 0002) <- temp1a
+    temp1b <- read-word(2289)
+    push-SP: (int16(temp1b) + int16(02))
+    temp1c <- read-word(2281)
+    temp1d <- pop-SP
+    write-word(temp1c + 0006) <- temp1d
     write-word(2271) <- b4
     push-SP: call 9530 (a0)
-    temp14 <- read-word(2271)
-    temp15 <- (temp14 - 1)
-    temp16 <- (temp15 * 9)
-    temp17 <- (temp16 + 02ee)
-    temp18 <- temp17
-    temp19 <- temp18
-    temp1a <- read-byte(temp19)
-    temp1b <- (temp1a & 0010)
-    temp1c <- (temp1b <> 0)
-    if (temp1c = 1) is true then
-        jump-to: LABEL 02
-LABEL 01
+    temp1e <- read-word(2271)
+    temp1f <- (temp1e - 1)
+    temp20 <- (temp1f * 9)
+    temp21 <- (temp20 + 02ee)
+    temp22 <- temp21
+    temp23 <- temp22
+    temp24 <- read-byte(temp23)
+    temp25 <- (temp24 & 0010)
+    temp26 <- (temp25 <> 0)
+    if (temp26 = 1) is true then
+        jump-to: LABEL 0b
+LABEL 0a
     push-SP: call 6ee0 ()
     print: "\n"
-LABEL 02
+LABEL 0b
     write-word(22f5) <- 01
     write-word(234f) <- 04
-    temp1d <- read-word(234f)
-    write-word(2371) <- temp1d
+    temp27 <- read-word(234f)
+    write-word(2371) <- temp27
     RUNTIME EXCEPTION: Unsupported opcode: insert_obj (v.3) with 2 operands
     push-SP: call 7e04 ()
     push-SP: call 552a ()

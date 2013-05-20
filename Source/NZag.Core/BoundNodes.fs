@@ -175,6 +175,9 @@ type Statement =
     /// Discards a value (i.e. does nothing with it).
     | DiscardValueStmt of Expression
 
+    /// Prints the char represented by the given expression
+    | PrintCharStmt of Expression
+
     /// Prints the text represented by the given expression
     | PrintTextStmt of Expression
 
@@ -258,6 +261,7 @@ module BoundNodeConstruction =
 
     let discardValue e = DiscardValueStmt(e)
 
+    let printChar ch = PrintCharStmt(ch)
     let printText text = PrintTextStmt(text)
 
     let random range = GenerateRandomNumberExpr(range)
@@ -349,6 +353,8 @@ module BoundNodeVisitors =
             fstmt (WriteMemoryWordStmt(rewriteExpr e1, rewriteExpr e2))
         | DiscardValueStmt(e) ->
             fstmt (DiscardValueStmt(rewriteExpr e))
+        | PrintCharStmt(e) ->
+            fstmt (PrintCharStmt(rewriteExpr e))
         | PrintTextStmt(e) ->
             fstmt (PrintTextStmt(rewriteExpr e))
         | SetRandomNumberSeedStmt(e) ->
@@ -412,6 +418,7 @@ module BoundNodeVisitors =
             | StackPushStmt(e)
             | StackUpdateStmt(e)
             | DiscardValueStmt(e)
+            | PrintCharStmt(e)
             | PrintTextStmt(e)
             | SetRandomNumberSeedStmt(e) ->
                 visitExpr e
@@ -665,6 +672,7 @@ type BoundNodeDumper (builder : StringBuilder) =
         | DiscardValueStmt(e) ->
             append "discard: "
             dumpExpression e
+        | PrintCharStmt(e)
         | PrintTextStmt(e) ->
             append "print: "
             dumpExpression e

@@ -351,6 +351,14 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         let result = initTemp ((propAddress .+. one) .+. (propSize .+. one))
         result |> toUInt16
 
+    let readObjectPropertyDefault propNum =
+        let t1 = initTemp (propNum .-. one)
+        let t2 = initTemp (t1 .*. two)
+        let t3 = initTemp (objectTableAddress .+. t2)
+
+        let result = initTemp (readWord t3)
+        result |> toUInt16
+
     let bindOperand = function
         | LargeConstantOperand(v) -> wordConst v
         | SmallConstantOperand(v) -> byteConst v
@@ -505,6 +513,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             let firstPropertyAddress = readObjectFirstPropertyAddress(objNum)
             let propAddressRead, propAddressWrite = initMutableTemp firstPropertyAddress
             let firstByteRead, firstByteWrite = initMutableTemp (readByte propAddressRead)
+
             let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
 
             ifThen (propNum .<>. zero) (fun () ->
@@ -516,12 +525,47 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             let result = initTemp ((readByte propAddressRead) .&. mask)
             store result
 
+        | "get_parent", Any, Op1(objNum) ->
+            let parent = readObjectParent objNum
+            store parent
+
+        | "get_prop", Any, Op2(objNum, propNum) ->
+            let firstPropertyAddress = readObjectFirstPropertyAddress(objNum)
+            let propAddressRead, propAddressWrite = initMutableTemp firstPropertyAddress
+            let firstByteRead, firstByteWrite = initMutableTemp zero
+            let stopLoopRead, stopLoopWrite = initMutableTemp zero
+            let resultRead, resultWrite = initMutableTemp zero
+
+            let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
+            let comp = if memory.Version <= 3 then byteConst 0xe0uy else byteConst 0xc0uy
+
+            loopWhile (stopLoopRead .=. zero) (fun () ->
+                firstByteWrite (readByte propAddressRead)
+                ifThenElse ((firstByteRead .&. mask) .<=. propNum)
+                    (fun () -> stopLoopWrite one)
+                    (fun () -> propAddressWrite (readObjectNextPropertyAddress propAddressRead)))
+
+            ifThenElse ((firstByteRead .&. mask) .=. propNum)
+                (fun () ->
+                    propAddressWrite (propAddressRead .+. one)
+
+                    ifThenElse ((firstByteRead .&. comp) .=. zero)
+                        (fun () ->
+                            resultWrite (readByte propAddressRead))
+                        (fun () ->
+                            resultWrite (readWord propAddressRead)))
+                (fun () ->
+                    resultWrite (readObjectPropertyDefault propNum))
+
+            store resultRead
+
         | "get_prop_addr", Any, Op2(objNum, propNum) ->
             let firstPropertyAddress = readObjectFirstPropertyAddress(objNum)
             let propAddressRead, propAddressWrite = initMutableTemp firstPropertyAddress
             let firstByteRead, firstByteWrite = initMutableTemp zero
-            let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
             let stopLoopRead, stopLoopWrite = initMutableTemp zero
+
+            let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
 
             loopWhile (stopLoopRead .=. zero) (fun () ->
                 firstByteWrite (readByte propAddressRead)
@@ -561,10 +605,6 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
                             valueWrite (int32Const 64))
 
                     store valueRead)
-
-        | "get_parent", Any, Op1(objNum) ->
-            let parent = readObjectParent objNum
-            store parent
 
         | "get_sibling", Any, Op1(objNum) ->
             let sibling = readObjectSibling objNum
@@ -670,6 +710,11 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         | "print", Any, NoOps ->
             textConst instruction.Text.Value |> printText |> addStatement
 
+        | "print_char", Any, Op1(ch) ->
+            ch
+            |> printChar
+            |> addStatement
+
         | "print_num", Any, Op1(number) ->
             number
             |> toInt16
@@ -693,6 +738,33 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
             let value = StackPopExpr
             write value |> addStatement
+
+        | "put_prop", Any, Op3(objNum, propNum, value) ->
+            let firstPropertyAddress = readObjectFirstPropertyAddress(objNum)
+            let propAddressRead, propAddressWrite = initMutableTemp firstPropertyAddress
+            let firstByteRead, firstByteWrite = initMutableTemp zero
+            let stopLoopRead, stopLoopWrite = initMutableTemp zero
+
+            let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
+            let comp = if memory.Version <= 3 then byteConst 0xe0uy else byteConst 0xc0uy
+
+            loopWhile (stopLoopRead .=. zero) (fun () ->
+                firstByteWrite (readByte propAddressRead)
+                ifThenElse ((firstByteRead .&. mask) .<=. propNum)
+                    (fun () -> stopLoopWrite one)
+                    (fun () -> propAddressWrite (readObjectNextPropertyAddress propAddressRead)))
+
+            ifThen ((firstByteRead .&. mask) .<>. propNum)
+                (fun () ->
+                    RuntimeExceptionStmt("Property not found!") |> addStatement)
+
+            propAddressWrite (propAddressRead .+. one)
+
+            ifThenElse ((firstByteRead .&. comp) .=. zero)
+                (fun () ->
+                    writeByte propAddressRead (value |> toByte) |> addStatement)
+                (fun () ->
+                    writeWord propAddressRead value |> addStatement)
 
         | "push", Any, Op1(value) ->
             StackPushStmt(value) |> addStatement
