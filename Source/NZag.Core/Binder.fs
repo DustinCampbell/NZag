@@ -1123,10 +1123,13 @@ type RoutineBinder(memory: Memory, debugging: bool) =
                     (fun e ->
                         match e with
                         | TempExpr(t) ->
+                            match getDefinitions t with
                             // If this temp only has a single definition of a constant expression
                             // at this point, use the constant.
-                            match getDefinitions t with
-                            | [|ConstantExpr(c) as v|] -> v
+                            | [|ConstantExpr(_) as v|] -> v
+                            // If this temp only has a single definition of another temp at this point,
+                            // use the temp.
+                            | [|TempExpr(_) as t|] -> t
                             | _ -> e
                         | e -> e)
 
@@ -1160,16 +1163,40 @@ type RoutineBinder(memory: Memory, debugging: bool) =
                         match e with
                         | BinaryOperationExpr(k,l,r) ->
                             match l,r with
-                            | ConstantExpr(Int32Value v1),ConstantExpr(Int32Value v2) ->
+                            | ConstantExpr(Int32Value v1), ConstantExpr(Int32Value v2) ->
                                 match binaryOp v1 v2 k with
                                 | Some(res) -> res
                                 | None -> e
-                            | (TempExpr(_) as t), ConstantExpr(Zero)
-                            | ConstantExpr(Zero), (TempExpr(_) as t) ->
+
+                            | ToInt16(ConstantExpr(Int32Value v1)), ToInt16(ConstantExpr(Int32Value v2)) ->
+                                match binaryOp v1 v2 k with
+                                | Some(res) -> res
+                                | None -> e
+
+                            | l, ConstantExpr(Zero) ->
                                 match k with
-                                | BinaryOperationKind.Add -> t
+                                | BinaryOperationKind.Add -> l
+                                | BinaryOperationKind.Multiply -> zero
+                                | BinaryOperationKind.Subtract -> l
+                                | _ -> e
+
+                            | l, ConstantExpr(One) ->
+                                match k with
+                                | BinaryOperationKind.Multiply -> l
+                                | _ -> e
+
+                            | ConstantExpr(Zero), r ->
+                                match k with
+                                | BinaryOperationKind.Add -> r
+                                | BinaryOperationKind.Divide -> zero
                                 | BinaryOperationKind.Multiply -> zero
                                 | _ -> e
+
+                            | ConstantExpr(One), r ->
+                                match k with
+                                | BinaryOperationKind.Multiply -> r
+                                | _ -> e
+
                             | _ -> e
                         | e -> e)
 
@@ -1220,18 +1247,85 @@ type RoutineBinder(memory: Memory, debugging: bool) =
             | Some(s') -> updater.AddStatement(s')
             | None -> ())
 
+    let optimize_InlineStackPushAndPop tree =
+        // We want to inline sequences of pushes and pops to reduce VM stack usage.
+        // To do this, we watch for StackPushStmts and inline the expression in
+        // specific cases.
+
+        let currentStackPush = ref None
+
+        tree |> updateTree (fun s updater ->
+            match !currentStackPush with
+            | Some(StackPushStmt(e) as lastStackPush) ->
+                let updatedStmt =
+                    match s with
+                    | ReturnStmt(StackPopExpr) -> Some(ReturnStmt(e))
+                    | BranchStmt(c,StackPopExpr,s) -> Some(BranchStmt(c,e,s))
+                    | WriteTempStmt(i,StackPopExpr) -> Some(WriteTempStmt(i,e))
+                    | WriteLocalStmt(StackPopExpr,v) -> Some(WriteLocalStmt(e,v))
+                    | WriteLocalStmt(ConstantExpr(_) as i,StackPopExpr) -> Some(WriteLocalStmt(i,e))
+                    | WriteLocalStmt(TempExpr(_) as i,StackPopExpr) -> Some(WriteLocalStmt(i,e))
+                    | WriteGlobalStmt(StackPopExpr,v) -> Some(WriteGlobalStmt(e,v))
+                    | WriteGlobalStmt(ConstantExpr(_) as i,StackPopExpr) -> Some(WriteGlobalStmt(i,e))
+                    | WriteGlobalStmt(TempExpr(_) as i,StackPopExpr) -> Some(WriteGlobalStmt(i,e))
+                    | StackPushStmt(StackPopExpr) -> Some(StackPushStmt(e))
+                    | StackUpdateStmt(StackPopExpr) -> Some(StackUpdateStmt(e))
+                    | WriteComputedVarStmt(StackPopExpr,v) -> Some(WriteComputedVarStmt(e,v))
+                    | WriteComputedVarStmt(ConstantExpr(_) as i, StackPopExpr) -> Some(WriteComputedVarStmt(i,e))
+                    | WriteComputedVarStmt(TempExpr(_) as i, StackPopExpr) -> Some(WriteComputedVarStmt(i,e))
+                    | WriteMemoryByteStmt(StackPopExpr,v) -> Some(WriteMemoryByteStmt(e,v))
+                    | WriteMemoryByteStmt(ConstantExpr(_) as a, StackPopExpr) -> Some(WriteMemoryByteStmt(a,e))
+                    | WriteMemoryByteStmt(TempExpr(_) as a,StackPopExpr) -> Some(WriteMemoryByteStmt(a,e))
+                    | WriteMemoryWordStmt(StackPopExpr,v) -> Some(WriteMemoryWordStmt(e,v))
+                    | WriteMemoryWordStmt(ConstantExpr(_) as a,StackPopExpr) -> Some(WriteMemoryWordStmt(a,e))
+                    | WriteMemoryWordStmt(TempExpr(_) as a,StackPopExpr) -> Some(WriteMemoryWordStmt(a,e))
+                    | DiscardValueStmt(StackPopExpr) -> Some(DiscardValueStmt(e))
+                    | PrintCharStmt(StackPopExpr) -> Some(PrintCharStmt(e))
+                    | PrintTextStmt(StackPopExpr) -> Some(PrintTextStmt(e))
+                    | SetRandomNumberSeedStmt(StackPopExpr) -> Some(SetRandomNumberSeedStmt(e))
+                    | DebugOutputStmt(StackPopExpr, list) -> Some(DebugOutputStmt(e, list))
+                    | _ -> None
+
+                match updatedStmt with
+                | Some(StackPushStmt(_)) ->
+                    // Special case: If we're inlining into another StackPushStmt,
+                    // we don't add it to the updated bound tree. Instead, we'll
+                    // just track it and check the next statement.
+                    currentStackPush := updatedStmt
+                | Some(updatedStmt) ->
+                    // Add our updated statement and stop tracking the last stack push.
+                    currentStackPush := None
+                    updater.AddStatement(updatedStmt)
+                | None ->
+                    // No inlining could occur. In this, case just add everything
+                    // to the updated bound tree.
+                    currentStackPush := None
+                    updater.AddStatement(lastStackPush)
+                    updater.AddStatement(s)
+
+            | None ->
+                match s with
+                | StackPushStmt(_) ->
+                    // We found a StackPushStmt, go ahead and track it but don't
+                    // add it to the updated bound tree yet.
+                    currentStackPush := Some(s)
+                | _ ->
+                    // Nothing to do.
+                    updater.AddStatement(s)
+
+            | Some(_) -> failcompile "Unexpected")
+
     let optimize_EliminateDeadBranches tree =
         tree |> updateTree (fun s updater ->
-            let s' = match s with
-                     | BranchStmt(b,e,j) ->
-                         if b && e = one then
-                             Some(j)
-                         elif not b && e = zero then
-                             Some(j)
-                         else
-                             Some(s)
-                     | s ->
-                         Some(s)
+            let s' =
+                match s with
+                | BranchStmt(b,e,j) ->
+                    match e with
+                    | ConstantExpr(One)  -> if b then Some(j) else None
+                    | ConstantExpr(Zero) -> if b then None else Some(j)
+                    | _ -> Some(s)
+                | s ->
+                    Some(s)
 
             match s' with
             | Some(s') -> updater.AddStatement(s')
@@ -1303,6 +1397,7 @@ type RoutineBinder(memory: Memory, debugging: bool) =
             |> optimize_PropagateConstants
             |> optimize_FoldConstants
             |> optimize_RemoveUnusedTemps
+            |> optimize_InlineStackPushAndPop
             |> optimize_EliminateDeadBranches
             |> optimize_EliminateDeadBlocks
             |> optimize_EliminateRedundantLabels)

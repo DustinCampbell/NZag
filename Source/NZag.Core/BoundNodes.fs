@@ -273,6 +273,13 @@ module BoundNodeConstruction =
     let runtimeException message =
         Printf.ksprintf (fun s -> RuntimeExceptionStmt(s)) message
 
+[<AutoOpen>]
+module ConversionPatterns =
+
+    let (|ToInt16|_|) = function
+        | ConversionExpr(ConversionKind.ToInt16, v) -> Some(v)
+        | _ -> None
+
 module BoundNodeVisitors =
 
     let rec rewriteExpression fexpr expr =
@@ -531,12 +538,16 @@ type BoundNodeDumper (builder : StringBuilder) =
             dumpConstant c
         | TempExpr(i) ->
             appendf "temp%02x" i
-        | ReadLocalExpr(e) ->
+        | ReadLocalExpr(i) ->
             append "L"
-            dumpExpression e
-        | ReadGlobalExpr(e) ->
+            match i with
+            | ConstantExpr(_) -> dumpExpression i
+            | _ -> parenthesize (fun () -> dumpExpression i)
+        | ReadGlobalExpr(i) ->
             append "G"
-            dumpExpression e
+            match i with
+            | ConstantExpr(_) -> dumpExpression i
+            | _ -> parenthesize (fun () -> dumpExpression i)
         | StackPopExpr ->
             append "pop-SP"
         | StackPeekExpr ->
@@ -638,12 +649,16 @@ type BoundNodeDumper (builder : StringBuilder) =
             dumpExpression v
         | WriteLocalStmt(i,v) ->
             append "L"
-            dumpExpression i
+            match i with
+            | ConstantExpr(_) -> dumpExpression i
+            | _ -> parenthesize (fun () -> dumpExpression i)
             append " <- "
             dumpExpression v
         | WriteGlobalStmt(i,v) ->
             append "G"
-            dumpExpression i
+            match i with
+            | ConstantExpr(_) -> dumpExpression i
+            | _ -> parenthesize (fun () -> dumpExpression i)
             append " <- "
             dumpExpression v
         | StackPushStmt(e) ->
