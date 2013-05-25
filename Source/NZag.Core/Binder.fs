@@ -1024,9 +1024,8 @@ type RoutineBinder(memory: Memory, debugging: bool) =
             match !block with
             | Some(b) ->
                 b.Data.Statements.[!index].InDefinitions
-                    |> Set.filter (fun d -> d.Temp = t)
-                    |> Set.map (fun d -> d.Value)
-                    |> Set.toList
+                    |> List.filter (fun d -> d.Temp = t)
+                    |> List.map (fun d -> d.Value)
             | None ->
                 failcompile "Couldn't find statement info"
 
@@ -1113,8 +1112,7 @@ type RoutineBinder(memory: Memory, debugging: bool) =
             | Some(b) ->
                 let defs =
                     reachingDefinitions.Definitions.[t]
-                    |> Set.filter (fun d -> d.BlockID = b.ID && d.StatementIndex = !index)
-                    |> Set.toList
+                    |> List.filter (fun d -> d.BlockID = b.ID && d.StatementIndex = !index)
 
                 match defs with
                 | [d] ->

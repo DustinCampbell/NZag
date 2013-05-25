@@ -199,6 +199,29 @@ module ResizeArray =
             res <- arr.[i] :: res
         res
 
+module HashSet =
+
+    let create() = new HashSet<_>()
+    let createFrom (e: seq<_>) = new HashSet<_>(e)
+
+    let unionWith (e: seq<_>) (set: HashSet<_>) =
+        set.UnionWith(e)
+
+    let equals (e: seq<_>) (set: HashSet<_>) =
+        set.SetEquals(e)
+
+    let add v (set: HashSet<_>) =
+        set.Add(v) |> ignore
+
+    let remove v (set: HashSet<_>) =
+        set.Remove(v) |> ignore
+
+    let removeWhere f (set: HashSet<_>) =
+        set.RemoveWhere(Predicate(f)) |> ignore
+
+    let toList (set: HashSet<_>) =
+        set |> List.ofSeq
+
 module SortedSet =
 
     let create() =

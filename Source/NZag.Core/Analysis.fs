@@ -171,16 +171,16 @@ module Graphs =
 
     type StatementFlowInfo =
       { Statement : Statement
-        InDefinitions : Set<Definition>
-        OutDefinitions : Set<Definition> }
+        InDefinitions : Definition list
+        OutDefinitions : Definition list }
 
     type DefinitionData =
       { Statements : StatementFlowInfo list
-        InDefinitions : Set<Definition>
-        OutDefinitions : Set<Definition> }
+        InDefinitions : Definition list
+        OutDefinitions : Definition list }
 
     type ReachingDefinitions =
-      { Definitions : Map<int, Set<Definition>>
+      { Definitions : Map<int, Definition list>
         Usages : Map<Definition, int>
         Graph : Graph<DefinitionData> }
 
@@ -192,29 +192,33 @@ module Graphs =
             | h::t -> h,t
 
         let statementsMap = Dictionary.createFrom (graph.Blocks |> List.map (fun b -> b.ID, ResizeArray.create()))
-        let insMap = Dictionary.createFrom (graph.Blocks |> List.map (fun b -> b.ID, Set.empty))
-        let outsMap = Dictionary.createFrom (graph.Blocks |> List.map (fun b -> b.ID, Set.empty))
+        let insMap = Dictionary.createFrom (graph.Blocks |> List.map (fun b -> b.ID, HashSet.create()))
+        let outsMap = Dictionary.createFrom (graph.Blocks |> List.map (fun b -> b.ID, HashSet.create()))
         let tempToDefinitionsMap = Dictionary.create()
         let definitionToUsagesMap = Dictionary.create()
 
         let computeIns b =
+            let res = HashSet.create()
+
             b.Predecessors
             |> List.map (fun p -> outsMap.[p])
-            |> List.fold (fun res s -> Set.union res s) Set.empty
+            |> List.iter (fun s -> res |> HashSet.unionWith s)
+
+            res
 
         let computeOuts (b : Block<ControlFlowData>) =
             let oldIns = insMap.[b.ID]
             let ins = computeIns b
-            if oldIns <> ins then
+            if not (oldIns |> HashSet.equals ins) then
                 insMap.[b.ID] <- ins
 
             let statements = statementsMap.[b.ID]
             statements.Clear()
 
-            let currentOuts = ref ins
+            let currentOuts = HashSet.createFrom ins
 
             b.Data.Statements |> List.iteri (fun i s ->
-                let currentIns = !currentOuts
+                let currentIns = currentOuts |> HashSet.toList
 
                 // First, get the flow info for this statement
                 let info =
@@ -222,21 +226,20 @@ module Graphs =
                     | WriteTempStmt(t,e) ->
                         let definitionSet =
                             tempToDefinitionsMap
-                            |> Dictionary.getOrAdd t (fun () -> Set.empty)
+                            |> Dictionary.getOrAdd t (fun () -> HashSet.create())
 
                         let definition = { Temp = t
                                            BlockID = b.ID
                                            StatementIndex = i
                                            Value = e }
 
-                        tempToDefinitionsMap.[t] <- definitionSet |> Set.add definition
+                        definitionSet |> HashSet.add definition
 
-                        currentOuts := !currentOuts
-                            |> Set.filter (fun d -> d.Temp <> t)
-                            |> Set.add definition
+                        currentOuts |> HashSet.removeWhere (fun d -> d.Temp = t)
+                        currentOuts |> HashSet.add definition
                     | s -> ()
 
-                    {Statement = s; InDefinitions = currentIns; OutDefinitions = !currentOuts}
+                    {Statement = s; InDefinitions = currentIns; OutDefinitions = currentOuts |> HashSet.toList}
 
                 // Next, find any definition usages for this statement
                 s |> walkStatement
@@ -244,7 +247,7 @@ module Graphs =
                     (fun e ->
                         match e with
                         | TempExpr(t) ->
-                            let defs = currentIns |> Set.filter (fun d -> d.Temp = t)
+                            let defs = currentIns |> List.filter (fun d -> d.Temp = t)
                             for def in defs do
                                 let usages = match definitionToUsagesMap |> Dictionary.tryFind def with
                                              | Some(u) -> u + 1
@@ -256,7 +259,7 @@ module Graphs =
 
                 statements.Add(info))
 
-            !currentOuts
+            currentOuts
 
         let stop = ref false
         while not (!stop) do
@@ -266,7 +269,7 @@ module Graphs =
             |> List.iter (fun b ->
                 let currentOuts = outsMap |> Dictionary.find b.ID
                 let newOuts = computeOuts b
-                if currentOuts <> newOuts then
+                if not (currentOuts |> HashSet.equals newOuts) then
                     outsMap.[b.ID] <- newOuts
                     stop := false)
 
@@ -274,14 +277,15 @@ module Graphs =
             graph.Blocks
             |> List.map (fun b -> { ID = b.ID
                                     Data = { Statements = statementsMap |> Dictionary.find b.ID |> ResizeArray.toList
-                                             InDefinitions = insMap |> Dictionary.find b.ID
-                                             OutDefinitions = outsMap |> Dictionary.find b.ID }
+                                             InDefinitions = insMap |> Dictionary.find b.ID |> HashSet.toList
+                                             OutDefinitions = outsMap |> Dictionary.find b.ID |> HashSet.toList }
                                     Predecessors = b.Predecessors
                                     Successors = b.Successors })
 
         { Definitions =
             tempToDefinitionsMap 
             |> Dictionary.toList
+            |> List.map (fun (id,defs) -> id, defs |> HashSet.toList)
             |> Map.ofList
           Usages =
             definitionToUsagesMap
