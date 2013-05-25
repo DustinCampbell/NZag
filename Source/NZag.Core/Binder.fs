@@ -467,14 +467,28 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             let label = builder.GetJumpTargetLabel(instruction.Address)
             builder.MarkLabel(label)
 
-        // If debugging, write the instruction to the debug output
-        if debugging then
-            debugOut (instruction.ToString()) [] |> addStatement
-
         // Create temps for all operands
         let operandValues = instruction.Operands |> List.map bindOperand
         let operandTemps = operandValues |> List.map (fun v -> initTemp v)
         let operandMap = List.zip operandTemps operandValues |> Map.ofList
+        
+        // If debugging, write the instruction to the debug output
+        if debugging then
+            let builder = StringBuilder.create()
+            builder |> StringBuilder.appendString (sprintf "%04x: %s" (instruction.Address.IntValue) (instruction.Opcode.Name))
+
+            instruction.Operands
+                |> List.iter (fun op -> 
+                    match op with
+                    | LargeConstantOperand(_) -> builder |> StringBuilder.appendString " {0:x4}"
+                    | SmallConstantOperand(_) -> builder |> StringBuilder.appendString " {0:x2}"
+                    | VariableOperand(v) ->
+                        match v with
+                        | StackVariable -> builder |> StringBuilder.appendString " SP={0:x}"
+                        | LocalVariable(i) -> builder |> StringBuilder.appendString (sprintf " L%02x={0:x}" i)
+                        | GlobalVariable(i) -> builder |> StringBuilder.appendString (sprintf " G%02x={0:x}" i))
+
+            debugOut (builder.ToString()) operandTemps |> addStatement
 
         let byRefVariable variableIndex =
 
@@ -496,7 +510,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
                 | Some(ConstantExpr(Byte(b))) ->
                     byRefVariableFromValue b
                 | Some(e) ->
-                    byRefVariableFromExpression e
+                    byRefVariableFromExpression temp
                 | _ ->
                     failcompile "Expected operand temp for by-ref variable index"
 
@@ -803,9 +817,9 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             |> addStatement
 
         | "pull", Any, Op1(varIndex) ->
+            let value = initTemp StackPopExpr
             let read, write = byRefVariable varIndex
 
-            let value = StackPopExpr
             write value |> addStatement
 
         | "put_prop", Any, Op3(objNum, propNum, value) ->
@@ -1009,6 +1023,70 @@ type RoutineBinder(memory: Memory, debugging: bool) =
                         | e -> e)
 
             updater.AddStatement(s'))
+
+    let lower_ComputedVariableReadsAndWrites tree =
+        let sixteen = int32Const 16
+
+        tree |> updateTree (fun s updater ->
+
+            let rewriteReadComputedVar index =
+                let varIndex = updater.InitTemp(index)
+                let valueRead, valueWrite = updater.InitMutableTemp(zero)
+
+                updater.IfThenElse (varIndex .=. zero)
+                    (fun () ->
+                        valueWrite StackPeekExpr
+
+                        if debugging then updater.AddStatement(debugOut "** indirectly read SP: {0:x4}" [valueRead]))
+                    (fun () ->
+                        updater.IfThenElse (varIndex .<. sixteen)
+                            (fun () ->
+                                let varIndex' = updater.InitTemp(varIndex .-. one)
+                                valueWrite (ReadLocalExpr(varIndex'))
+
+                                if debugging then updater.AddStatement(debugOut "** indirectly read L{0:x2}: {1:x4}" [varIndex'; valueRead]))
+                            (fun () ->
+                                let varIndex' = updater.InitTemp(varIndex .-. sixteen)
+                                valueWrite (ReadGlobalExpr(varIndex'))
+
+                                if debugging then updater.AddStatement(debugOut "** indirectly read G{0:x2}: {1:x4}" [varIndex'; valueRead])))
+
+                valueRead
+
+            let rewriteWriteComputedVar index value =
+                let varIndex = updater.InitTemp(index)
+
+                updater.IfThenElse (varIndex .=. zero)
+                    (fun () ->
+                        updater.AddStatement(StackUpdateStmt(value))
+
+                        if debugging then updater.AddStatement(debugOut "** indirectly write SP: {0:x4}" [value]))
+                    (fun () ->
+                        updater.IfThenElse (varIndex .<. sixteen)
+                            (fun () ->
+                                let varIndex' = updater.InitTemp(varIndex .-. one)
+                                updater.AddStatement(WriteLocalStmt(varIndex', value))
+
+                                if debugging then updater.AddStatement(debugOut "** indirectly write L{0:x2}: {1:x4}" [varIndex'; value]))
+                            (fun () ->
+                                let varIndex' = updater.InitTemp(varIndex .-. sixteen)
+                                updater.AddStatement(WriteGlobalStmt(varIndex', value))
+
+                                if debugging then updater.AddStatement(debugOut "** indirectly write G{0:x2}: {1:x4}" [varIndex'; value])))
+
+            // First, rewrite any computed variable reads
+            let s' =
+                s |> rewriteStatement
+                    (fun s -> s)
+                    (fun e ->
+                        match e with
+                        | ReadComputedVarExpr(index) -> rewriteReadComputedVar(index)
+                        | e -> e)
+
+            // Next, check to see if this is a computed variable write
+            match s' with
+            | WriteComputedVarStmt(index, value) -> rewriteWriteComputedVar index value
+            | s -> updater.AddStatement(s))
 
     let optimize_PropagateConstants tree =
         let graph = Graphs.buildControlFlowGraph tree
@@ -1216,6 +1294,7 @@ type RoutineBinder(memory: Memory, debugging: bool) =
 
     let lower tree =
         tree
+        |> lower_ComputedVariableReadsAndWrites
         |> lower_GlobalVariableReadsAndWrites
 
     let optimize tree =

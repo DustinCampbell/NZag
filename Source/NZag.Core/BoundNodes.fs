@@ -161,7 +161,7 @@ type Statement =
     /// Replaces the top value on the evaluation stack with the given expression
     | StackUpdateStmt of Expression
 
-    /// Writer the given value to the variable whose index is computed by the specified
+    /// Write the given value to the variable whose index is computed by the specified
     /// expression. Note that computed variables are always write indirectly. That is, stack
     /// writes are updates rather than pushes.
     | WriteComputedVarStmt of Expression * Expression
