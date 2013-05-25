@@ -81,7 +81,7 @@ There is a small mailbox here.
 
     Private Sub Test(gameName As String, expected As XCData)
         Dim memory = GameMemory(gameName)
-        Dim machine = New Machine(memory, debugging:=True)
+        Dim machine = New Machine(memory, debugging:=False)
         Dim screen = New Screen()
         machine.RegisterScreen(screen)
         Try

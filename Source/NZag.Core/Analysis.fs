@@ -171,16 +171,16 @@ module Graphs =
 
     type StatementFlowInfo =
       { Statement : Statement
-        InDefinitions : Definition list
-        OutDefinitions : Definition list }
+        InDefinitions : Definition[]
+        OutDefinitions : Definition[] }
 
     type DefinitionData =
       { Statements : StatementFlowInfo list
-        InDefinitions : Definition list
-        OutDefinitions : Definition list }
+        InDefinitions : Definition[]
+        OutDefinitions : Definition[] }
 
     type ReachingDefinitions =
-      { Definitions : Map<int, Definition list>
+      { Definitions : Map<int, Definition[]>
         Usages : Map<Definition, int>
         Graph : Graph<DefinitionData> }
 
@@ -218,7 +218,7 @@ module Graphs =
             let currentOuts = HashSet.createFrom ins
 
             b.Data.Statements |> List.iteri (fun i s ->
-                let currentIns = currentOuts |> HashSet.toList
+                let currentIns = currentOuts |> HashSet.toArray
 
                 // First, get the flow info for this statement
                 let info =
@@ -239,7 +239,7 @@ module Graphs =
                         currentOuts |> HashSet.add definition
                     | s -> ()
 
-                    {Statement = s; InDefinitions = currentIns; OutDefinitions = currentOuts |> HashSet.toList}
+                    {Statement = s; InDefinitions = currentIns; OutDefinitions = currentOuts |> HashSet.toArray}
 
                 // Next, find any definition usages for this statement
                 s |> walkStatement
@@ -247,7 +247,7 @@ module Graphs =
                     (fun e ->
                         match e with
                         | TempExpr(t) ->
-                            let defs = currentIns |> List.filter (fun d -> d.Temp = t)
+                            let defs = currentIns |> Array.filter (fun d -> d.Temp = t)
                             for def in defs do
                                 let usages = match definitionToUsagesMap |> Dictionary.tryFind def with
                                              | Some(u) -> u + 1
@@ -277,15 +277,15 @@ module Graphs =
             graph.Blocks
             |> List.map (fun b -> { ID = b.ID
                                     Data = { Statements = statementsMap |> Dictionary.find b.ID |> ResizeArray.toList
-                                             InDefinitions = insMap |> Dictionary.find b.ID |> HashSet.toList
-                                             OutDefinitions = outsMap |> Dictionary.find b.ID |> HashSet.toList }
+                                             InDefinitions = insMap |> Dictionary.find b.ID |> HashSet.toArray
+                                             OutDefinitions = outsMap |> Dictionary.find b.ID |> HashSet.toArray }
                                     Predecessors = b.Predecessors
                                     Successors = b.Successors })
 
         { Definitions =
             tempToDefinitionsMap 
             |> Dictionary.toList
-            |> List.map (fun (id,defs) -> id, defs |> HashSet.toList)
+            |> List.map (fun (id,defs) -> id, defs |> HashSet.toArray)
             |> Map.ofList
           Usages =
             definitionToUsagesMap

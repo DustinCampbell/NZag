@@ -219,8 +219,13 @@ module HashSet =
     let removeWhere f (set: HashSet<_>) =
         set.RemoveWhere(Predicate(f)) |> ignore
 
-    let toList (set: HashSet<_>) =
-        set |> List.ofSeq
+    let toArray (set: HashSet<_>) =
+        let arr = Array.zeroCreate set.Count
+        let mutable i = 0
+        for item in set do
+            arr.[i] <- item
+            i <- i + 1
+        arr
 
 module SortedSet =
 
