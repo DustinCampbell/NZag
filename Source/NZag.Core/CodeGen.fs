@@ -14,6 +14,7 @@ type IMachine =
     abstract member GetCallSite : address:int -> ZFuncCallSite
 
     abstract member ReadZText : address:int -> string
+    abstract member ReadZTextOfLength : address:int * length:int -> string
 
     abstract member WriteOutputChar : ch:char -> unit
     abstract member WriteOutputText : s:string -> unit
@@ -138,6 +139,7 @@ type IArguments =
 type IRuntimeFunctions =
     abstract member GetCallSite : loadAddress:(unit -> unit) -> unit
     abstract member ReadZText : loadAddress:(unit -> unit) -> unit
+    abstract member ReadZTextOfLength : loadAddress:(unit -> unit) -> loadLength:(unit -> unit) -> unit
     abstract member WriteOutputChar : loadChar:(unit -> unit) -> unit
     abstract member WriteOutputText : loadText:(unit -> unit) -> unit
 
@@ -293,8 +295,12 @@ type ILBuilder (generator: ILGenerator) =
     member x.RuntimeFunctions =
         let getCallSite = typeof<IMachine>.GetMethod("GetCallSite")
         let readZText = typeof<IMachine>.GetMethod("ReadZText")
+        let readZTextOfLength = typeof<IMachine>.GetMethod("ReadZTextOfLength")
         let writeOutputChar = typeof<IMachine>.GetMethod("WriteOutputChar")
         let writeOutputText = typeof<IMachine>.GetMethod("WriteOutputText")
+
+        let loadArgs2 loadArg1 loadArg2 =
+            (fun () -> loadArg1(); loadArg2())
 
         let invoke loadArgs methodInfo =
             x.Arguments.LoadMachine()
@@ -306,6 +312,8 @@ type ILBuilder (generator: ILGenerator) =
                 invoke loadAddress getCallSite
             member y.ReadZText loadAddress =
                 invoke loadAddress readZText
+            member y.ReadZTextOfLength loadAddress loadLength =
+                invoke (loadArgs2 loadAddress loadLength) readZTextOfLength
             member y.WriteOutputChar loadChar =
                 invoke loadChar writeOutputChar
             member y.WriteOutputText loadText =
@@ -700,6 +708,10 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
         | ReadMemoryTextExpr(a) ->
             builder.RuntimeFunctions.ReadZText
                 (fun () -> emitExpression a)
+        | ReadMemoryTextOfLengthExpr(a,l) ->
+            builder.RuntimeFunctions.ReadZTextOfLength
+                (fun () -> emitExpression a)
+                (fun () -> emitExpression l)
         | e ->
             unexpectedNodeFound e
 

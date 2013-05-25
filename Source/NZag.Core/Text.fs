@@ -72,7 +72,7 @@ type ICharProcessor =
 [<RequireQualifiedAccess>]
 module private ZText =
 
-    let readZChars (reader : IMemoryReader) : ZCharEnumerator =
+    let readZChars (reader: IMemoryReader) =
         seq {
             let stop = ref false
             while not (!stop) do
@@ -82,28 +82,47 @@ module private ZText =
                 yield byte ((zword >>> 5) &&& 0x1fus)
                 yield byte (zword &&& 0x1fus)
                 stop := last || reader.AtEndOfMemory }
-        |> Enumerable.getEnumerator
 
-    let skipZChars (reader : IMemoryReader) =
+    let readZCharsWithLength (length: int) (reader: IMemoryReader) =
+        seq {
+            let index = ref 0
+            while !index < length do
+                let zword = reader.NextWord()
+                let last = (zword &&& 0x8000us) = 0x8000us
+                yield byte ((zword >>> 10) &&& 0x1fus)
+                yield byte ((zword >>> 5) &&& 0x1fus)
+                yield byte (zword &&& 0x1fus)
+                incr index }
+
+    let skipZChars (reader: IMemoryReader) =
         let mutable stop = false
         while not stop && not reader.AtEndOfMemory do
             let zword = reader.NextWord()
             stop <- (zword &&& 0x8000us) = 0x8000us
 
-    let readString (reader : IMemoryReader) (charProcessor : ICharProcessor) =
+    let readString (charProcessor: ICharProcessor) (reader: IMemoryReader) =
         let builder = StringBuilder.create()
-        let zcharEnum = readZChars reader
+        let zcharEnum = readZChars reader |> Enumerable.getEnumerator
 
         charProcessor.Reset()
         while charProcessor.TryProcessNext builder zcharEnum do ()
 
         builder.ToString()
 
-type CharProcessor (memory : Memory, ?abbreviationReader : AbbreviationReader) =
+    let readStringOfLength (length: int) (charProcessor: ICharProcessor) (reader: IMemoryReader) =
+        let builder = StringBuilder.create()
+        let zcharEnum = readZCharsWithLength length reader |> Enumerable.getEnumerator
+
+        charProcessor.Reset()
+        while charProcessor.TryProcessNext builder zcharEnum do ()
+
+        builder.ToString()
+
+type CharProcessor (memory: Memory, ?abbreviationReader: AbbreviationReader) =
 
     let alphabetTable = new AlphabetTable(memory)
 
-    let appendMultibyteZsciiChar (zcharEnum : ZCharEnumerator) builder =
+    let appendMultibyteZsciiChar (zcharEnum: ZCharEnumerator) builder =
         // If this is character 6 in A2, it's a multibyte ZSCII character
         // Note that it can be legal for the stream to end in the middle of a 
         // multi-byte ZSCII character (i.e. in the dictionary table). In that case,
@@ -135,7 +154,7 @@ type CharProcessor (memory : Memory, ?abbreviationReader : AbbreviationReader) =
             builder |> StringBuilder.appendString abbreviation
         | None -> ()
 
-    let processChar_v1 builder zcharEnum (zchar : ZChar) =
+    let processChar_v1 builder zcharEnum (zchar: ZChar) =
         match zchar with
         | 0uy -> builder|> StringBuilder.appendChar(' ')
         | 1uy -> builder|> StringBuilder.appendChar('\n')
@@ -147,7 +166,7 @@ type CharProcessor (memory : Memory, ?abbreviationReader : AbbreviationReader) =
         | zc -> if zc <= 31uy then builder |> StringBuilder.appendChar (alphabetTable.GetChar(zc))
                 else failcompilef "Unexpected ZSCII character value: %d. Legal values are from 0 to 31." zc
 
-    let processChar_v2 builder zcharEnum (zchar : ZChar) =
+    let processChar_v2 builder zcharEnum (zchar: ZChar) =
         match zchar with
         | 0uy -> builder|> StringBuilder.appendChar(' ')
         | 1uy -> builder |> appendAbbreviation zcharEnum 1
@@ -159,7 +178,7 @@ type CharProcessor (memory : Memory, ?abbreviationReader : AbbreviationReader) =
         | zc -> if zc <= 31uy then builder |> StringBuilder.appendChar (alphabetTable.GetChar(zc))
                 else failcompilef "Unexpected ZSCII character value: %d. Legal values are from 0 to 31." zc
 
-    let processChar_v3 builder zcharEnum (zchar : ZChar) =
+    let processChar_v3 builder zcharEnum (zchar: ZChar) =
         match zchar with
         | 0uy -> builder|> StringBuilder.appendChar(' ')
         | 1uy -> builder |> appendAbbreviation zcharEnum 1
@@ -188,7 +207,7 @@ type CharProcessor (memory : Memory, ?abbreviationReader : AbbreviationReader) =
                           true
             | None     -> false
 
-and AbbreviationReader (memory : Memory) =
+and AbbreviationReader (memory: Memory) =
 
     let charProcessor = new CharProcessor(memory)
     let baseAddress = memory |> Header.readAbbreviationTableAddress
@@ -198,18 +217,28 @@ and AbbreviationReader (memory : Memory) =
 
     member x.GetAbbreviation index =
         let reader = readAbbreviationAddress index |> memory.CreateMemoryReader
-        ZText.readString reader charProcessor
+        reader |> ZText.readString charProcessor
 
-type ZTextReader (memory : Memory) =
+type ZTextReader (memory: Memory) =
 
     let charProcessor = new CharProcessor(memory, new AbbreviationReader(memory))
 
-    member x.ReadString (reader : IMemoryReader) =
+    member x.ReadString(reader: IMemoryReader) =
         if reader.Memory <> memory then
             failcompile "Expected IMemoryReader from same memory"
 
-        ZText.readString reader charProcessor
+        reader |> ZText.readString charProcessor
 
-    member x.ReadString address =
+    member x.ReadString(reader: IMemoryReader, length: int) =
+        if reader.Memory <> memory then
+            failcompile "Expected IMemoryReader from same memory"
+
+        reader |> ZText.readStringOfLength length charProcessor
+
+    member x.ReadString(address) =
         let reader = address |> memory.CreateMemoryReader
-        x.ReadString reader
+        x.ReadString(reader)
+
+    member x.ReadString(address, length) =
+        let reader = address |> memory.CreateMemoryReader
+        x.ReadString(reader, length)

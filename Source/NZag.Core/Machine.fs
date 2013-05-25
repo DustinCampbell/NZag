@@ -98,6 +98,8 @@ type Machine (memory: Memory, debugging: bool) as this =
 
         member y.ReadZText(address) =
             textReader.ReadString(RawAddress(address))
+        member y.ReadZTextOfLength(address, length) =
+            textReader.ReadString(RawAddress(address), length)
 
         member y.WriteOutputChar(ch) =
             let work = (outputStreams :> IOutputStream).WriteCharAsync(ch)
