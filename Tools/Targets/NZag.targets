@@ -72,6 +72,10 @@
     <Optimize>false</Optimize>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug' And '$(ProjectLanguage)' == 'CSharp'">
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)' == 'Debug' And '$(ProjectLanguage)' == 'FSharp'">
     <Tailcalls>false</Tailcalls>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
@@ -89,16 +93,20 @@
     <Optimize>true</Optimize>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)' == 'Release' And '$(ProjectLanguage)' == 'VB'">
-    <DefineDebug>false</DefineDebug>
-    <DefineTrace>true</DefineTrace>
-    <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' And '$(ProjectLanguage)' == 'CSharp'">
+    <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release' And '$(ProjectLanguage)' == 'FSharp'">
     <Tailcalls>true</Tailcalls>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' And '$(ProjectLanguage)' == 'VB'">
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
   </PropertyGroup>
 
 </Project>
