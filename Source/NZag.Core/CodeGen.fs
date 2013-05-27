@@ -142,6 +142,8 @@ type IRuntimeFunctions =
     abstract member ReadZTextOfLength : loadAddress:(unit -> unit) -> loadLength:(unit -> unit) -> unit
     abstract member WriteOutputChar : loadChar:(unit -> unit) -> unit
     abstract member WriteOutputText : loadText:(unit -> unit) -> unit
+    abstract member Randomize : loadSeed:(unit -> unit) -> unit
+    abstract member NextRandomNumber : loadRange:(unit -> unit) -> unit
 
 type IEvaluationStack =
     abstract member Load : bool -> unit
@@ -298,6 +300,8 @@ type ILBuilder (generator: ILGenerator) =
         let readZTextOfLength = typeof<IMachine>.GetMethod("ReadZTextOfLength")
         let writeOutputChar = typeof<IMachine>.GetMethod("WriteOutputChar")
         let writeOutputText = typeof<IMachine>.GetMethod("WriteOutputText")
+        let randomize = typeof<IMachine>.GetMethod("Randomize")
+        let nextRandomNumber = typeof<IMachine>.GetMethod("NextRandomNumber")
 
         let loadArgs2 loadArg1 loadArg2 =
             (fun () -> loadArg1(); loadArg2())
@@ -317,7 +321,11 @@ type ILBuilder (generator: ILGenerator) =
             member y.WriteOutputChar loadChar =
                 invoke loadChar writeOutputChar
             member y.WriteOutputText loadText =
-                invoke loadText writeOutputText }
+                invoke loadText writeOutputText
+            member y.Randomize loadSeed =
+                invoke loadSeed randomize
+            member y.NextRandomNumber loadRange =
+                invoke loadRange nextRandomNumber }
 
     member x.EvaluationStack =
         { new IEvaluationStack with
@@ -712,6 +720,9 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
             builder.RuntimeFunctions.ReadZTextOfLength
                 (fun () -> emitExpression a)
                 (fun () -> emitExpression l)
+        | GenerateRandomNumberExpr(range) ->
+            builder.RuntimeFunctions.NextRandomNumber
+                (fun () -> emitExpression range)
         | e ->
             unexpectedNodeFound e
 
@@ -796,6 +807,9 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
         | PrintTextStmt(e) ->
             builder.RuntimeFunctions.WriteOutputText
                 (fun () -> emitExpression e)
+        | SetRandomNumberSeedStmt(seed) ->
+            builder.RuntimeFunctions.Randomize
+                (fun () -> emitExpression seed)
         | DebugOutputStmt(e, elist) ->
             builder.DebugOutput(
                 (fun () -> emitExpression e),
