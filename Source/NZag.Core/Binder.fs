@@ -905,6 +905,9 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
             store (left .-. right)
 
+        | "test", Any, Op2(bitmap, flags) ->
+            branchIf ((bitmap .&. flags) .=. flags)
+
         | "test_attr", Any, Op2(objNum, attrNum) ->
             let attributeValue = readObjectAttribute objNum attrNum
 
