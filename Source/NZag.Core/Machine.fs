@@ -24,6 +24,13 @@ type Machine (memory: Memory, debugging: bool) as this =
 
     let mutable random = new Random()
 
+    let checksum =
+        let size = min (memory |> Header.readFileSize) memory.Size
+        let mutable result = 0us
+        for i = 0x40 to size - 1 do
+            result <- result + uint16 (memory.ReadByte(i))
+        result
+
     let compile =
         let compileAux (routine: Routine) =
             let dynamicMethod =
@@ -115,5 +122,8 @@ type Machine (memory: Memory, debugging: bool) as this =
             let minValue = 1us
             let maxValue = max minValue (uint16 (range - 1s))
             uint16 (random.Next(int minValue, int maxValue))
+
+        member y.Verify() =
+            checksum = (memory |> Header.readChecksum)
 
 

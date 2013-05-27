@@ -587,11 +587,13 @@ and Memory private (stream : Stream) =
 module Header =
 
     let private offset_InitialPC = ByteAddress(0x06us)
-    let private offset_ObjectTableAddress = ByteAddress(0x0aus)
-    let private offset_GlobalVariableTableAddress = ByteAddress(0x0cus)
+    let private offset_ObjectTableAddress = ByteAddress(0x0Aus)
+    let private offset_GlobalVariableTableAddress = ByteAddress(0x0Cus)
     let private offset_AbbreviationTableAddress = ByteAddress(0x18us)
+    let private offset_FileSize = ByteAddress(0x1Aus)
+    let private offset_Checksum = ByteAddress(0x1Cus)
     let private offset_RoutinesOffset = ByteAddress(0x28us)
-    let private offset_StringsOffset = ByteAddress(0x2aus)
+    let private offset_StringsOffset = ByteAddress(0x2Aus)
     let private offset_AlphabetTableAddress = ByteAddress(0x34us)
 
     let readMainRoutineAddress (memory: Memory) =
@@ -609,6 +611,16 @@ module Header =
 
     let readAbbreviationTableAddress (memory: Memory) =
         offset_AbbreviationTableAddress |> memory.ReadWord |> ByteAddress
+
+    let readFileSize (memory: Memory) =
+        let fileSize = offset_FileSize |> memory.ReadWord
+
+        if memory.Version <= 3 then (int fileSize) * 2
+        elif memory.Version <= 5 then (int fileSize) * 4
+        else (int fileSize) * 8
+
+    let readChecksum (memory: Memory) =
+        offset_Checksum |> memory.ReadWord
 
     let readRoutinesOffset (memory: Memory) =
         offset_RoutinesOffset |> memory.ReadWord |> ByteAddress

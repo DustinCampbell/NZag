@@ -913,6 +913,9 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
             branchIf (attributeValue .=. one)
 
+        | "verify", AtLeast 3uy, NoOps ->
+            branchIf VerifyExpr
+
         | (n,k,ops) ->
             runtimeException "Unsupported opcode: %s (v.%d) with %d operands" n k ops.Length |> addStatement
 

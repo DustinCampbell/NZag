@@ -22,6 +22,8 @@ type IMachine =
     abstract member Randomize : seed:int16 -> unit
     abstract member NextRandomNumber : range:int16 -> uint16
 
+    abstract member Verify : unit -> bool
+
 and ZCompileResult =
   { Routine : Routine
     ZFunc : ZFunc
@@ -144,6 +146,7 @@ type IRuntimeFunctions =
     abstract member WriteOutputText : loadText:(unit -> unit) -> unit
     abstract member Randomize : loadSeed:(unit -> unit) -> unit
     abstract member NextRandomNumber : loadRange:(unit -> unit) -> unit
+    abstract member Verify : unit -> unit
 
 type IEvaluationStack =
     abstract member Load : bool -> unit
@@ -302,6 +305,10 @@ type ILBuilder (generator: ILGenerator) =
         let writeOutputText = typeof<IMachine>.GetMethod("WriteOutputText")
         let randomize = typeof<IMachine>.GetMethod("Randomize")
         let nextRandomNumber = typeof<IMachine>.GetMethod("NextRandomNumber")
+        let verify = typeof<IMachine>.GetMethod("Verify")
+
+        let noArgs =
+            (fun () -> ())
 
         let loadArgs2 loadArg1 loadArg2 =
             (fun () -> loadArg1(); loadArg2())
@@ -325,7 +332,9 @@ type ILBuilder (generator: ILGenerator) =
             member y.Randomize loadSeed =
                 invoke loadSeed randomize
             member y.NextRandomNumber loadRange =
-                invoke loadRange nextRandomNumber }
+                invoke loadRange nextRandomNumber
+            member y.Verify() =
+                invoke noArgs verify }
 
     member x.EvaluationStack =
         { new IEvaluationStack with
@@ -723,6 +732,8 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
         | GenerateRandomNumberExpr(range) ->
             builder.RuntimeFunctions.NextRandomNumber
                 (fun () -> emitExpression range)
+        | VerifyExpr ->
+            builder.RuntimeFunctions.Verify()
         | e ->
             unexpectedNodeFound e
 

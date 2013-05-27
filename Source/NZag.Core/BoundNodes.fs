@@ -129,6 +129,8 @@ type Expression =
     /// Generates a random number using the given range expression
     | GenerateRandomNumberExpr of Expression
 
+    | VerifyExpr
+
 type Statement =
 
     /// Declares a new label with the specified index
@@ -326,6 +328,8 @@ module BoundNodeVisitors =
             fexpr (ReadObjectPropertyDefaultExpr(rewriteExpr e))
         | GenerateRandomNumberExpr(e) ->
             fexpr (GenerateRandomNumberExpr(rewriteExpr e))
+        | Verify ->
+            fexpr VerifyExpr
 
     let rec rewriteStatement fstmt fexpr stmt =
         let rewriteStmt = rewriteStatement fstmt fexpr
@@ -386,7 +390,8 @@ module BoundNodeVisitors =
             | TempExpr(_)
             | StackPopExpr
             | StackPeekExpr
-            | ArgCountExpr ->
+            | ArgCountExpr
+            | VerifyExpr ->
                 ()
             | ReadLocalExpr(e)
             | ReadGlobalExpr(e)
@@ -620,6 +625,8 @@ type BoundNodeDumper (builder : StringBuilder) =
             append "random"
             parenthesize (fun () ->
                 dumpExpression e)
+        | VerifyExpr ->
+            append "verify"
 
     let rec dumpStatement s =
         newLine()
