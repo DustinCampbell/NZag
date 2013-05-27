@@ -31,6 +31,15 @@ type Machine (memory: Memory, debugging: bool) as this =
             result <- result + uint16 (memory.ReadByte(i))
         result
 
+    // Set header bits...
+    do
+        if memory.Version >= 4 then
+            memory.WriteByte(0x1e, 6uy) // target
+            memory.WriteByte(0x1f, (byte 'A')) // version
+
+        memory.WriteByte(0x32, 1uy) // standard revision major version
+        memory.WriteByte(0x33, 0uy) // standard revision minor version
+
     let compile =
         let compileAux (routine: Routine) =
             let dynamicMethod =

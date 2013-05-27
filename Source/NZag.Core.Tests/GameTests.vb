@@ -57,7 +57,37 @@ Objects [193]: get_parent....get_sibling.......get_child......jin.......
 Indirect Opcodes [283]: load..................store.........................
     pull...............inc...............dec...............
     inc_chk...............dec_chk...............
-Misc [401]: test...random.verify.piracy
+Misc [401]: test...random.verify.piracy.
+Header (No tests)
+    standard 1.0 
+    interpreter 6 A (IBM PC)
+    Flags on: 
+    Flags off: color, pictures, boldface, italic, fixed-space, sound, timer, transcripting on, fixed-pitch on, redraw pending, using pictures, using undo, using mouse, using colors, using sound, using menus, 
+    Screen size: 0x0; in 0x0 units: 0x0
+    Default color: current on current
+
+
+
+Print opcodes [407]: Tests should look like... '[Test] opcode (stuff): stuff'
+print_num (0, 1, -1, 32767,-32768, -1): 0, 1, -1, 32767, -32768, -1
+[413] print_char (abcd): abcd
+[417] new_line:
+
+There should be an empty line above this line.
+print_ret (should have newline after this).
+print_addr (Hello.): Hello.
+
+print_paddr (A long string that Inform will put in high memory):
+A long string that Inform will put in high memory
+Abbreviations (I love 'xyzzy' [two times]): I love 'xyzzy'  I love 'xyzzy'
+
+[424] print_obj (Test Object #1Test Object #2): Test Object #1Test Object #2
+
+
+Performed 425 tests.
+Passed: 406, Failed: 0, Print tests: 19
+Didn't crash: hooray!
+Last test: quit!
 ]]>
 
         Test(CZech, expected)

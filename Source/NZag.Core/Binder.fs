@@ -790,8 +790,20 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         | "or", Any, Op2(left, right) ->
             store (left .|. right)
 
+        | "piracy", AtLeast 5uy, NoOps ->
+            branchIf (one)
+
         | "print", Any, NoOps ->
-            textConst instruction.Text.Value |> printText |> addStatement
+            instruction.Text.Value
+            |> textConst
+            |> printText
+            |> addStatement
+
+        | "print_addr", Any, Op1(address) ->
+            address
+            |> readText 
+            |> printText
+            |> addStatement
 
         | "print_char", Any, Op1(ch) ->
             ch
@@ -815,6 +827,14 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             |> readText 
             |> printText
             |> addStatement
+
+        | "print_ret", Any, NoOps ->
+            instruction.Text.Value
+            |> textConst
+            |> printText
+            |> addStatement
+
+            ret one
 
         | "pull", Any, Op1(varIndex) ->
             let value = initTemp StackPopExpr
