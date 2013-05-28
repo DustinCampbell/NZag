@@ -35,6 +35,15 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
+    <Compile Include="Windows\ZBlankWindow.cs" />
+    <Compile Include="Windows\ZPairWindow.cs" />
+    <Compile Include="Windows\ZTextBufferWindow.cs" />
+    <Compile Include="Windows\ZTextGridWindow.cs" />
+    <Compile Include="Windows\ZWindow.cs" />
+    <Compile Include="Windows\ZWindowManager.cs" />
+    <Compile Include="Windows\ZWindowPosition.cs" />
+    <Compile Include="Windows\ZWindowSizeKind.cs" />
+    <Compile Include="Windows\ZWindowKind.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
