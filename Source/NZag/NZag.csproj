@@ -14,9 +14,6 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="SimpleMVVM">
-      <HintPath>..\..\Modules\SimpleMVVM\Binaries\Debug\SimpleMVVM.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Data" />
@@ -31,6 +28,11 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="SimpleMVVM">
+      <HintPath>$(NZagReferencesPath)\SimpleMVVM\SimpleMVVM.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
