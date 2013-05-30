@@ -81,19 +81,23 @@ type Machine (memory: Memory, debugging: bool) as this =
             let stack = Array.zeroCreate 1024
             callSite.Invoke0(memory, stack, 0) |> ignore
         }
+        |> startAsTask
 
     member x.Run() =
-        Async.RunSynchronously(x.RunAsync())
+        x.RunAsync().RunSynchronously()
 
     member x.Randomize seed =
         (x :> IMachine).Randomize(seed)
 
     member x.RegisterScreen newScreen =
-        screen <- newScreen
-        // TODO: Write screen header values
-        outputStreams.RegisterScreenStream(newScreen)
+        (x :> IMachine).RegisterScreen(newScreen)
 
     interface IMachine with
+
+        member y.RegisterScreen(newScreen) =
+            screen <- newScreen
+            // TODO: Write screen header values
+            outputStreams.RegisterScreenStream(newScreen)
 
         member y.GetInitialLocalArray(routine) =
             let result = getOrCreateLocalArray()

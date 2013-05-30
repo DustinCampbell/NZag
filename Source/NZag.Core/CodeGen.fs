@@ -7,6 +7,8 @@ open NZag.Utilities
 
 type IMachine =
 
+    abstract member RegisterScreen : IScreen -> unit
+
     abstract member GetInitialLocalArray : Routine -> uint16[]
     abstract member ReleaseLocalArray : uint16[] -> unit
 
