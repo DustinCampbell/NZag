@@ -18,6 +18,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Utilities.fs" />
+    <Compile Include="Reflection.fs" />
     <Compile Include="Memory.fs" />
     <Compile Include="Text.fs" />
     <Compile Include="IO.fs" />

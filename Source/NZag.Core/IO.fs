@@ -14,13 +14,13 @@ module NullInstances =
 
     let OutputStream =
         { new IOutputStream with
-            member x.WriteCharAsync _ = async { return () } |> startAsTask
-            member x.WriteTextAsync _ = async { return () } |> startAsTask }
+            member x.WriteCharAsync _ = async { return () } |> Async.StartAsTask
+            member x.WriteTextAsync _ = async { return () } |> Async.StartAsTask }
 
     let Screen =
         { new IScreen with
-            member x.WriteCharAsync _ = async { return () } |> startAsTask
-            member x.WriteTextAsync _ = async { return () } |> startAsTask }
+            member x.WriteCharAsync _ = async { return () } |> Async.StartAsTask
+            member x.WriteTextAsync _ = async { return () } |> Async.StartAsTask }
 
 type MemoryOutputStream(memory: Memory, address: Address) =
 
@@ -41,7 +41,7 @@ type MemoryOutputStream(memory: Memory, address: Address) =
                 count <- count + 1us
                 writeCount()
             }
-            |> startAsTask
+            |> Async.StartAsTask
 
         member x.WriteTextAsync s =
             async {
@@ -50,7 +50,7 @@ type MemoryOutputStream(memory: Memory, address: Address) =
                 count <- count + (uint16 bytes.Length)
                 writeCount()
             }
-            |> startAsTask
+            |> Async.StartAsTask
 
 type OutputStreamCollection(memory: Memory) =
     let memoryStreams = Stack.create()
@@ -104,7 +104,7 @@ type OutputStreamCollection(memory: Memory) =
                 elif transcriptActive then
                     transcriptStream.WriteCharAsync(ch)
                 else
-                    async { return () } |> startAsTask
+                    async { return () } |> Async.StartAsTask
             else
                 memoryStreams |> Stack.pop |> (fun stream -> stream.WriteCharAsync(ch))
 
@@ -115,6 +115,6 @@ type OutputStreamCollection(memory: Memory) =
                 elif transcriptActive then
                     transcriptStream.WriteTextAsync(s)
                 else
-                    async { return () } |> startAsTask
+                    async { return () } |> Async.StartAsTask
             else
                 memoryStreams |> Stack.pop |> (fun stream -> stream.WriteTextAsync(s))

@@ -1,6 +1,7 @@
 ﻿namespace NZag.Core
 
 open System
+open NZag.Reflection
 open NZag.Utilities
 
 type Machine (memory: Memory, debugging: bool) as this =
@@ -81,10 +82,7 @@ type Machine (memory: Memory, debugging: bool) as this =
             let stack = Array.zeroCreate 1024
             callSite.Invoke0(memory, stack, 0) |> ignore
         }
-        |> startAsTask
-
-    member x.Run() =
-        x.RunAsync().RunSynchronously()
+        |> Async.StartAsTask
 
     member x.Randomize seed =
         (x :> IMachine).Randomize(seed)
@@ -123,10 +121,10 @@ type Machine (memory: Memory, debugging: bool) as this =
 
         member y.WriteOutputChar(ch) =
             let work = (outputStreams :> IOutputStream).WriteCharAsync(ch)
-            Async.RunSynchronously(work |> awaitTask)
+            Async.RunSynchronously(work |> Async.AwaitTask)
         member y.WriteOutputText(s) =
             let work = (outputStreams :> IOutputStream).WriteTextAsync(s)
-            Async.RunSynchronously(work |> awaitTask)
+            Async.RunSynchronously(work |> Async.AwaitTask)
 
         member y.Randomize(seed) =
             random <- if seed = 0s then new Random(int DateTime.Now.Ticks)

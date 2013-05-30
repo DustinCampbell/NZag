@@ -49,19 +49,37 @@ module Exceptions =
     let argOutOfRange name format =
         Printf.ksprintf (fun s -> raise <| ArgumentOutOfRangeException(name, s)) format
 
-[<AutoOpen>]
+[<RequireQualifiedAccess>]
 module Async =
 
-    let awaitTask (task: Task) =
-        let continuation (t: Task) : unit =
-            match t.IsFaulted with
-            | true -> raise t.Exception
-            | arg -> ()
+    let Raise (e: exn) =
+        Async.FromContinuations(fun (_,econt,_) -> econt e)
 
-        task.ContinueWith(continuation, TaskContinuationOptions.ExecuteSynchronously) |> Async.AwaitTask
+    let private flattenExns (e: AggregateException) =
+        e.Flatten().InnerExceptions.Item(0)
 
-    let startAsTask (work: Async<unit>) =
-        Task.Factory.StartNew(fun () -> work |> Async.RunSynchronously)
+    let private rewrapExn (work: Async<unit>) =
+        async {
+            try
+                do! work
+            with :? AggregateException as e ->
+                do! Raise <| flattenExns e
+        }
+
+    let AwaitTask (task: Task) =
+        let tcs = new TaskCompletionSource<unit>(TaskCreationOptions.None)
+
+        let continuation = fun _ ->
+            if task.IsFaulted then tcs.SetException(task.Exception |> flattenExns)
+            elif task.IsCanceled then tcs.SetCanceled()
+            else tcs.SetResult(())
+
+        task.ContinueWith(continuation, TaskContinuationOptions.ExecuteSynchronously) |> ignore
+
+        tcs.Task |> Async.AwaitTask |> rewrapExn
+
+    let StartAsTask (work: Async<unit>) =
+        work |> Async.StartAsTask :> Task
 
 [<RequireQualifiedAccess>]
 module String =

@@ -1,5 +1,4 @@
-﻿
-Imports NZag.Utilities
+﻿Imports NZag.Utilities
 
 Public Module GameTests
 
@@ -112,15 +111,14 @@ There is a small mailbox here.
         Test(Zork1, expected)
     End Sub
 
-    Private Sub Test(gameName As String, expected As XCData)
+    Private Async Sub Test(gameName As String, expected As XCData)
         Dim memory = GameMemory(gameName)
-        Dim machine = New Machine(memory, debugging:=True)
+        Dim machine = New Machine(memory, debugging:=False)
         Dim screen = New Screen()
         machine.RegisterScreen(screen)
         Try
-            machine.Run()
+            Await machine.RunAsync()
         Catch ex As Exceptions.ZMachineQuitException
-        Catch
         End Try
 
         Dim expectedText = expected.Value.Trim()
