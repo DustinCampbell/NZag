@@ -27,7 +27,7 @@ Public Module GameTests
     End Class
 
     <Fact()>
-    Sub RunCZech()
+    Async Function RunCZech() As task
         Dim expected =
 <![CDATA[
 CZECH: the Comprehensive Z-machine Emulation CHecker, version 0.8
@@ -89,11 +89,11 @@ Didn't crash: hooray!
 Last test: quit!
 ]]>
 
-        Test(CZech, expected)
-    End Sub
+        Await Test(CZech, expected)
+    End Function
 
     <Fact()>
-    Sub RunZork1()
+    Async Function RunZork1() As task
         Dim expected =
 <![CDATA[
 ZORK I: The Great Underground Empire
@@ -108,10 +108,10 @@ There is a small mailbox here.
 >
 ]]>
 
-        Test(Zork1, expected)
-    End Sub
+        Await Test(Zork1, expected)
+    End Function
 
-    Private Async Sub Test(gameName As String, expected As XCData)
+    Private Async Function Test(gameName As String, expected As XCData) As task
         Dim memory = GameMemory(gameName)
         Dim machine = New Machine(memory, debugging:=False)
         Dim screen = New Screen()
@@ -119,11 +119,12 @@ There is a small mailbox here.
         Try
             Await machine.RunAsync()
         Catch ex As Exceptions.ZMachineQuitException
+        Catch
         End Try
 
         Dim expectedText = expected.Value.Trim()
 
         Assert.Equal(expectedText, screen.Output.Trim())
-    End Sub
+    End Function
 
 End Module
