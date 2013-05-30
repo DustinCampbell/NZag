@@ -211,6 +211,9 @@ module ResizeArray =
     let add v (arr: ResizeArray<_>) =
         arr.Add(v) |> ignore
 
+    let toArray (arr: ResizeArray<_>) =
+        arr.ToArray()
+
     let toList (arr: ResizeArray<_>) =
         let mutable res = []
         for i = length arr - 1 downto 0 do

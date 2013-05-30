@@ -19,7 +19,7 @@ module Graphs =
         Blocks : Block<'T> list }
 
     type ControlFlowData =
-      { Statements : Statement list }
+      { Statements : Statement[] }
 
     [<CompiledNameAttribute("BuildControlFlowGraph")>]
     val buildControlFlowGraph : tree:BoundTree -> Graph<ControlFlowData>

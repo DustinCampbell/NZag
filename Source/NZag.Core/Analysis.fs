@@ -95,7 +95,7 @@ module Graphs =
             |> List.map createBlock
 
     type ControlFlowData =
-      { Statements : Statement list }
+      { Statements : Statement[] }
 
     [<CompiledNameAttribute("BuildControlFlowGraph")>]
     let buildControlFlowGraph (tree : BoundTree) =
@@ -155,10 +155,17 @@ module Graphs =
                         (fun e -> ()))
                 (fun data ->
                     match data with
-                    | Some(slist) -> { Statements = slist |> List.ofSeq }
-                    | None -> { Statements = List.empty })
+                    | Some(slist) -> { Statements = slist |> ResizeArray.toArray }
+                    | None -> { Statements = [||] })
 
         { Tree = tree; Blocks = blocks }
+
+    type NewDefinition =
+      { ID : int
+        Temp : int
+        BlockID : int
+        StatementIndex : int
+        Value : Expression }
 
     type Definition =
       { Temp : int
@@ -191,6 +198,23 @@ module Graphs =
             | [] | _::[] | _::_::[] -> failcompile "Expected at least three nodes in graph (entry, exit and some basic block)"
             | h::t -> h,t
 
+        // First, find every defintion.
+        let definitions =
+            let arr = ResizeArray.create()
+            for b in rest do
+                let statements = b.Data.Statements
+                let count = statements.Length
+                for i = 0 to count - 1 do
+                    match statements.[i] with
+                    | WriteTempStmt(t,e) ->
+                        let id = arr.Count
+                        arr |> ResizeArray.add { ID = id; Temp = t; BlockID = b.ID; StatementIndex = i; Value = e }
+                    | _ -> ()
+            arr
+
+        // Next, produce a map of each temp to its definitions.
+        // TODO: Start here!
+
         let statementsMap = Dictionary.createFrom (graph.Blocks |> List.map (fun b -> b.ID, ResizeArray.create()))
         let insMap = Dictionary.createFrom (graph.Blocks |> List.map (fun b -> b.ID, HashSet.create()))
         let outsMap = Dictionary.createFrom (graph.Blocks |> List.map (fun b -> b.ID, HashSet.create()))
@@ -217,7 +241,7 @@ module Graphs =
 
             let currentOuts = HashSet.createFrom ins
 
-            b.Data.Statements |> List.iteri (fun i s ->
+            b.Data.Statements |> Array.iteri (fun i s ->
                 let currentIns = currentOuts |> HashSet.toArray
 
                 // First, get the flow info for this statement
