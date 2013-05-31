@@ -167,12 +167,25 @@ module Graphs =
         StatementIndex : int
         Value : Expression }
 
+        member x.IsNone =
+            x.ID = -1
+
         static member None =
           { ID = -1
             Temp = 0
             BlockID = 0
             StatementIndex = 0
             Value = ConstantExpr(Int32(0)) }
+
+    type NewStatementFlowInfo =
+      { Statement : Statement
+        InDefinitions : NewDefinition[]
+        OutDefinitions : NewDefinition[] }
+
+        static member None =
+          { Statement = LabelStmt(-1)
+            InDefinitions = Array.empty
+            OutDefinitions = Array.empty }
 
     type Definition =
       { Temp : int
@@ -206,26 +219,33 @@ module Graphs =
             | h::t -> h,t
 
         // First, find every defintion.
-        let definitions, definitionMap =
+        let definitions, definitionsByBlock, statementInfosByBlock =
             let allDefs = new ResizeArray<_>(graph.Tree.TempCount)
-            let allBlocks = new ResizeArray<_>(graph.Blocks.Length)
+            let defsByBlock = new ResizeArray<_>(graph.Blocks.Length)
+            let stmtInfosByBlock = new ResizeArray<_>(graph.Blocks.Length)
 
             for b in graph.Blocks do
                 let stmts = b.Data.Statements
-                let stmtCount = stmts.Length
-                let allStmts = new ResizeArray<_>(stmtCount)
-                allBlocks.Add(allStmts)
+                let count = stmts.Length
 
-                for i = 0 to stmtCount - 1 do
+                let defs = new ResizeArray<_>(count)
+                defsByBlock.Add(defs)
+
+                let stmtInfos = new ResizeArray<_>(count)
+                stmtInfosByBlock.Add(stmtInfos)
+
+                for i = 0 to count - 1 do
+                    stmtInfos.Add(NewStatementFlowInfo.None)
+
                     match stmts.[i] with
                     | WriteTempStmt(t,e) ->
                         let def = { ID = allDefs.Count; Temp = t; BlockID = b.ID; StatementIndex = i; Value = e }
                         allDefs.Add(def)
-                        allStmts.Add(def)
+                        defs.Add(def)
                     | _ ->
-                        allStmts.Add(NewDefinition.None)
+                        defs.Add(NewDefinition.None)
 
-            allDefs, allBlocks
+            allDefs, defsByBlock, stmtInfosByBlock
 
         let definitionCount = definitions.Count
         let bitVectorLength = definitionCount / 32
@@ -243,6 +263,11 @@ module Graphs =
             let bit = def % bitVectorLength
             vector.[index] <- vector.[index] &&& ~~~(1u <<< bit)
 
+        let hasDefinition (def: int) (vector: uint32[]) =
+            let index = def / bitVectorLength
+            let bit = def % bitVectorLength
+            (vector.[index] ||| (1u <<< bit)) <> 0u
+
         let unionWith (source: uint32[]) (target: uint32[]) =
             for i = 0 to bitVectorLength - 1 do
                 target.[i] <- target.[i] ||| source.[i]
@@ -250,6 +275,25 @@ module Graphs =
         let differenceOf (source: uint32[]) (target: uint32[]) =
             for i = 0 to bitVectorLength - 1 do
                 target.[i] <- target.[i] &&& ~~~source.[i]
+
+        let equals (vector1: uint32[]) (vector2: uint32[]) =
+            Array.forall2 (=) vector1 vector2
+
+        let clone (vector: uint32[]) =
+            Array.copy vector
+
+        let definitionsFromVector (vector: uint32[]) =
+            let len = vector.Length
+            let arr = Array.zeroCreate len
+            for i = 0 to len - 1 do
+                arr.[i] <- if vector |> hasDefinition i then definitions.[i] else NewDefinition.None
+            arr
+
+        let getIndexForBlockID id (arr: ResizeArray<_>) =
+            match id with
+            | -2 -> 0
+            | -1 -> arr.Count - 1
+            | id -> id + 1
 
         let insByBlock =
             let arr = new ResizeArray<_>()
@@ -263,17 +307,31 @@ module Graphs =
                 arr.Add(emptyBitVector())
             arr
 
+        let getBlockData id (arr: ResizeArray<_>) =
+            let index = arr |> getIndexForBlockID id
+            arr.[index]
+
+        let setBlockData id value (arr: ResizeArray<_>) =
+            let index = arr |> getIndexForBlockID id
+            arr.[index] <- value
+
+        let getDefinitions id =
+            definitionsByBlock |> getBlockData id
+
+        let getStatementInfos id =
+            statementInfosByBlock |> getBlockData id
+
         let getIns id =
-            match id with
-            | -1 -> insByBlock.[0]
-            | -2 -> insByBlock.[insByBlock.Count - 1]
-            | id -> insByBlock.[id + 1]
+            insByBlock |> getBlockData id
+
+        let setIns id ins =
+            insByBlock |> setBlockData id ins
 
         let getOuts id =
-            match id with
-            | -1 -> outsByBlock.[0]
-            | -2 -> outsByBlock.[outsByBlock.Count - 1]
-            | id -> outsByBlock.[id + 1]
+            outsByBlock |> getBlockData id
+
+        let setOuts id outs =
+            outsByBlock |> setBlockData id outs
 
         let computeIns b =
             let vector = emptyBitVector()
@@ -281,13 +339,39 @@ module Graphs =
                 vector |> unionWith (getOuts p)
             vector
 
-        let computeOuts b =
-            let vector = computeIns b
+        let computeOuts (b: Block<ControlFlowData>) =
+            let mutable outs = computeIns b
+            setIns b.ID outs
 
             // TODO: Start here! To improve performance, we'll use bit vectors to represent the
             // ins and outs for each block.
 
-            vector
+            let defs = getDefinitions b.ID
+            let stmtInfos = getStatementInfos b.ID
+
+            let stmts = b.Data.Statements
+            let count = stmts.Length
+            
+            for i = 0 to count - 1 do
+                let s = stmts.[i]
+                let ins = outs
+                
+                let def = defs.[i]
+                if not def.IsNone then
+                    // TODO: Remove any reaching definitions for the same temp as this one.
+                    outs |> add def.ID
+
+                // Create statement info
+                let info : NewStatementFlowInfo =
+                  { Statement = s
+                    InDefinitions = definitionsFromVector ins
+                    OutDefinitions = definitionsFromVector outs }
+
+                stmtInfos.[i] <- info
+
+                // TODO: Compute usages
+
+            outs
 
         let statementsMap = Dictionary.createFrom (graph.Blocks |> List.map (fun b -> b.ID, ResizeArray.create()))
         let insMap = Dictionary.createFrom (graph.Blocks |> List.map (fun b -> b.ID, HashSet.create()))
@@ -305,10 +389,8 @@ module Graphs =
             res
 
         let computeOuts (b : Block<ControlFlowData>) =
-            let oldIns = insMap.[b.ID]
             let ins = computeIns b
-            if not (oldIns |> HashSet.equals ins) then
-                insMap.[b.ID] <- ins
+            insMap.[b.ID] <- ins
 
             let statements = statementsMap.[b.ID]
             statements.Clear()
