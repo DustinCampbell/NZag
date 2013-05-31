@@ -167,6 +167,13 @@ module Graphs =
         StatementIndex : int
         Value : Expression }
 
+        static member None =
+          { ID = -1
+            Temp = 0
+            BlockID = 0
+            StatementIndex = 0
+            Value = ConstantExpr(Int32(0)) }
+
     type Definition =
       { Temp : int
         BlockID : int
@@ -195,25 +202,92 @@ module Graphs =
     let computeReachingDefinitions (graph : Graph<ControlFlowData>) =
         let entry,rest =
             match graph.Blocks with
-            | [] | _::[] | _::_::[] -> failcompile "Expected at least three nodes in graph (entry, exit and some basic block)"
+            | [] | _::[] | _::_::[] -> failcompile "Expected at least three nodes in graph (entry, exit and some basic block(s))"
             | h::t -> h,t
 
         // First, find every defintion.
-        let definitions =
-            let arr = ResizeArray.create()
-            for b in rest do
-                let statements = b.Data.Statements
-                let count = statements.Length
-                for i = 0 to count - 1 do
-                    match statements.[i] with
+        let definitions, definitionMap =
+            let allDefs = new ResizeArray<_>(graph.Tree.TempCount)
+            let allBlocks = new ResizeArray<_>(graph.Blocks.Length)
+
+            for b in graph.Blocks do
+                let stmts = b.Data.Statements
+                let stmtCount = stmts.Length
+                let allStmts = new ResizeArray<_>(stmtCount)
+                allBlocks.Add(allStmts)
+
+                for i = 0 to stmtCount - 1 do
+                    match stmts.[i] with
                     | WriteTempStmt(t,e) ->
-                        let id = arr.Count
-                        arr |> ResizeArray.add { ID = id; Temp = t; BlockID = b.ID; StatementIndex = i; Value = e }
-                    | _ -> ()
+                        let def = { ID = allDefs.Count; Temp = t; BlockID = b.ID; StatementIndex = i; Value = e }
+                        allDefs.Add(def)
+                        allStmts.Add(def)
+                    | _ ->
+                        allStmts.Add(NewDefinition.None)
+
+            allDefs, allBlocks
+
+        let definitionCount = definitions.Count
+        let bitVectorLength = definitionCount / 32
+
+        let emptyBitVector() : uint32[] =
+            Array.zeroCreate bitVectorLength
+
+        let add (def: int) (vector: uint32[]) =
+            let index = def / bitVectorLength
+            let bit = def % bitVectorLength
+            vector.[index] <- vector.[index] ||| (1u <<< bit)
+
+        let remove (def: int) (vector: uint32[]) =
+            let index = def / bitVectorLength
+            let bit = def % bitVectorLength
+            vector.[index] <- vector.[index] &&& ~~~(1u <<< bit)
+
+        let unionWith (source: uint32[]) (target: uint32[]) =
+            for i = 0 to bitVectorLength - 1 do
+                target.[i] <- target.[i] ||| source.[i]
+
+        let differenceOf (source: uint32[]) (target: uint32[]) =
+            for i = 0 to bitVectorLength - 1 do
+                target.[i] <- target.[i] &&& ~~~source.[i]
+
+        let insByBlock =
+            let arr = new ResizeArray<_>()
+            for b in graph.Blocks do
+                arr.Add(emptyBitVector())
             arr
 
-        // Next, produce a map of each temp to its definitions.
-        // TODO: Start here!
+        let outsByBlock =
+            let arr = new ResizeArray<_>()
+            for b in graph.Blocks do
+                arr.Add(emptyBitVector())
+            arr
+
+        let getIns id =
+            match id with
+            | -1 -> insByBlock.[0]
+            | -2 -> insByBlock.[insByBlock.Count - 1]
+            | id -> insByBlock.[id + 1]
+
+        let getOuts id =
+            match id with
+            | -1 -> outsByBlock.[0]
+            | -2 -> outsByBlock.[outsByBlock.Count - 1]
+            | id -> outsByBlock.[id + 1]
+
+        let computeIns b =
+            let vector = emptyBitVector()
+            for p in b.Predecessors do
+                vector |> unionWith (getOuts p)
+            vector
+
+        let computeOuts b =
+            let vector = computeIns b
+
+            // TODO: Start here! To improve performance, we'll use bit vectors to represent the
+            // ins and outs for each block.
+
+            vector
 
         let statementsMap = Dictionary.createFrom (graph.Blocks |> List.map (fun b -> b.ID, ResizeArray.create()))
         let insMap = Dictionary.createFrom (graph.Blocks |> List.map (fun b -> b.ID, HashSet.create()))
