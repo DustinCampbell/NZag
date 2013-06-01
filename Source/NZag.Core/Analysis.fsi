@@ -36,7 +36,7 @@ module Graphs =
         OutDefinitions : int[] }
 
     type DefinitionData =
-      { Statements : StatementFlowInfo list
+      { Statements : StatementFlowInfo[]
         InDefinitions : int[]
         OutDefinitions : int[] }
 

@@ -175,7 +175,7 @@ module Graphs =
         OutDefinitions : int[] }
 
     type DefinitionData =
-      { Statements : StatementFlowInfo list
+      { Statements : StatementFlowInfo[]
         InDefinitions : int[]
         OutDefinitions : int[] }
 
@@ -193,9 +193,13 @@ module Graphs =
             | h::t -> h,t
 
         let tempCount = graph.Tree.TempCount
+        let blockCount = graph.Blocks.Length
         let definitions = new ResizeArray<_>(tempCount)
         let definitionsByTemp = ResizeArray.init tempCount (fun _ -> ResizeArray.create())
-        let definitionsByBlock = ResizeArray<_>(graph.Blocks.Length)
+        let definitionsByBlock = new ResizeArray<_>(graph.Blocks.Length)
+        let insByBlock = new ResizeArray<_>(blockCount)
+        let outsByBlock = new ResizeArray<_>(blockCount)
+        let statementInfosByBlock = new ResizeArray<_>(blockCount)
 
         // First, find all of the definitions
         do
@@ -215,6 +219,9 @@ module Graphs =
                 if lastBlockIdSeen <> -3 && blockId <> Entry then
                     for i = lastBlockIdSeen + 1 to blockId - 1 do
                         definitionsByBlock.Add(ResizeArray.create())
+                        insByBlock.Add(HashSet.create())
+                        outsByBlock.Add(HashSet.create())
+                        statementInfosByBlock.Add(ResizeArray.create())
 
                 lastBlockIdSeen <- blockId
 
@@ -223,6 +230,9 @@ module Graphs =
 
                 let blockDefinitions = new ResizeArray<_>(count)
                 definitionsByBlock.Add(blockDefinitions)
+                insByBlock.Add(HashSet.create())
+                outsByBlock.Add(HashSet.create())
+                statementInfosByBlock.Add(ResizeArray.create())
 
                 for i = 0 to count - 1 do
                     match statements.[i] with
@@ -246,42 +256,67 @@ module Graphs =
                         // indicate "no definition"
                         blockDefinitions.Add(-1)
 
-        let getBlockDefinitions id =
-            match id with
-            | -1 -> definitionsByBlock.[0]
-            | -2 -> definitionsByBlock.[definitionsByBlock.Count - 1]
-            | id -> definitionsByBlock.[id + 1]
-
-        let statementsMap = Dictionary.createFrom (graph.Blocks |> List.map (fun b -> b.ID, ResizeArray.create()))
-        let insMap = Dictionary.createFrom (graph.Blocks |> List.map (fun b -> b.ID, HashSet.create()))
-        let outsMap = Dictionary.createFrom (graph.Blocks |> List.map (fun b -> b.ID, HashSet.create()))
         let definitionUsages = ResizeArray.init definitions.Count (fun _ -> 0)
+
+        // Because our block arrays contains the entry and exit blocks,
+        // we need to translate the block id to get the right index.
+        let blockIdToIndex id (arr: ResizeArray<_>) =
+            match id with
+            | -1 -> 0
+            | -2 -> arr.Count - 1
+            | id -> id + 1
+
+        let getDataByBlock id (arr: ResizeArray<_>) =
+            let index = arr |> blockIdToIndex id
+            arr.[index]
+
+        let setDataByBlock id data (arr: ResizeArray<_>) =
+            let index = arr |> blockIdToIndex id
+            arr.[index] <- data
+
+        let getDefinitionsByBlock id =
+            definitionsByBlock |> getDataByBlock id
+
+        let getInsByBlock id =
+            insByBlock |> getDataByBlock id
+
+        let setInsByBlock id ins =
+            insByBlock |> setDataByBlock id ins
+
+        let getOutsByBlock id =
+            outsByBlock |> getDataByBlock id
+
+        let setOutsByBlock id outs =
+            outsByBlock |> setDataByBlock id outs
+
+        let getStatementInfosByBlock id =
+            statementInfosByBlock |> getDataByBlock id
 
         let computeIns (block: Block<ControlFlowData>) =
             let res = HashSet.create()
 
             block.Predecessors
-            |> List.map (fun p -> outsMap.[p])
+            |> List.map (fun p -> getOutsByBlock p)
             |> List.iter (fun s -> res |> HashSet.unionWith s)
 
             res
 
         let computeOuts (block : Block<ControlFlowData>) =
             let blockId = block.ID
-            let blockDefintions = getBlockDefinitions blockId
+            let blockDefinitions = getDefinitionsByBlock blockId
 
             let ins = computeIns block
-            insMap.[blockId] <- ins
+            setInsByBlock blockId ins
 
-            let statements = statementsMap.[blockId]
-            statements.Clear()
+            let statementInfos = getStatementInfosByBlock blockId
+            statementInfos.Clear()
 
             let currentOuts = HashSet.createFrom ins
 
             block.Data.Statements |> Array.iteri (fun i s ->
                 let currentIns = currentOuts |> HashSet.toArray
 
-                let definitionId = blockDefintions.[i]
+                let definitionId = blockDefinitions.[i]
                 if definitionId >= 0 then
                     let definition = definitions.[definitionId]
 
@@ -294,7 +329,7 @@ module Graphs =
                     OutDefinitions = currentOuts |> HashSet.toArray
                 }
 
-                // Next, find any definition usages for this statement
+                // Find any definition usages for this statement
                 s |> walkStatement
                     (fun s -> ())
                     (fun e ->
@@ -306,7 +341,7 @@ module Graphs =
 
                         | e -> ())
 
-                statements.Add(info))
+                statementInfos.Add(info))
 
             currentOuts
 
@@ -316,18 +351,18 @@ module Graphs =
 
             rest
             |> List.iter (fun b ->
-                let currentOuts = outsMap |> Dictionary.find b.ID
+                let currentOuts = getOutsByBlock b.ID
                 let newOuts = computeOuts b
                 if not (currentOuts |> HashSet.equals newOuts) then
-                    outsMap.[b.ID] <- newOuts
+                    setOutsByBlock b.ID newOuts
                     stop := false)
 
         let blocks =
             graph.Blocks
             |> List.map (fun b -> { ID = b.ID
-                                    Data = { Statements = statementsMap |> Dictionary.find b.ID |> ResizeArray.toList
-                                             InDefinitions = insMap |> Dictionary.find b.ID |> HashSet.toArray
-                                             OutDefinitions = outsMap |> Dictionary.find b.ID |> HashSet.toArray }
+                                    Data = { Statements = getStatementInfosByBlock b.ID |> ResizeArray.toArray
+                                             InDefinitions = getInsByBlock b.ID |> HashSet.toArray
+                                             OutDefinitions = getOutsByBlock b.ID |> HashSet.toArray }
                                     Predecessors = b.Predecessors
                                     Successors = b.Successors })
 
