@@ -174,6 +174,21 @@ module Graphs =
         InDefinitions : int[]
         OutDefinitions : int[] }
 
+    type StatementFlowInfoBuilder(statement: Statement) =
+
+        let mutable ins = [||]
+        let mutable outs = [||]
+
+        member x.SetIns newIns =
+            ins <- newIns
+        member x.SetOuts newOuts =
+            outs <- newOuts
+
+        member x.GetStatementFlowInfo() =
+          { Statement = statement
+            InDefinitions = ins
+            OutDefinitions = outs }
+
     type DefinitionData =
       { Statements : StatementFlowInfo[]
         InDefinitions : int[]
@@ -232,10 +247,16 @@ module Graphs =
                 definitionsByBlock.Add(blockDefinitions)
                 insByBlock.Add(HashSet.create())
                 outsByBlock.Add(HashSet.create())
-                statementInfosByBlock.Add(ResizeArray.create())
+
+                let blockStatementInfos = new ResizeArray<_>(count)
+                statementInfosByBlock.Add(blockStatementInfos)
 
                 for i = 0 to count - 1 do
-                    match statements.[i] with
+                    let statement = statements.[i]
+
+                    blockStatementInfos.Add(new StatementFlowInfoBuilder(statement))
+
+                    match statement with
                     | WriteTempStmt(temp,value) ->
                         // We've found a defintion, go ahead and add it to
                         // the various collections
@@ -308,10 +329,9 @@ module Graphs =
             let ins = computeIns block
             setInsByBlock blockId ins
 
-            let statementInfos = getStatementInfosByBlock blockId
-            statementInfos.Clear()
-
             let currentOuts = HashSet.createFrom ins
+
+            let blockStatementInfos = getStatementInfosByBlock blockId
 
             block.Data.Statements |> Array.iteri (fun i s ->
                 let currentIns = currentOuts |> HashSet.toArray
@@ -323,11 +343,9 @@ module Graphs =
                     currentOuts |> HashSet.removeWhere (fun d -> definitions.[d].Temp = definition.Temp)
                     currentOuts |> HashSet.add definitionId
 
-                let info = {
-                    Statement = s
-                    InDefinitions = currentIns
-                    OutDefinitions = currentOuts |> HashSet.toArray
-                }
+                let statementInfoBuilder = blockStatementInfos.[i]
+                statementInfoBuilder.SetIns(currentIns)
+                statementInfoBuilder.SetOuts(currentOuts |> HashSet.toArray)
 
                 // Find any definition usages for this statement
                 s |> walkStatement
@@ -340,8 +358,7 @@ module Graphs =
                                 definitionUsages.[def] <- definitionUsages.[def] + 1
 
                         | e -> ())
-
-                statementInfos.Add(info))
+            )
 
             currentOuts
 
@@ -359,12 +376,18 @@ module Graphs =
 
         let blocks =
             graph.Blocks
-            |> List.map (fun b -> { ID = b.ID
-                                    Data = { Statements = getStatementInfosByBlock b.ID |> ResizeArray.toArray
-                                             InDefinitions = getInsByBlock b.ID |> HashSet.toArray
-                                             OutDefinitions = getOutsByBlock b.ID |> HashSet.toArray }
-                                    Predecessors = b.Predecessors
-                                    Successors = b.Successors })
+            |> List.map (fun b ->
+              { ID = b.ID
+                Data =
+                  { Statements =
+                        getStatementInfosByBlock b.ID
+                        |> ResizeArray.toArray
+                        |> Array.map (fun builder -> builder.GetStatementFlowInfo())
+                    InDefinitions = getInsByBlock b.ID |> HashSet.toArray
+                    OutDefinitions = getOutsByBlock b.ID |> HashSet.toArray }
+                Predecessors = b.Predecessors
+                Successors = b.Successors }
+             )
 
         { Definitions = definitions |> ResizeArray.toArray
           DefinitionsByTemp =
