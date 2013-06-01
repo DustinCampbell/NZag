@@ -126,22 +126,31 @@ You are standing in an open field west of a white house, with a boarded front do
 There is a small mailbox here.
 
 >quit
+Your score is 0 (total of 350 points), in 0 moves.
+This gives you the rank of Beginner.
 Do you wish to leave the game? (Y is affirmative): >y
-
 ]]>
 
-        Await Test(Zork1, expected)
+        Dim script = {
+            "quit",
+            "y"
+        }
+
+        Await Test(Zork1, script, expected)
     End Function
 
-    Private Async Function Test(gameName As String, expected As XCData) As Task
+    Private Function Test(gameName As String, expected As XCData) As Task
+        Return Test(gameName, {}, expected)
+    End Function
+
+    Private Async Function Test(gameName As String, script As String(), expected As XCData) As Task
         Dim memory = GameMemory(gameName)
         Dim machine = New Machine(memory, debugging:=False)
-        Dim screen = New Screen({"quit", "y"})
+        Dim screen = New Screen(script)
         machine.RegisterScreen(screen)
         Try
             Await machine.RunAsync()
         Catch ex As Exceptions.ZMachineQuitException
-        Catch
         End Try
 
         Dim expectedText = expected.Value.Trim()

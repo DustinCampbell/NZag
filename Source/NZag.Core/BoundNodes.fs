@@ -54,6 +54,14 @@ type BinaryOperationKind =
 [<AutoOpen>]
 module BinaryOperationKindPatterns =
 
+    let (|IsArithmetic|_|) = function
+        | BinaryOperationKind.Add
+        | BinaryOperationKind.Subtract
+        | BinaryOperationKind.Multiply
+        | BinaryOperationKind.Divide
+        | BinaryOperationKind.Remainder -> Some()
+        | _ -> None
+
     let (|IsLogical|_|) = function
         | BinaryOperationKind.Equal
         | BinaryOperationKind.NotEqual
@@ -61,6 +69,13 @@ module BinaryOperationKindPatterns =
         | BinaryOperationKind.AtMost
         | BinaryOperationKind.AtLeast
         | BinaryOperationKind.GreaterThan -> Some()
+        | _ -> None
+
+    let (|IsBitwise|_|) = function
+        | BinaryOperationKind.And
+        | BinaryOperationKind.Or
+        | BinaryOperationKind.ShiftLeft
+        | BinaryOperationKind.ShiftRight -> Some()
         | _ -> None
 
 type ConversionKind =

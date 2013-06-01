@@ -1194,23 +1194,45 @@ type RoutineBinder(memory: Memory, debugging: bool) =
             updater.AddStatement(s'))
 
     let optimize_FoldConstants tree =
-        let binaryOp l r k =
-            match k with
+        let int16_arithmetic l r = function
             | BinaryOperationKind.Add         -> Some(wordConst (uint16 ((int16 l) + (int16 r))))
             | BinaryOperationKind.Subtract    -> Some(wordConst (uint16 ((int16 l) - (int16 r))))
             | BinaryOperationKind.Multiply    -> Some(wordConst (uint16 ((int16 l) * (int16 r))))
             | BinaryOperationKind.Divide      -> Some(wordConst (uint16 ((int16 l) / (int16 r))))
             | BinaryOperationKind.Remainder   -> Some(wordConst (uint16 ((int16 l) % (int16 r))))
-            | BinaryOperationKind.Or          -> Some(wordConst (uint16 l ||| uint16 r))
-            | BinaryOperationKind.And         -> Some(wordConst (uint16 l &&& uint16 r))
-            | BinaryOperationKind.ShiftLeft   -> Some(wordConst (uint16 l <<< r))
-            | BinaryOperationKind.ShiftRight  -> Some(wordConst (uint16 l >>> r))
+            | _ -> None
+
+        let int16_logical l r = function
             | BinaryOperationKind.Equal       -> if l = r then Some(one) else Some(zero)
             | BinaryOperationKind.NotEqual    -> if l <> r then Some(one) else Some(zero)
             | BinaryOperationKind.LessThan    -> if (int16 l) < (int16 r) then Some(one) else Some(zero)
             | BinaryOperationKind.GreaterThan -> if (int16 l) > (int16 r) then Some(one) else Some(zero)
             | BinaryOperationKind.AtLeast     -> if (int16 l) >= (int16 r) then Some(one) else Some(zero)
             | BinaryOperationKind.AtMost      -> if (int16 l) <= (int16 r) then Some(one) else Some(zero)
+            | _ -> None
+
+        let int32_arithmetic l r = function
+            | BinaryOperationKind.Add         -> Some(int32Const (l + r))
+            | BinaryOperationKind.Subtract    -> Some(int32Const (l - r))
+            | BinaryOperationKind.Multiply    -> Some(int32Const (l * r))
+            | BinaryOperationKind.Divide      -> Some(int32Const (l / r))
+            | BinaryOperationKind.Remainder   -> Some(int32Const (l % r))
+            | _ -> None
+
+        let int32_logical l r = function
+            | BinaryOperationKind.Equal       -> if l = r then Some(one) else Some(zero)
+            | BinaryOperationKind.NotEqual    -> if l <> r then Some(one) else Some(zero)
+            | BinaryOperationKind.LessThan    -> if l < r then Some(one) else Some(zero)
+            | BinaryOperationKind.GreaterThan -> if l > r then Some(one) else Some(zero)
+            | BinaryOperationKind.AtLeast     -> if l >= r then Some(one) else Some(zero)
+            | BinaryOperationKind.AtMost      -> if l <= r then Some(one) else Some(zero)
+            | _ -> None
+
+        let bitwise l r = function
+            | BinaryOperationKind.Or          -> Some(wordConst (uint16 l ||| uint16 r))
+            | BinaryOperationKind.And         -> Some(wordConst (uint16 l &&& uint16 r))
+            | BinaryOperationKind.ShiftLeft   -> Some(wordConst (uint16 l <<< r))
+            | BinaryOperationKind.ShiftRight  -> Some(wordConst (uint16 l >>> r))
             | _ -> None
 
         tree |> updateTree (fun s updater ->
@@ -1222,14 +1244,36 @@ type RoutineBinder(memory: Memory, debugging: bool) =
                         | BinaryOperationExpr(k,l,r) ->
                             match l,r with
                             | ConstantExpr(Int32Value v1), ConstantExpr(Int32Value v2) ->
-                                match binaryOp v1 v2 k with
-                                | Some(res) -> res
-                                | None -> e
+                                match k with
+                                | IsArithmetic ->
+                                    match int32_arithmetic v1 v2 k with
+                                    | Some(res) -> res
+                                    | None -> e
+                                | IsLogical ->
+                                    match int32_logical v1 v2 k with
+                                    | Some(res) -> res
+                                    | None -> e
+                                | IsBitwise ->
+                                    match bitwise v1 v2 k with
+                                    | Some(res) -> res
+                                    | None -> e
+                                | _ -> e
 
                             | ToInt16(ConstantExpr(Int32Value v1)), ToInt16(ConstantExpr(Int32Value v2)) ->
-                                match binaryOp v1 v2 k with
-                                | Some(res) -> res
-                                | None -> e
+                                match k with
+                                | IsArithmetic ->
+                                    match int16_arithmetic v1 v2 k with
+                                    | Some(res) -> res
+                                    | None -> e
+                                | IsLogical ->
+                                    match int16_logical v1 v2 k with
+                                    | Some(res) -> res
+                                    | None -> e
+                                | IsBitwise ->
+                                    match bitwise v1 v2 k with
+                                    | Some(res) -> res
+                                    | None -> e
+                                | _ -> e
 
                             | l, ConstantExpr(Zero) ->
                                 match k with
