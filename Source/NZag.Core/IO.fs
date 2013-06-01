@@ -3,24 +3,37 @@
 open System.Threading.Tasks
 open NZag.Utilities
 
+type IInputStream =
+    abstract member ReadCharAsync : unit -> Task<char>
+    abstract member ReadTextAsync : maxChars:int -> Task<string>
+
 type IOutputStream =
-    abstract member WriteCharAsync : char -> Task
-    abstract member WriteTextAsync : string -> Task
+    abstract member WriteCharAsync : ch:char -> Task
+    abstract member WriteTextAsync : text:string -> Task
 
 type IScreen =
+    inherit IInputStream
     inherit IOutputStream
 
 module NullInstances =
 
+    let InputStream =
+        { new IInputStream with
+            member x.ReadCharAsync() = async { return char 0 } |> Async.StartAsTask
+            member x.ReadTextAsync _ = async { return "" } |> Async.StartAsTask }
+
     let OutputStream =
         { new IOutputStream with
-            member x.WriteCharAsync _ = async { return () } |> Async.StartAsTask
-            member x.WriteTextAsync _ = async { return () } |> Async.StartAsTask }
+            member x.WriteCharAsync _ = async { return () } |> Async.StartAsPlainTask
+            member x.WriteTextAsync _ = async { return () } |> Async.StartAsPlainTask }
 
     let Screen =
         { new IScreen with
-            member x.WriteCharAsync _ = async { return () } |> Async.StartAsTask
-            member x.WriteTextAsync _ = async { return () } |> Async.StartAsTask }
+            member x.ReadCharAsync() = async { return char 0 } |> Async.StartAsTask
+            member x.ReadTextAsync _ = async { return "" } |> Async.StartAsTask
+
+            member x.WriteCharAsync _ = async { return () } |> Async.StartAsPlainTask
+            member x.WriteTextAsync _ = async { return () } |> Async.StartAsPlainTask }
 
 type MemoryOutputStream(memory: Memory, address: Address) =
 
@@ -41,7 +54,7 @@ type MemoryOutputStream(memory: Memory, address: Address) =
                 count <- count + 1us
                 writeCount()
             }
-            |> Async.StartAsTask
+            |> Async.StartAsPlainTask
 
         member x.WriteTextAsync s =
             async {
@@ -50,7 +63,7 @@ type MemoryOutputStream(memory: Memory, address: Address) =
                 count <- count + (uint16 bytes.Length)
                 writeCount()
             }
-            |> Async.StartAsTask
+            |> Async.StartAsPlainTask
 
 type OutputStreamCollection(memory: Memory) =
     let memoryStreams = Stack.create()
@@ -104,7 +117,7 @@ type OutputStreamCollection(memory: Memory) =
                 elif transcriptActive then
                     transcriptStream.WriteCharAsync(ch)
                 else
-                    async { return () } |> Async.StartAsTask
+                    async { return () } |> Async.StartAsPlainTask
             else
                 memoryStreams |> Stack.pop |> (fun stream -> stream.WriteCharAsync(ch))
 
@@ -115,6 +128,6 @@ type OutputStreamCollection(memory: Memory) =
                 elif transcriptActive then
                     transcriptStream.WriteTextAsync(s)
                 else
-                    async { return () } |> Async.StartAsTask
+                    async { return () } |> Async.StartAsPlainTask
             else
                 memoryStreams |> Stack.pop |> (fun stream -> stream.WriteTextAsync(s))

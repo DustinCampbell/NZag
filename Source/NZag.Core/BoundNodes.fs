@@ -129,6 +129,18 @@ type Expression =
     /// Generates a random number using the given range expression
     | GenerateRandomNumberExpr of Expression
 
+    /// Reads user char input.
+    | ReadInputCharExpr
+
+    /// Reads user text input using the specified addresses for storing text and parse results respectively.
+    | ReadInputTextExpr of Expression * Expression
+    
+    /// Reads timed user char input.
+    | ReadTimedInputCharExpr of Expression * Expression * Expression
+
+    /// Reads timed user text input using the specified addresses for storing text and parse results respectively.
+    | ReadTimedInputTextExpr of Expression * Expression * Expression * Expression
+
     | VerifyExpr
 
 type Statement =
@@ -328,7 +340,15 @@ module BoundNodeVisitors =
             fexpr (ReadObjectPropertyDefaultExpr(rewriteExpr e))
         | GenerateRandomNumberExpr(e) ->
             fexpr (GenerateRandomNumberExpr(rewriteExpr e))
-        | Verify ->
+        | ReadInputCharExpr ->
+            fexpr ReadInputCharExpr
+        | ReadInputTextExpr(e1,e2) ->
+            fexpr (ReadInputTextExpr(rewriteExpr e1, rewriteExpr e2))
+        | ReadTimedInputCharExpr(e1,e2,e3) ->
+            fexpr (ReadTimedInputCharExpr(rewriteExpr e1, rewriteExpr e2, rewriteExpr e3))
+        | ReadTimedInputTextExpr(e1,e2,e3,e4) ->
+            fexpr (ReadTimedInputTextExpr(rewriteExpr e1, rewriteExpr e2, rewriteExpr e3, rewriteExpr e4))
+        | VerifyExpr ->
             fexpr VerifyExpr
 
     let rec rewriteStatement fstmt fexpr stmt =
@@ -391,6 +411,7 @@ module BoundNodeVisitors =
             | StackPopExpr
             | StackPeekExpr
             | ArgCountExpr
+            | ReadInputCharExpr
             | VerifyExpr ->
                 ()
             | ReadLocalExpr(e)
@@ -407,9 +428,19 @@ module BoundNodeVisitors =
             | GenerateRandomNumberExpr(e) ->
                 visitExpr e
             | BinaryOperationExpr(_,e1,e2)
-            | ReadMemoryTextOfLengthExpr(e1,e2) ->
+            | ReadMemoryTextOfLengthExpr(e1,e2)
+            | ReadInputTextExpr(e1,e2) ->
                 visitExpr e1
                 visitExpr e2
+            | ReadTimedInputCharExpr(e1,e2,e3) ->
+                visitExpr e1
+                visitExpr e2
+                visitExpr e3
+            | ReadTimedInputTextExpr(e1,e2,e3,e4) ->
+                visitExpr e1
+                visitExpr e2
+                visitExpr e3
+                visitExpr e4
             | CallExpr(e,elist) ->
                 visitExpr e
                 elist |> List.iter visitExpr
@@ -625,6 +656,32 @@ type BoundNodeDumper (builder : StringBuilder) =
             append "random"
             parenthesize (fun () ->
                 dumpExpression e)
+        | ReadInputCharExpr ->
+            append "read-input-char"
+        | ReadInputTextExpr(e1,e2) ->
+            append "read-input-text"
+            parenthesize (fun () ->
+                dumpExpression e1
+                append ", "
+                dumpExpression e2)
+        | ReadTimedInputCharExpr(e1,e2,e3) ->
+            append "read-timed-input-char"
+            parenthesize (fun () ->
+                dumpExpression e1
+                append ", "
+                dumpExpression e2
+                append ", "
+                dumpExpression e3)
+        | ReadTimedInputTextExpr(e1,e2,e3,e4) ->
+            append "read-timed-input-text"
+            parenthesize (fun () ->
+                dumpExpression e1
+                append ", "
+                dumpExpression e2
+                append ", "
+                dumpExpression e3
+                append ", "
+                dumpExpression e4)
         | VerifyExpr ->
             append "verify"
 

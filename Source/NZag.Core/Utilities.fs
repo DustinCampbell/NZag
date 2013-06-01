@@ -78,7 +78,7 @@ module Async =
 
         tcs.Task |> Async.AwaitTask |> rewrapExn
 
-    let StartAsTask (work: Async<unit>) =
+    let StartAsPlainTask (work: Async<unit>) =
         work |> Async.StartAsTask :> Task
 
 [<RequireQualifiedAccess>]

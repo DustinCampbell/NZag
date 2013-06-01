@@ -82,7 +82,7 @@ type Machine (memory: Memory, debugging: bool) as this =
             let stack = Array.zeroCreate 1024
             callSite.Invoke0(memory, stack, 0) |> ignore
         }
-        |> Async.StartAsTask
+        |> Async.StartAsPlainTask
 
     member x.Randomize seed =
         (x :> IMachine).Randomize(seed)
@@ -133,6 +133,49 @@ type Machine (memory: Memory, debugging: bool) as this =
             let minValue = 1us
             let maxValue = max minValue (uint16 (range - 1s))
             uint16 (random.Next(int minValue, int maxValue))
+
+        member y.ReadInputChar() =
+            let readCharTask = screen.ReadCharAsync()
+            let ch = readCharTask.Result
+
+            ch
+
+        member y.ReadInputText(textBuffer, parseBuffer) =
+            let dictionaryAddress = memory |> Header.readDictionaryAddress |> (fun a -> a.IntValue)
+            let maxChars = int (memory.ReadByte(textBuffer))
+
+            let readTextTask = screen.ReadTextAsync(maxChars)
+            let text = readTextTask.Result
+
+            // Write text to textBuffer
+            let address = textBuffer + 1
+            for i = 0 to text.Length - 1 do
+                memory.WriteByte(address + i, byte text.[i])
+
+            memory.WriteByte(address + text.Length, 0uy)
+
+            // Tokenize command and write result to parseBuffer
+            let tokens = memory |> Dictionary.tokenizeCommand text dictionaryAddress
+
+            let maxWords = memory.ReadByte(parseBuffer)
+            let parsedWords = min maxWords (byte tokens.Length)
+
+            let mutable address = parseBuffer + 1
+            memory.WriteByte(address, parsedWords)
+            address <- address + 1
+
+            for token in tokens do
+                let entryAddress = memory |> Dictionary.lookupWord token.Text dictionaryAddress
+                memory.WriteWord(address, uint16 entryAddress)
+                address <- address + 2
+
+                memory.WriteByte(address, byte token.Length)
+                address <- address + 1
+
+                memory.WriteByte(address, byte (token.Start + 1))
+                address <- address + 1
+
+            0
 
         member y.Verify() =
             checksum = (memory |> Header.readChecksum)

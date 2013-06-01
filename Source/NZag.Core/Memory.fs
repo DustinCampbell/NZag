@@ -432,7 +432,10 @@ and Memory private (stream : Stream) =
     member x.Version = version
 
     member x.CreateMemoryReader address =
-        let readerAddress = ref (translate address)
+        x.CreateMemoryReader(translate address)
+
+    member x.CreateMemoryReader address =
+        let readerAddress = ref address
         let readerChunk = ref None
         let readerChunkOffset = ref 0
 
@@ -587,6 +590,7 @@ and Memory private (stream : Stream) =
 module Header =
 
     let private offset_InitialPC = ByteAddress(0x06us)
+    let private offset_DictionaryAddress = ByteAddress(0x08us)
     let private offset_ObjectTableAddress = ByteAddress(0x0Aus)
     let private offset_GlobalVariableTableAddress = ByteAddress(0x0Cus)
     let private offset_AbbreviationTableAddress = ByteAddress(0x18us)
@@ -602,6 +606,9 @@ module Header =
             ByteAddress(initialPC - 1us)
         else
             RoutineAddress(initialPC)
+
+    let readDictionaryAddress (memory: Memory) =
+        offset_DictionaryAddress |> memory.ReadWord |> ByteAddress
 
     let readObjectTableAddress (memory: Memory) =
         offset_ObjectTableAddress |> memory.ReadWord |> ByteAddress

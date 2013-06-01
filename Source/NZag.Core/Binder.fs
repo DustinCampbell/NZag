@@ -523,7 +523,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
                 byRefVariableFromExpression e
 
         // Bind the instruction
-        match (instruction.Opcode.Name, instruction.Opcode.Version, operandTemps) with
+        match (instruction.Opcode.Name, int instruction.Opcode.Version, operandTemps) with
         | "add", Any, Op2(left, right) ->
             let left = left |> toInt16
             let right = right |> toInt16
@@ -533,7 +533,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         | "and", Any, Op2(left, right) ->
             store (left .&. right)
 
-        | "art_shift", AtLeast 5uy, Op2(number, places) ->
+        | "art_shift", AtLeast 5, Op2(number, places) ->
             let number = number |> toInt16
             let places = places |> toInt16
 
@@ -544,21 +544,21 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
                     store (number .>>. ((negate places) .&. (int32Const 0x1f))))
 
         | "call", Any, OpAndList(address, args)
-        | "call_1s", AtLeast 4uy, OpAndList(address, args)
-        | "call_2s", AtLeast 4uy, OpAndList(address, args)
+        | "call_1s", AtLeast 4, OpAndList(address, args)
+        | "call_2s", AtLeast 4, OpAndList(address, args)
         | "call_vs", Any, OpAndList(address, args)
-        | "call_vs2", AtLeast 4uy, OpAndList(address, args) ->
+        | "call_vs2", AtLeast 4, OpAndList(address, args) ->
 
             call address args store
 
-        | "call_1n", AtLeast 5uy, OpAndList(address, args)
-        | "call_2n", AtLeast 5uy, OpAndList(address, args)
-        | "call_vn", AtLeast 5uy, OpAndList(address, args)
-        | "call_vn2", AtLeast 4uy, OpAndList(address, args) ->
+        | "call_1n", AtLeast 5, OpAndList(address, args)
+        | "call_2n", AtLeast 5, OpAndList(address, args)
+        | "call_vn", AtLeast 5, OpAndList(address, args)
+        | "call_vn2", AtLeast 4, OpAndList(address, args) ->
 
             call address args discard
 
-        | "check_arg_count", AtLeast 5uy, Op1(number) ->
+        | "check_arg_count", AtLeast 5, Op1(number) ->
             branchIf (number .<=. ArgCountExpr)
 
         | "clear_attr", Any, Op2(objNum, attrNum) ->
@@ -759,7 +759,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
             store (ReadMemoryWordExpr(address))
 
-        | "log_shift", AtLeast 5uy, Op2(number, places) ->
+        | "log_shift", AtLeast 5, Op2(number, places) ->
             let places = places |> toInt16
 
             ifThenElse (places .>. zero)
@@ -783,14 +783,14 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         | "new_line", Any, NoOps ->
             textConst "\n" |> printText |> addStatement
 
-        | "not", AtLeast 5uy, Op1(value) ->
+        | "not", AtLeast 5, Op1(value) ->
             let result = UnaryOperationKind.Not |> unaryOp value
             store result
 
         | "or", Any, Op2(left, right) ->
             store (left .|. right)
 
-        | "piracy", AtLeast 5uy, NoOps ->
+        | "piracy", AtLeast 5, NoOps ->
             branchIf (one)
 
         | "print", Any, NoOps ->
@@ -885,6 +885,9 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
                     randomize range |> addStatement
                     store zero)
 
+        | "read_char", AtLeast 4, Op1(input) ->
+            store (ReadInputCharExpr)
+
         | "remove_obj", Any, Op1(objNum) ->
             removeObject objNum
 
@@ -902,6 +905,9 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
         | "set_attr", Any, Op2(objNum, attrNum) ->
             writeObjectAttribute objNum attrNum true
+
+        | "sread", Is 3, Op2(textBuffer, parseBuffer) ->
+            discard (ReadInputTextExpr(textBuffer, parseBuffer))
 
         | "store", Any, Op2(varIndex, value) ->
             let read, write = byRefVariable varIndex
@@ -933,7 +939,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
             branchIf (attributeValue .=. one)
 
-        | "verify", AtLeast 3uy, NoOps ->
+        | "verify", AtLeast 3, NoOps ->
             branchIf VerifyExpr
 
         | (n,k,ops) ->

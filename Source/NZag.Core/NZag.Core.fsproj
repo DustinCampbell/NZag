@@ -21,6 +21,7 @@
     <Compile Include="Reflection.fs" />
     <Compile Include="Memory.fs" />
     <Compile Include="Text.fs" />
+    <Compile Include="Dictionary.fs" />
     <Compile Include="IO.fs" />
     <Compile Include="Routines.fs" />
     <Compile Include="BoundNodes.fs" />

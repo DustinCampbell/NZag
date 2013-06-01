@@ -7,6 +7,14 @@ Public Module GameTests
 
         Private ReadOnly _builder As New Text.StringBuilder
 
+        Public Function ReadCharAsync() As Task(Of Char) Implements IInputStream.ReadCharAsync
+            Return Task.FromResult(Chr(0))
+        End Function
+
+        Public Function ReadTextAsync(maxChars As Integer) As Task(Of String) Implements IInputStream.ReadTextAsync
+            Return Task.FromResult("quit")
+        End Function
+
         Public Function WriteCharAsync(ch As Char) As Task Implements IOutputStream.WriteCharAsync
             Return Task.Factory.StartNew(Sub()
                                              _builder.Append(ch)

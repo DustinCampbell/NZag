@@ -42,6 +42,16 @@ namespace NZag.ViewModels
             this.windowManager.ActivateWindow(this.mainWindow);
         }
 
+        public Task<char> ReadCharAsync()
+        {
+            return this.windowManager.ActiveWindow.ReadCharAsync();
+        }
+
+        public Task<string> ReadTextAsync(int maxChars)
+        {
+            return this.windowManager.ActiveWindow.ReadTextAsync(maxChars);
+        }
+
         public Task WriteCharAsync(char value)
         {
             return this.windowManager.ActiveWindow.PutCharAsync(value, false);

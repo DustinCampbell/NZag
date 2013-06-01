@@ -547,7 +547,7 @@ type InstructionReader (memory : Memory) =
 
         new Instruction(address, length, opcode, operands, storeVariable, branch, text)
 
-    member x.ReadInstruction address =
+    member x.ReadInstruction (address: Address) =
         let reader = address |> memory.CreateMemoryReader
         x.ReadInstruction reader
 
@@ -636,6 +636,6 @@ type RoutineReader (memory : Memory) =
 
         new Routine(address, instructions, locals)
 
-    member x.ReadRoutine address =
+    member x.ReadRoutine (address: Address) =
         let reader = address |> memory.CreateMemoryReader
         x.ReadRoutine reader

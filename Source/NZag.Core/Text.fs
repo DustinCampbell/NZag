@@ -63,7 +63,20 @@ type AlphabetTable (memory : Memory) =
         currentAlphabet := !baseAlphabet
         result
 
+    member x.FindSetAndIndex ch =
+        alphabets
+        |> Seq.mapi (fun set arr ->
+            arr
+            |> Seq.mapi (fun index c -> (set,index,c)))
+        |> Seq.concat
+        |> Seq.tryFind (fun (set,index,c) -> c = ch)
+        |> (fun res ->
+            match res with
+            | Some(set,index,c) -> Some(byte set, byte index)
+            | None -> None)
+
     member x.CurrentAlphabet = !currentAlphabet
+    member x.Version = memory.Version
 
 type ICharProcessor =
     abstract member Reset : unit -> unit
@@ -117,6 +130,67 @@ module private ZText =
         while charProcessor.TryProcessNext builder zcharEnum do ()
 
         builder.ToString()
+
+    let translateToZscii (ch: char) =
+        // TODO(DustinCa): Handle unicode, mouse clicks, etc.
+        uint16 ch
+
+    let encodeZText (alphabetTable: AlphabetTable) (text: string) =
+        let version = alphabetTable.Version
+        let resolution = if version <= 3 then 2 else 3
+
+        let text =
+            match text with
+            | "g"  -> "again"
+            | "x"  -> "examine"
+            | "z"  -> "wait"
+            | text -> text
+
+        let length = resolution * 3
+        let address = ref 0
+        let zchars = Array.zeroCreate length
+
+        let writeByte b =
+            zchars.[!address] <- b
+            incr address
+
+        let mutable index = 0
+        while !address < length do
+            if index < text.Length then
+                let ch = text.[index]
+                index <- index + 1
+
+                if ch = ' ' then
+                    writeByte 0uy
+                else
+                    match alphabetTable.FindSetAndIndex ch with
+                    | Some(set, index) ->
+                        if set <> 0uy then
+                            let b = if version <= 2 then 1uy else 3uy
+                            writeByte (b + set)
+
+                        writeByte index
+                    | None ->
+                        let zchar = translateToZscii ch
+                        writeByte 5uy
+                        writeByte 6uy
+                        writeByte (byte (zchar >>> 5))
+                        writeByte (byte (zchar &&& 0x1fus))
+            else
+                writeByte 5uy
+
+        let zwords = Array.zeroCreate resolution
+
+        for i = 0 to resolution - 1 do
+            let z1 = uint16 zchars.[i*3]
+            let z2 = uint16 zchars.[i*3 + 1]
+            let z3 = uint16 zchars.[i*3 + 2]
+            zwords.[i] <- uint16 (z1 <<< 10) ||| uint16 (z2 <<< 5) ||| z3
+
+        zwords.[resolution-1] <- zwords.[resolution-1] ||| 0x8000us
+
+        zwords
+
 
 type CharProcessor (memory: Memory, ?abbreviationReader: AbbreviationReader) =
 
@@ -235,10 +309,10 @@ type ZTextReader (memory: Memory) =
 
         reader |> ZText.readStringOfLength length charProcessor
 
-    member x.ReadString(address) =
+    member x.ReadString(address: Address) =
         let reader = address |> memory.CreateMemoryReader
         x.ReadString(reader)
 
-    member x.ReadString(address, length) =
+    member x.ReadString(address: Address, length) =
         let reader = address |> memory.CreateMemoryReader
         x.ReadString(reader, length)

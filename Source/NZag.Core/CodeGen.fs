@@ -22,6 +22,9 @@ type IMachine =
     abstract member Randomize : seed:int16 -> unit
     abstract member NextRandomNumber : range:int16 -> uint16
 
+    abstract member ReadInputChar : unit -> char
+    abstract member ReadInputText : textBuffer:int * parseBuffer:int -> int
+
     abstract member Verify : unit -> bool
 
 and ZCompileResult =
@@ -147,6 +150,8 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
     let writeOutputText = typeof<IMachine>.GetMethod("WriteOutputText")
     let randomize = typeof<IMachine>.GetMethod("Randomize")
     let nextRandomNumber = typeof<IMachine>.GetMethod("NextRandomNumber")
+    let readInputChar = typeof<IMachine>.GetMethod("ReadInputChar")
+    let readInputText = typeof<IMachine>.GetMethod("ReadInputText")
     let verify = typeof<IMachine>.GetMethod("Verify")
 
     let peekStack() =
@@ -294,6 +299,14 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
             builder.Arguments.LoadMachine()
             emitExpression range
             builder.Call(nextRandomNumber)
+        | ReadInputTextExpr(textBuffer, parseBuffer) ->
+            builder.Arguments.LoadMachine()
+            emitExpression textBuffer
+            emitExpression parseBuffer
+            builder.Call(readInputText)
+        | ReadInputCharExpr ->
+            builder.Arguments.LoadArgCount()
+            builder.Call(readInputChar)
         | VerifyExpr ->
             builder.Arguments.LoadMachine()
             builder.Call(verify)
