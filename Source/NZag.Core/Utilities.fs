@@ -206,10 +206,16 @@ module ResizeArray =
     let create() = new ResizeArray<_>()
     let createFrom (e: seq<_>) = new ResizeArray<_>(e)
 
+    let init (count: int) initializer =
+        let arr = new ResizeArray<_>(count)
+        for i = 0 to count - 1 do
+            arr.Add(initializer i)
+        arr
+
     let length (arr: ResizeArray<_>) = arr.Count
 
     let add v (arr: ResizeArray<_>) =
-        arr.Add(v) |> ignore
+        arr.Add(v)
 
     let toArray (arr: ResizeArray<_>) =
         arr.ToArray()

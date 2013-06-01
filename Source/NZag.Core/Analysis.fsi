@@ -32,17 +32,18 @@ module Graphs =
 
     type StatementFlowInfo =
       { Statement : Statement
-        InDefinitions : Definition[]
-        OutDefinitions : Definition[] }
+        InDefinitions : int[]
+        OutDefinitions : int[] }
 
     type DefinitionData =
       { Statements : StatementFlowInfo list
-        InDefinitions : Definition[]
-        OutDefinitions : Definition[] }
+        InDefinitions : int[]
+        OutDefinitions : int[] }
 
     type ReachingDefinitions =
-      { Definitions : Map<int, Definition[]>
-        Usages : Map<Definition, int>
+      { Definitions : Definition[]
+        DefinitionsByTemp : int[][]
+        Usages : int[]
         Graph : Graph<DefinitionData> }
 
     [<CompiledNameAttribute("ComputeReachingDefinitions")>]

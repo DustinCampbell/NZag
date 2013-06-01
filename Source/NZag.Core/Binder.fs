@@ -1128,8 +1128,8 @@ type RoutineBinder(memory: Memory, debugging: bool) =
             match !block with
             | Some(b) ->
                 b.Data.Statements.[!index].InDefinitions
-                    |> Array.filter (fun d -> d.Temp = t)
-                    |> Array.map (fun d -> d.Value)
+                    |> Array.filter (fun d -> reachingDefinitions.Definitions.[d].Temp = t)
+                    |> Array.map (fun d -> reachingDefinitions.Definitions.[d].Value)
             | None ->
                 failcompile "Couldn't find statement info"
 
@@ -1242,14 +1242,14 @@ type RoutineBinder(memory: Memory, debugging: bool) =
             match !block with
             | Some(b) ->
                 let defs =
-                    reachingDefinitions.Definitions.[t]
-                    |> Array.filter (fun d -> d.BlockID = b.ID && d.StatementIndex = !index)
+                    reachingDefinitions.DefinitionsByTemp.[t]
+                    |> Array.filter (fun d ->
+                        let def = reachingDefinitions.Definitions.[d]
+                        def.BlockID = b.ID && def.StatementIndex = !index
+                    )
 
                 match defs with
-                | [|d|] ->
-                    match reachingDefinitions.Usages |> Map.tryFind d with
-                    | Some(u) -> u > 0
-                    | None -> false
+                | [|d|] -> reachingDefinitions.Usages.[d] > 0
                 | _ -> failcompile "Expected a single definition"
 
             | None ->
