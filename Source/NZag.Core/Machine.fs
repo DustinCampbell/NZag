@@ -147,6 +147,8 @@ type Machine (memory: Memory, debugging: bool) as this =
             let readTextTask = screen.ReadTextAsync(maxChars)
             let text = readTextTask.Result
 
+            let text = text.ToLower()
+
             // Write text to textBuffer
             let mutable address = textBuffer + 1
 
