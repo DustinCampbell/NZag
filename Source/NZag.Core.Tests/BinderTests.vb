@@ -3972,6 +3972,210 @@ LABEL 5f
     End Sub
 
     <Fact>
+    Sub Zork1_6A52()
+        ' 6a5d:  a2 01 01 40             GET_CHILD       L00 -> L00 [FALSE] RFALSE
+        ' 6a61:  41 03 02 da             JE              L02,#02 [TRUE] 6a7d
+        ' 6a65:  52 01 12 00             GET_PROP_ADDR   L00,#12 -> -(SP)
+        ' 6a69:  a0 00 d3                JZ              (SP)+ [TRUE] 6a7d
+        ' 6a6c:  e0 2b 36 8e 01 02 00    CALL            6d1c (L00,L01) -> -(SP)
+        ' 6a73:  a0 00 c9                JZ              (SP)+ [TRUE] 6a7d
+        ' 6a76:  e0 2b 35 5d 01 02 00    CALL            6aba (L00,L01) -> -(SP)
+        ' 6a7d:  41 03 00 4a             JE              L02,#00 [FALSE] 6a89
+        ' 6a81:  4a 01 08 c6             TEST_ATTR       L00,#08 [TRUE] 6a89
+        ' 6a85:  4a 01 0a 6d             TEST_ATTR       L00,#0a [FALSE] 6ab4
+        ' 6a89:  a2 01 05 69             GET_CHILD       L00 -> L04 [FALSE] 6ab4
+        ' 6a8d:  4a 01 0b c6             TEST_ATTR       L00,#0b [TRUE] 6a95
+        ' 6a91:  4a 01 0c 61             TEST_ATTR       L00,#0c [FALSE] 6ab4
+        ' 6a95:  4a 01 0a 48             TEST_ATTR       L00,#0a [FALSE] 6a9f
+        ' 6a99:  e8 7f 01                PUSH            #01
+        ' 6a9c:  8c 00 0f                JUMP            6aac
+        ' 6a9f:  4a 01 08 48             TEST_ATTR       L00,#08 [FALSE] 6aa9
+        ' 6aa3:  e8 7f 01                PUSH            #01
+        ' 6aa6:  8c 00 05                JUMP            6aac
+        ' 6aa9:  e8 7f 00                PUSH            #00
+        ' 6aac:  e0 2a 35 29 01 02 00 04 CALL            6a52 (L00,L01,(SP)+) -> L03
+        ' 6ab4:  a1 01 01 bf aa          GET_SIBLING     L00 -> L00 [TRUE] 6a61
+        ' 6ab9:  b0                      RTRUE
+
+        Dim expected =
+<![CDATA[
+# temps: 94
+
+LABEL 00
+    temp00 <- L00
+    temp01 <- (temp00 - 1)
+    temp02 <- (temp01 * 9)
+    temp03 <- (temp02 + 02ee)
+    temp04 <- (temp03 + 6)
+    temp05 <- read-byte(temp04)
+    L00 <- temp05
+    if (temp05 <> 0) is false then
+        return: 0
+LABEL 01
+    temp06 <- L02
+    temp07 <- (temp06 = 02)
+    if (temp07) is true then
+        jump-to: LABEL 0c
+LABEL 02
+    temp08 <- L00
+    temp09 <- (temp08 - 1)
+    temp0a <- (temp09 * 9)
+    temp0b <- (temp0a + 02ee)
+    temp0c <- (temp0b + 7)
+    temp0d <- read-word(temp0c)
+    temp0e <- read-byte(temp0d)
+    temp0f <- (temp0d + 1)
+    temp10 <- (temp0e * 2)
+    temp11 <- (temp0f + temp10)
+    temp12 <- uint16(temp11)
+    temp13 <- 0
+LABEL 03
+    temp14 <- read-byte(temp12)
+    if ((temp14 & 1f) <= 12) is false then
+        jump-to: LABEL 05
+LABEL 04
+    temp13 <- 1
+    jump-to: LABEL 06
+LABEL 05
+    temp15 <- read-byte(temp12)
+    temp16 <- ((temp12 + 1) + ((temp15 >> 5) + 1))
+    temp12 <- uint16(temp16)
+LABEL 06
+    if (temp13 = 0) is true then
+        jump-to: LABEL 03
+    if ((temp14 & 1f) = 12) is false then
+        jump-to: LABEL 08
+LABEL 07
+    push-SP: (temp12 + 1)
+    jump-to: LABEL 09
+LABEL 08
+    push-SP: 0
+LABEL 09
+    temp17 <- pop-SP
+    if (temp17 = 0) is true then
+        jump-to: LABEL 0c
+LABEL 0a
+    temp18 <- L00
+    temp19 <- L01
+    temp1a <- call 6d1c (temp18, temp19)
+    if (temp1a = 0) is true then
+        jump-to: LABEL 0c
+LABEL 0b
+    temp1b <- L00
+    temp1c <- L01
+    push-SP: call 6aba (temp1b, temp1c)
+LABEL 0c
+    temp1d <- L02
+    temp1e <- (temp1d = 00)
+    if (temp1e) is false then
+        jump-to: LABEL 0f
+LABEL 0d
+    temp1f <- L00
+    temp20 <- (temp1f - 1)
+    temp21 <- (temp20 * 9)
+    temp22 <- (temp21 + 02ee)
+    temp23 <- (temp22 + 0001)
+    temp24 <- read-byte(temp23)
+    temp25 <- (temp24 & 0080)
+    temp26 <- (temp25 <> 0)
+    if (temp26 = 1) is true then
+        jump-to: LABEL 0f
+LABEL 0e
+    temp27 <- L00
+    temp28 <- (temp27 - 1)
+    temp29 <- (temp28 * 9)
+    temp2a <- (temp29 + 02ee)
+    temp2b <- (temp2a + 0001)
+    temp2c <- read-byte(temp2b)
+    temp2d <- (temp2c & 0020)
+    temp2e <- (temp2d <> 0)
+    if (temp2e = 1) is false then
+        jump-to: LABEL 18
+LABEL 0f
+    temp2f <- L00
+    temp30 <- (temp2f - 1)
+    temp31 <- (temp30 * 9)
+    temp32 <- (temp31 + 02ee)
+    temp33 <- (temp32 + 6)
+    temp34 <- read-byte(temp33)
+    L04 <- temp34
+    if (temp34 <> 0) is false then
+        jump-to: LABEL 18
+LABEL 10
+    temp35 <- L00
+    temp36 <- (temp35 - 1)
+    temp37 <- (temp36 * 9)
+    temp38 <- (temp37 + 02ee)
+    temp39 <- (temp38 + 0001)
+    temp3a <- read-byte(temp39)
+    temp3b <- (temp3a & 0010)
+    temp3c <- (temp3b <> 0)
+    if (temp3c = 1) is true then
+        jump-to: LABEL 12
+LABEL 11
+    temp3d <- L00
+    temp3e <- (temp3d - 1)
+    temp3f <- (temp3e * 9)
+    temp40 <- (temp3f + 02ee)
+    temp41 <- (temp40 + 0001)
+    temp42 <- read-byte(temp41)
+    temp43 <- (temp42 & 0008)
+    temp44 <- (temp43 <> 0)
+    if (temp44 = 1) is false then
+        jump-to: LABEL 18
+LABEL 12
+    temp45 <- L00
+    temp46 <- (temp45 - 1)
+    temp47 <- (temp46 * 9)
+    temp48 <- (temp47 + 02ee)
+    temp49 <- (temp48 + 0001)
+    temp4a <- read-byte(temp49)
+    temp4b <- (temp4a & 0020)
+    temp4c <- (temp4b <> 0)
+    if (temp4c = 1) is false then
+        jump-to: LABEL 14
+LABEL 13
+    push-SP: 01
+    jump-to: LABEL 17
+LABEL 14
+    temp4d <- L00
+    temp4e <- (temp4d - 1)
+    temp4f <- (temp4e * 9)
+    temp50 <- (temp4f + 02ee)
+    temp51 <- (temp50 + 0001)
+    temp52 <- read-byte(temp51)
+    temp53 <- (temp52 & 0080)
+    temp54 <- (temp53 <> 0)
+    if (temp54 = 1) is false then
+        jump-to: LABEL 16
+LABEL 15
+    push-SP: 01
+    jump-to: LABEL 17
+LABEL 16
+    push-SP: 00
+LABEL 17
+    temp55 <- L00
+    temp56 <- L01
+    temp57 <- pop-SP
+    L03 <- call 6a52 (temp55, temp56, temp57)
+LABEL 18
+    temp58 <- L00
+    temp59 <- (temp58 - 1)
+    temp5a <- (temp59 * 9)
+    temp5b <- (temp5a + 02ee)
+    temp5c <- (temp5b + 5)
+    temp5d <- read-byte(temp5c)
+    L00 <- temp5d
+    if (temp5d <> 0) is true then
+        jump-to: LABEL 01
+LABEL 19
+    return: 1
+]]>
+
+        Test(Zork1, &H6A52, expected)
+    End Sub
+
+    <Fact>
     Sub Zork1_8C9A()
         ' 8ca3:  a0 01 c8                JZ              L00 [TRUE] 8cac
         ' 8ca6:  e8 bf 01                PUSH            L00

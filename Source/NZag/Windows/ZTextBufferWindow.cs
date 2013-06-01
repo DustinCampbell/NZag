@@ -163,7 +163,7 @@ namespace NZag.Windows
 
                 if (!inputTextBox.Focus())
                 {
-                    inputTextBox.Focus();
+                    inputTextBox.PostAction(() => inputTextBox.Focus());
                 }
 
                 string text = null;
@@ -177,7 +177,7 @@ namespace NZag.Windows
                 }
 
                 this.paragraph.Inlines.Remove(container);
-                await PutTextAsync(text, forceFixedWidthFont: false);
+                await PutTextAsync(text + "\r\n", forceFixedWidthFont: false);
 
                 return text;
             });

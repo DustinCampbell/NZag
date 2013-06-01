@@ -6,13 +6,25 @@ Public Module GameTests
         Implements IScreen
 
         Private ReadOnly _builder As New Text.StringBuilder
+        Private ReadOnly _script As String()
+        Private _scriptIndex As Integer
+
+        Public Sub New(Optional script As String() = Nothing)
+            _script = If(script, New String() {})
+        End Sub
 
         Public Function ReadCharAsync() As Task(Of Char) Implements IInputStream.ReadCharAsync
             Return Task.FromResult(Chr(0))
         End Function
 
         Public Function ReadTextAsync(maxChars As Integer) As Task(Of String) Implements IInputStream.ReadTextAsync
-            Return Task.FromResult("quit")
+            Dim command = _script(_scriptIndex)
+            _scriptIndex += 1
+
+            _builder.Append(command)
+            _builder.Append(vbLf)
+
+            Return Task.FromResult(command)
         End Function
 
         Public Function WriteCharAsync(ch As Char) As Task Implements IOutputStream.WriteCharAsync
@@ -35,7 +47,7 @@ Public Module GameTests
     End Class
 
     <Fact()>
-    Async Function RunCZech() As task
+    Async Function RunCZech() As Task
         Dim expected =
 <![CDATA[
 CZECH: the Comprehensive Z-machine Emulation CHecker, version 0.8
@@ -101,7 +113,7 @@ Last test: quit!
     End Function
 
     <Fact()>
-    Async Function RunZork1() As task
+    Async Function RunZork1() As Task
         Dim expected =
 <![CDATA[
 ZORK I: The Great Underground Empire
@@ -113,16 +125,18 @@ West of House
 You are standing in an open field west of a white house, with a boarded front door.
 There is a small mailbox here.
 
->
+>quit
+Do you wish to leave the game? (Y is affirmative): >y
+
 ]]>
 
         Await Test(Zork1, expected)
     End Function
 
-    Private Async Function Test(gameName As String, expected As XCData) As task
+    Private Async Function Test(gameName As String, expected As XCData) As Task
         Dim memory = GameMemory(gameName)
         Dim machine = New Machine(memory, debugging:=False)
-        Dim screen = New Screen()
+        Dim screen = New Screen({"quit", "y"})
         machine.RegisterScreen(screen)
         Try
             Await machine.RunAsync()

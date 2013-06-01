@@ -477,16 +477,28 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             let builder = StringBuilder.create()
             builder |> StringBuilder.appendString (sprintf "%04x: %s" (instruction.Address.IntValue) (instruction.Opcode.Name))
 
+            let index = ref 0
+
+            let formatItem (specifier: string) =
+                let start = "{" + (!index).ToString()
+                let res = if specifier.Length > 0 then start + ":" + specifier + "}"
+                          else start + "}"
+                incr index
+                res
+
             instruction.Operands
                 |> List.iter (fun op -> 
                     match op with
-                    | LargeConstantOperand(_) -> builder |> StringBuilder.appendString " {0:x4}"
-                    | SmallConstantOperand(_) -> builder |> StringBuilder.appendString " {0:x2}"
+                    | LargeConstantOperand(_) -> builder |> StringBuilder.appendString (" " + formatItem "x4")
+                    | SmallConstantOperand(_) -> builder |> StringBuilder.appendString (" " + formatItem "x2")
                     | VariableOperand(v) ->
                         match v with
-                        | StackVariable -> builder |> StringBuilder.appendString " SP={0:x}"
-                        | LocalVariable(i) -> builder |> StringBuilder.appendString (sprintf " L%02x={0:x}" i)
-                        | GlobalVariable(i) -> builder |> StringBuilder.appendString (sprintf " G%02x={0:x}" i))
+                        | StackVariable ->
+                            builder |> StringBuilder.appendString (" SP=" + formatItem "x")
+                        | LocalVariable(i) ->
+                            builder |> StringBuilder.appendString ((sprintf " L%02x=" i) + formatItem "x")
+                        | GlobalVariable(i) ->
+                            builder |> StringBuilder.appendString ((sprintf " G%02x=" i) + formatItem "x"))
 
             debugOut (builder.ToString()) operandTemps |> addStatement
 
@@ -532,6 +544,12 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
         | "and", Any, Op2(left, right) ->
             store (left .&. right)
+
+        | "aread", AtLeast 5, Op1(textBuffer) ->
+            store (ReadInputTextExpr(textBuffer, zero))
+
+        | "aread", AtLeast 5, Op2(textBuffer, parseBuffer) ->
+            store (ReadInputTextExpr(textBuffer, parseBuffer))
 
         | "art_shift", AtLeast 5, Op2(number, places) ->
             let number = number |> toInt16
@@ -641,6 +659,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
         | "get_prop_addr", Any, Op2(objNum, propNum) ->
             let firstPropertyAddress = readObjectFirstPropertyAddress(objNum)
+
             let propAddressRead, propAddressWrite = initMutableTemp firstPropertyAddress
             let firstByteRead, firstByteWrite = initMutableTemp zero
             let stopLoopRead, stopLoopWrite = initMutableTemp zero
@@ -649,6 +668,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
             loopWhile (stopLoopRead .=. zero) (fun () ->
                 firstByteWrite (readByte propAddressRead)
+
                 ifThenElse ((firstByteRead .&. mask) .<=. propNum)
                     (fun () -> stopLoopWrite one)
                     (fun () -> propAddressWrite (readObjectNextPropertyAddress propAddressRead)))
@@ -659,7 +679,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
                         ifThen ((firstByteRead .&. (int32Const 0x80)) .<>. zero)
                             (fun() -> propAddressWrite (propAddressRead .+. one))
 
-                        store (propAddressRead .+. one))
+                    store (propAddressRead .+. one))
                 (fun () ->
                     store zero)
 
@@ -885,6 +905,9 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
                     randomize range |> addStatement
                     store zero)
 
+        | "read_char", AtLeast 4, NoOps ->
+            store (ReadInputCharExpr)
+
         | "read_char", AtLeast 4, Op1(input) ->
             store (ReadInputCharExpr)
 
@@ -906,7 +929,10 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         | "set_attr", Any, Op2(objNum, attrNum) ->
             writeObjectAttribute objNum attrNum true
 
-        | "sread", Is 3, Op2(textBuffer, parseBuffer) ->
+        | "sread", AtMost 3, Op2(textBuffer, parseBuffer) ->
+            discard (ReadInputTextExpr(textBuffer, parseBuffer))
+
+        | "sread", Is 4, Op2(textBuffer, parseBuffer) ->
             discard (ReadInputTextExpr(textBuffer, parseBuffer))
 
         | "store", Any, Op2(varIndex, value) ->

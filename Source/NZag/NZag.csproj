@@ -39,6 +39,7 @@
     <Compile Include="Controls\VisualPair.cs" />
     <Compile Include="Controls\ZTextGrid.cs" />
     <Compile Include="Extensions\DependencyObjectExtensions.cs" />
+    <Compile Include="Extensions\DispatcherObjectExtensions.cs" />
     <Compile Include="Extensions\InputElementExtensions.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Services\GameService.cs" />

@@ -305,7 +305,7 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
             emitExpression parseBuffer
             builder.Call(readInputText)
         | ReadInputCharExpr ->
-            builder.Arguments.LoadArgCount()
+            builder.Arguments.LoadMachine()
             builder.Call(readInputChar)
         | VerifyExpr ->
             builder.Arguments.LoadMachine()
