@@ -11,15 +11,15 @@ module Graphs =
     type Block<'T> =
       { ID : int
         Data : 'T
-        Predecessors : int list
-        Successors : int list }
+        Predecessors : int[]
+        Successors : int[] }
 
         member x.IsEntry = x.ID = Entry
         member x.IsExit = x.ID = Exit
 
     type Graph<'T> =
       { Tree : BoundTree
-        Blocks : Block<'T> list }
+        Blocks : Block<'T>[] }
 
     type Builder<'T> =
       { AddNode : int -> unit;
@@ -27,7 +27,7 @@ module Graphs =
         GetData : int -> 'T option
         UpdateData : int -> 'T option -> unit }
 
-    let computeBlocks (buildBlocks : Builder<'T> -> unit) (finalizeData : 'T option -> 'U) : Block<'U> list =
+    let computeBlocks (buildBlocks : Builder<'T> -> unit) (finalizeData : 'T option -> 'U) : Block<'U>[] =
 
         let compareIds x y = 
             if x = y then 0
@@ -87,12 +87,12 @@ module Graphs =
         let createBlock (id, (pred,succ,data)) =
           { ID = id
             Data = data |> finalizeData
-            Predecessors = pred |> SortedSet.toList
-            Successors = succ |> SortedSet.toList }
+            Predecessors = pred |> SortedSet.toArray
+            Successors = succ |> SortedSet.toArray }
 
         map
-            |> Dictionary.toList
-            |> List.map createBlock
+            |> Dictionary.toArray
+            |> Array.map createBlock
 
     type ControlFlowData =
       { Statements : Statement[] }
@@ -202,19 +202,51 @@ module Graphs =
 
     [<CompiledNameAttribute("ComputeReachingDefinitions")>]
     let computeReachingDefinitions (graph : Graph<ControlFlowData>) =
-        let entry,rest =
-            match graph.Blocks with
-            | [] | _::[] | _::_::[] -> failcompile "Expected at least three nodes in graph (entry, exit and some basic block(s))"
-            | h::t -> h,t
 
         let tempCount = graph.Tree.TempCount
-        let blockCount = graph.Blocks.Length
+        let blocks = graph.Blocks
+        let blockCount = blocks.Length
         let definitions = new ResizeArray<_>(tempCount)
         let definitionsByTemp = ResizeArray.init tempCount (fun _ -> ResizeArray.create())
-        let definitionsByBlock = new ResizeArray<_>(graph.Blocks.Length)
+
+        let definitionsByBlock = new ResizeArray<_>(blockCount)
         let insByBlock = new ResizeArray<_>(blockCount)
         let outsByBlock = new ResizeArray<_>(blockCount)
         let statementInfosByBlock = new ResizeArray<_>(blockCount)
+
+        // Because our block arrays contains the entry and exit blocks,
+        // we need to translate the block id to get the right index.
+        let blockIdToIndex id (arr: ResizeArray<_>) =
+            match id with
+            | -1 -> 0
+            | -2 -> arr.Count - 1
+            | id -> id + 1
+
+        let getDataByBlock id (arr: ResizeArray<_>) =
+            let index = arr |> blockIdToIndex id
+            arr.[index]
+
+        let setDataByBlock id data (arr: ResizeArray<_>) =
+            let index = arr |> blockIdToIndex id
+            arr.[index] <- data
+
+        let getDefinitionsByBlock id =
+            definitionsByBlock |> getDataByBlock id
+
+        let getInsByBlock id =
+            insByBlock |> getDataByBlock id
+
+        let setInsByBlock id ins =
+            insByBlock |> setDataByBlock id ins
+
+        let getOutsByBlock id =
+            outsByBlock |> getDataByBlock id
+
+        let setOutsByBlock id outs =
+            outsByBlock |> setDataByBlock id outs
+
+        let getStatementInfosByBlock id =
+            statementInfosByBlock |> getDataByBlock id
 
         // First, find all of the definitions
         do
@@ -279,46 +311,13 @@ module Graphs =
 
         let definitionUsages = ResizeArray.init definitions.Count (fun _ -> 0)
 
-        // Because our block arrays contains the entry and exit blocks,
-        // we need to translate the block id to get the right index.
-        let blockIdToIndex id (arr: ResizeArray<_>) =
-            match id with
-            | -1 -> 0
-            | -2 -> arr.Count - 1
-            | id -> id + 1
-
-        let getDataByBlock id (arr: ResizeArray<_>) =
-            let index = arr |> blockIdToIndex id
-            arr.[index]
-
-        let setDataByBlock id data (arr: ResizeArray<_>) =
-            let index = arr |> blockIdToIndex id
-            arr.[index] <- data
-
-        let getDefinitionsByBlock id =
-            definitionsByBlock |> getDataByBlock id
-
-        let getInsByBlock id =
-            insByBlock |> getDataByBlock id
-
-        let setInsByBlock id ins =
-            insByBlock |> setDataByBlock id ins
-
-        let getOutsByBlock id =
-            outsByBlock |> getDataByBlock id
-
-        let setOutsByBlock id outs =
-            outsByBlock |> setDataByBlock id outs
-
-        let getStatementInfosByBlock id =
-            statementInfosByBlock |> getDataByBlock id
-
         let computeIns (block: Block<ControlFlowData>) =
             let res = HashSet.create()
 
             block.Predecessors
-            |> List.map (fun p -> getOutsByBlock p)
-            |> List.iter (fun s -> res |> HashSet.unionWith s)
+            |> Array.iter (fun p ->
+                let outs = getOutsByBlock p
+                res |> HashSet.unionWith outs)
 
             res
 
@@ -366,8 +365,9 @@ module Graphs =
         while not (!stop) do
             stop := true
 
-            rest
-            |> List.iter (fun b ->
+            graph.Blocks
+            |> Seq.skip 1
+            |> Seq.iter (fun b ->
                 let currentOuts = getOutsByBlock b.ID
                 let newOuts = computeOuts b
                 if not (currentOuts |> HashSet.equals newOuts) then
@@ -376,7 +376,7 @@ module Graphs =
 
         let blocks =
             graph.Blocks
-            |> List.map (fun b ->
+            |> Array.map (fun b ->
               { ID = b.ID
                 Data =
                   { Statements =

@@ -172,6 +172,15 @@ module Dictionary =
             d.Add(k, v)
             v
 
+    let toArray (d: IDictionary<_,_>) =
+        let res = Array.zeroCreate d.Count
+
+        let keys = d.Keys |> Collection.toArray
+        for i = length d - 1 downto 0 do
+            let key = keys.[i]
+            res.[i] <- (key, d.[key])
+        res
+
     let toList (d: IDictionary<_,_>) =
         let mutable res = []
 
@@ -262,6 +271,9 @@ module SortedSet =
 
     let add v (s : SortedSet<_>) =
         s.Add(v) |> ignore
+
+    let toArray (s : SortedSet<_>) =
+        s |> Array.ofSeq
 
     let toList (s : SortedSet<_>) =
         s |> List.ofSeq

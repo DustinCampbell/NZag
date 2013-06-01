@@ -1122,7 +1122,7 @@ type RoutineBinder(memory: Memory, debugging: bool) =
         let index = ref 0
 
         let setBlock id =
-            block := Some(reachingDefinitions.Graph.Blocks |> List.find (fun b -> b.ID = id))
+            block := Some(reachingDefinitions.Graph.Blocks |> Array.find (fun b -> b.ID = id))
 
         let getDefinitions t =
             match !block with
@@ -1236,7 +1236,7 @@ type RoutineBinder(memory: Memory, debugging: bool) =
         let index = ref 0
 
         let setBlock id =
-            block := Some(reachingDefinitions.Graph.Blocks |> List.find (fun b -> b.ID = id))
+            block := Some(reachingDefinitions.Graph.Blocks |> Array.find (fun b -> b.ID = id))
 
         let hasUsages t =
             match !block with
@@ -1363,7 +1363,7 @@ type RoutineBinder(memory: Memory, debugging: bool) =
         let block = ref None
 
         let setBlock id =
-            block := Some(graph.Blocks |> List.find (fun b -> b.ID = id))
+            block := Some(graph.Blocks |> Array.find (fun b -> b.ID = id))
 
         let hasPredecessors() =
             match !block with
@@ -1395,11 +1395,11 @@ type RoutineBinder(memory: Memory, debugging: bool) =
 
             | JumpStmt(j), LabelStmt(l) ->
                 if j = l then
-                    let b = graph.Blocks |> List.find (fun b -> b.ID = l)
+                    let b = graph.Blocks |> Array.find (fun b -> b.ID = l)
                     if b.Predecessors.Length = 1 then
                         labelsToRemove := !labelsToRemove |> Set.add l
             | _, LabelStmt(l) ->
-                let b = graph.Blocks |> List.find (fun b -> b.ID = l)
+                let b = graph.Blocks |> Array.find (fun b -> b.ID = l)
                 if b.Predecessors.Length = 1 then
                     labelsToRemove := !labelsToRemove |> Set.add l
             | _ -> ()

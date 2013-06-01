@@ -8,15 +8,15 @@ module Graphs =
     type Block<'T> =
       { ID : int
         Data : 'T
-        Predecessors : int list
-        Successors : int list }
+        Predecessors : int[]
+        Successors : int[] }
 
         member IsEntry : bool
         member IsExit : bool
 
     type Graph<'T> =
       { Tree : BoundTree
-        Blocks : Block<'T> list }
+        Blocks : Block<'T>[] }
 
     type ControlFlowData =
       { Statements : Statement[] }
