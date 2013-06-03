@@ -17,8 +17,6 @@ namespace NZag.ViewModels
         private readonly GameService gameService;
         private readonly ScreenViewModel screenViewModel;
 
-        private Machine machine;
-
         [ImportingConstructor]
         private MainWindowViewModel(GameService gameService, ScreenViewModel screenViewModel)
             : base("Views/MainWindowView")
@@ -40,6 +38,7 @@ namespace NZag.ViewModels
             screenContent.Children.Add(screenViewModel.CreateView());
 
             this.OpenCommand = RegisterCommand("Open", "Open", OpenExecuted, () => true, new KeyGesture(Key.O, ModifierKeys.Control));
+            this.LoadScriptCommand = RegisterCommand("Load Script...", "LoadScript", LoadScriptExecuted, () => true);
         }
 
         private void OnGameOpened(object sender, EventArgs e)
@@ -51,7 +50,8 @@ namespace NZag.ViewModels
         {
             var dialog = new OpenFileDialog
             {
-                Title = "Open Z-Machine File"
+                Title = "Open Z-Machine File",
+                Filter = "Story Files (*.z*)|*.z*"
             };
 
             if (dialog.ShowDialog() == true)
@@ -60,6 +60,20 @@ namespace NZag.ViewModels
             }
         }
 
+        private void LoadScriptExecuted()
+        {
+            var dialog = new OpenFileDialog
+            {
+                Title = "Load Script File"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                this.screenViewModel.LoadScript(dialog.FileName);
+            }
+        }
+
         public ICommand OpenCommand { get; private set; }
+        public ICommand LoadScriptCommand { get; private set; }
     }
 }

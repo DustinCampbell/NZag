@@ -62,6 +62,7 @@ namespace NZag.Services
         public void StartGame(IScreen screen)
         {
             this.machine.RegisterScreen(screen);
+            this.machine.Randomize(42);
             this.machine.RunAsync();
         }
 

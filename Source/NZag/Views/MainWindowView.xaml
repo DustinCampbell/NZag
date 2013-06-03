@@ -39,6 +39,10 @@
                 <Button Command="{Binding OpenCommand}">
                     <controls:AutoDisableImage Source="{StaticResource OpenImage}"/>
                 </Button>
+                <Separator/>
+                <Button Command="{Binding LoadScriptCommand}">
+                    Load Script...
+                </Button>
             </ToolBar>
         </ToolBarTray>
 
