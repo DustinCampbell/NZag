@@ -3,6 +3,9 @@
                     xmlns:controls="clr-namespace:NZag.Controls">
 
     <BitmapImage x:Key="OpenImage" UriSource="open.png"/>
+    <BitmapImage x:Key="PlayImage" UriSource="play.png"/>
+    <BitmapImage x:Key="ResetImage" UriSource="reset.png"/>
+    <BitmapImage x:Key="ScriptImage" UriSource="script.png"/>
 
     <Style TargetType="{x:Type controls:AutoDisableImage}">
         <Setter Property="Height" Value="16"/>

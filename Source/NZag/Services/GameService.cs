@@ -8,16 +8,12 @@ namespace NZag.Services
     [Export]
     public class GameService
     {
+        private string gameFileName;
         private Machine machine;
 
-        private void OnGameOpening()
-        {
-            var handler = GameOpening;
-            if (handler != null)
-            {
-                handler(this, EventArgs.Empty);
-            }
-        }
+        private string scriptFileName;
+        private string[] script;
+        private int scriptIndex = -1;
 
         private void OnGameOpened()
         {
@@ -28,33 +24,50 @@ namespace NZag.Services
             }
         }
 
-        private void OnGameClosing()
+        private void OnScriptLoaded()
         {
-            var handler = GameClosing;
+            var handler = ScriptLoaded;
             if (handler != null)
             {
                 handler(this, EventArgs.Empty);
             }
         }
 
-        private void OnGameClosed()
+        public void LoadScript(string fileName)
         {
-            var handler = GameClosed;
-            if (handler != null)
+            this.script = File.ReadAllLines(fileName);
+            this.scriptIndex = 0;
+            this.scriptFileName = fileName;
+
+            OnScriptLoaded();
+        }
+
+        public bool HasNextScriptCommand
+        {
+            get { return this.scriptIndex >= 0 && this.scriptIndex < this.script.Length; }
+        }
+
+        public string GetNextScriptCommand()
+        {
+            if (!HasNextScriptCommand)
             {
-                handler(this, EventArgs.Empty);
+                return string.Empty;
             }
+
+            var command = this.script[this.scriptIndex];
+            this.scriptIndex++;
+            return command;
         }
 
         public void OpenGame(string fileName)
         {
-            OnGameOpening();
-
             using (var file = File.OpenRead(fileName))
             {
                 var memory = Memory.CreateFrom(file);
                 this.machine = new Machine(memory, debugging: false);
             }
+
+            this.gameFileName = fileName;
 
             OnGameOpened();
         }
@@ -66,14 +79,32 @@ namespace NZag.Services
             this.machine.RunAsync();
         }
 
+        public bool IsGameOpen
+        {
+            get { return this.machine != null; }
+        }
+
         public Machine Machine
         {
             get { return this.machine; }
         }
 
-        public event EventHandler GameOpening;
+        public string GameFileName
+        {
+            get { return this.gameFileName; }
+        }
+
+        public bool IsScriptOpen
+        {
+            get { return this.script != null; }
+        }
+
+        public string ScriptFileName
+        {
+            get { return this.scriptFileName; }
+        }
+
         public event EventHandler GameOpened;
-        public event EventHandler GameClosing;
-        public event EventHandler GameClosed;
+        public event EventHandler ScriptLoaded;
     }
 }

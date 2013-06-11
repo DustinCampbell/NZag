@@ -36,12 +36,15 @@
         <ToolBarTray Grid.Row="1"
                      RenderOptions.BitmapScalingMode="NearestNeighbor">
             <ToolBar>
+                <Button Command="{Binding LoadScriptCommand}">
+                    <controls:AutoDisableImage Source="{StaticResource ScriptImage}"/>
+                </Button>
+                <TextBlock VerticalAlignment="Center"
+                           Margin="4,0"
+                           Text="{Binding ScriptName}"/>
+                <Separator/>
                 <Button Command="{Binding OpenCommand}">
                     <controls:AutoDisableImage Source="{StaticResource OpenImage}"/>
-                </Button>
-                <Separator/>
-                <Button Command="{Binding LoadScriptCommand}">
-                    Load Script...
                 </Button>
             </ToolBar>
         </ToolBarTray>

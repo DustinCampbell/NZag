@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel.Composition;
-using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using NZag.Core;
@@ -18,9 +17,6 @@ namespace NZag.ViewModels
         private Grid windowContainer;
         private ZWindow mainWindow;
         private ZWindow upperWindow;
-
-        private string[] script;
-        private int scriptIndex = -1;
 
         [ImportingConstructor]
         private ScreenViewModel(GameService gameService)
@@ -48,8 +44,7 @@ namespace NZag.ViewModels
 
         public void LoadScript(string fileName)
         {
-            this.script = File.ReadAllLines(fileName);
-            this.scriptIndex = 0;
+            this.gameService.LoadScript(fileName);
         }
 
         public Task<char> ReadCharAsync()
@@ -59,10 +54,9 @@ namespace NZag.ViewModels
 
         public Task<string> ReadTextAsync(int maxChars)
         {
-            if (this.scriptIndex >= 0 && this.scriptIndex < this.script.Length)
+            if (this.gameService.HasNextScriptCommand)
             {
-                var command = this.script[this.scriptIndex];
-                this.scriptIndex++;
+                var command = this.gameService.GetNextScriptCommand();
                 this.windowManager.ActiveWindow.PutTextAsync(command + "\r\n", forceFixedWidthFont: false);
                 return Task.FromResult(command);
             }
