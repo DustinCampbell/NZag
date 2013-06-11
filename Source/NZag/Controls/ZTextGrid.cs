@@ -98,7 +98,7 @@ namespace NZag.Controls
                 var backgroundRect = new Rect(
                     Math.Floor(x),
                     Math.Floor(y),
-                    Math.Ceiling(fontCharSize.Width*0.5),
+                    Math.Ceiling(fontCharSize.Width + 0.5),
                     Math.Ceiling(fontCharSize.Height));
 
                 backgroundContext.DrawRectangle(background, null, backgroundRect);

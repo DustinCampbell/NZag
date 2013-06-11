@@ -96,7 +96,7 @@ namespace NZag.ViewModels
 
             if (dialog.ShowDialog() == true)
             {
-                this.screenViewModel.LoadScript(dialog.FileName);
+                this.gameService.LoadScript(dialog.FileName);
             }
         }
 

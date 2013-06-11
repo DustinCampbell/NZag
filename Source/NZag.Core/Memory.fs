@@ -637,3 +637,27 @@ module Header =
 
     let readAlphabetTableAddress (memory: Memory) =
         offset_AlphabetTableAddress |> memory.ReadWord |> ByteAddress
+
+    let writeScreenHeightInLines value (memory: Memory) =
+        memory.WriteByte(0x20, value)
+
+    let writeScreenWidthInColumns value (memory: Memory) =
+        memory.WriteByte(0x21, value)
+
+    let writeScreenHeightInUnits value (memory: Memory) =
+        memory.WriteWord(0x24, value)
+
+    let writeScreenWidthInUnits value (memory: Memory) =
+        memory.WriteWord(0x22, value)
+
+    let writeFontHeightInUnits value (memory: Memory) =
+        if memory.Version = 6 then
+            memory.WriteByte(0x26, value)
+        else
+            memory.WriteByte(0x27, value)
+
+    let writeFontWidthInUnits value (memory: Memory) =
+        if memory.Version = 6 then
+            memory.WriteByte(0x27, value)
+        else
+            memory.WriteByte(0x26, value)

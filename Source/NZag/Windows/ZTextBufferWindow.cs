@@ -60,10 +60,10 @@ namespace NZag.Windows
             this.Children.Add(this.scrollViewer);
         }
 
-        private async Task ForceFixedWidthFontAsync(bool value, Action a)
+        private async Task ForceFixedWidthFontAsync(bool value, Action action)
         {
             var oldValue = await this.SetFixedPitchAsync(value);
-            a();
+            action();
             await this.SetFixedPitchAsync(oldValue);
         }
 

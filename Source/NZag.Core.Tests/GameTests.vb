@@ -41,11 +41,52 @@ Public Module GameTests
                                          End Sub)
         End Function
 
+        Public Function ShowStatusAsync() As Task Implements IScreen.ShowStatusAsync
+            Return Task.Factory.StartNew(Sub() Exit Sub)
+        End Function
+
+        Public ReadOnly Property FontHeightInUnits As Byte Implements IScreen.FontHeightInUnits
+            Get
+                Return 0
+            End Get
+        End Property
+
+        Public ReadOnly Property FontWidthInUnits As Byte Implements IScreen.FontWidthInUnits
+            Get
+                Return 0
+            End Get
+        End Property
+
+        Public ReadOnly Property ScreenHeightInLines As Byte Implements IScreen.ScreenHeightInLines
+            Get
+                Return 0
+            End Get
+        End Property
+
+        Public ReadOnly Property ScreenHeightInUnits As UShort Implements IScreen.ScreenHeightInUnits
+            Get
+                Return 0
+            End Get
+        End Property
+
+        Public ReadOnly Property ScreenWidthInColumns As Byte Implements IScreen.ScreenWidthInColumns
+            Get
+                Return 0
+            End Get
+        End Property
+
+        Public ReadOnly Property ScreenWidthInUnits As UShort Implements IScreen.ScreenWidthInUnits
+            Get
+                Return 0
+            End Get
+        End Property
+
         Public ReadOnly Property Output As String
             Get
                 Return _builder.ToString()
             End Get
         End Property
+
     End Class
 
     <Fact()>

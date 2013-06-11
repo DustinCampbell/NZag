@@ -88,14 +88,47 @@ type Machine (memory: Memory, debugging: bool) as this =
         (x :> IMachine).Randomize(seed)
 
     member x.RegisterScreen newScreen =
-        (x :> IMachine).RegisterScreen(newScreen)
+        screen <- newScreen
+
+        if memory.Version >= 4 then
+            memory |> Header.writeScreenHeightInLines screen.ScreenHeightInLines
+            memory |> Header.writeScreenWidthInColumns screen.ScreenWidthInColumns
+
+        if memory.Version >= 5 then
+            memory |> Header.writeScreenHeightInUnits screen.ScreenHeightInUnits
+            memory |> Header.writeScreenWidthInUnits screen.ScreenWidthInUnits
+            memory |> Header.writeFontHeightInUnits screen.FontHeightInUnits
+            memory |> Header.writeFontWidthInUnits screen.FontWidthInUnits
+
+        outputStreams.RegisterScreenStream(newScreen)
+
+    member x.ForceFixedWidthFont() =
+        (memory.ReadWord(0x10) &&& 0x0002us) = 0x0002us
+
+    member x.IsScoreGame() =
+        if memory.Version < 3 then
+            true
+        else
+            (memory.ReadByte(0x01) &&& 0x01uy) = 0x00uy
+
+    member x.ReadGlobalVariable index =
+        let globalVariableTableAddress = memory |> Header.readGlobalVariableTableAddress |> (fun a -> a.IntValue)
+        let globalVariableAddress = globalVariableTableAddress + (index * 2)
+        memory.ReadWord(globalVariableAddress)
+
+    member x.ReadObjectShortName objectNumber =
+        let objectTableAddress = memory |> Header.readObjectTableAddress |> (fun a -> a.IntValue)
+        let propertyCount = if memory.Version <= 3 then 31 else 63
+        let propertyDefaultsTableSize = propertyCount * 2
+        let objectEntriesAddress = objectTableAddress + propertyDefaultsTableSize
+        let objectEntrySize = if memory.Version <= 3 then 9 else 14
+        let objectAddress = objectEntriesAddress + ((objectNumber - 1) * objectEntrySize)
+        let propertyTableAddressOffset = if memory.Version <= 3 then 7 else 12
+        let propertyTableAddress = int (memory.ReadWord(objectAddress + propertyTableAddressOffset))
+        let length = int (memory.ReadByte(propertyTableAddress))
+        textReader.ReadString(RawAddress(propertyTableAddress + 1), length)
 
     interface IMachine with
-
-        member y.RegisterScreen(newScreen) =
-            screen <- newScreen
-            // TODO: Write screen header values
-            outputStreams.RegisterScreenStream(newScreen)
 
         member y.GetInitialLocalArray(routine) =
             let result = getOrCreateLocalArray()
@@ -141,6 +174,9 @@ type Machine (memory: Memory, debugging: bool) as this =
             ch
 
         member y.ReadInputText(textBuffer, parseBuffer) =
+            if memory.Version <= 3 then
+                screen.ShowStatusAsync().Wait()
+
             let dictionaryAddress = memory |> Header.readDictionaryAddress |> (fun a -> a.IntValue)
             let maxChars = int (memory.ReadByte(textBuffer))
 

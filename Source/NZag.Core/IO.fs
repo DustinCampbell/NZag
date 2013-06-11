@@ -15,25 +15,47 @@ type IScreen =
     inherit IInputStream
     inherit IOutputStream
 
+    abstract member ShowStatusAsync : unit -> Task
+
+    abstract member ScreenHeightInLines : byte
+    abstract member ScreenWidthInColumns : byte
+    abstract member ScreenHeightInUnits : uint16
+    abstract member ScreenWidthInUnits : uint16
+    abstract member FontHeightInUnits : byte
+    abstract member FontWidthInUnits : byte
+
 module NullInstances =
+
+    let private emptyCharTask = async { return char 0 } |> Async.StartAsTask
+    let private emptyStringTask = async { return "" } |> Async.StartAsTask
+    let private emptyTask = async { return () } |> Async.StartAsPlainTask
 
     let InputStream =
         { new IInputStream with
-            member x.ReadCharAsync() = async { return char 0 } |> Async.StartAsTask
-            member x.ReadTextAsync _ = async { return "" } |> Async.StartAsTask }
+            member x.ReadCharAsync() = emptyCharTask
+            member x.ReadTextAsync _ = emptyStringTask }
 
     let OutputStream =
         { new IOutputStream with
-            member x.WriteCharAsync _ = async { return () } |> Async.StartAsPlainTask
-            member x.WriteTextAsync _ = async { return () } |> Async.StartAsPlainTask }
+            member x.WriteCharAsync _ = emptyTask
+            member x.WriteTextAsync _ = emptyTask }
 
     let Screen =
         { new IScreen with
-            member x.ReadCharAsync() = async { return char 0 } |> Async.StartAsTask
-            member x.ReadTextAsync _ = async { return "" } |> Async.StartAsTask
+            member x.ReadCharAsync() = emptyCharTask
+            member x.ReadTextAsync _ = emptyStringTask
 
-            member x.WriteCharAsync _ = async { return () } |> Async.StartAsPlainTask
-            member x.WriteTextAsync _ = async { return () } |> Async.StartAsPlainTask }
+            member x.WriteCharAsync _ = emptyTask
+            member x.WriteTextAsync _ = emptyTask
+
+            member x.ShowStatusAsync() = emptyTask
+
+            member x.ScreenHeightInLines = 0uy
+            member x.ScreenWidthInColumns = 0uy
+            member x.ScreenHeightInUnits = 0us
+            member x.ScreenWidthInUnits = 0us
+            member x.FontHeightInUnits = 0uy
+            member x.FontWidthInUnits = 0uy }
 
 type MemoryOutputStream(memory: Memory, address: Address) =
 
