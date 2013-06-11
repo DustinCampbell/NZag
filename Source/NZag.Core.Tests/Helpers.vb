@@ -1,10 +1,12 @@
 ﻿Imports System.IO
 Imports System.Reflection
+Imports System.Text
 
 Module Helpers
 
     Public Const Zork1 = "zork1.z3"
     Public Const CZech = "czech.z5"
+    Public Const Advent = "Advent.z5"
 
     Function GameMemory(name As String) As Memory
         Dim asm = Assembly.GetExecutingAssembly()
@@ -152,5 +154,28 @@ Module Helpers
                    Assert.Equal(var, i.StoreVariable.Value)
                End Sub
     End Function
+
+    Public Sub TestBinder(gameName As String, address As Integer, expected As XCData, Optional debugging As Boolean = False)
+        Dim memory = GameMemory(gameName)
+        Dim reader = New RoutineReader(memory)
+
+        Dim a = RawAddress(address)
+        Dim r = reader.ReadRoutine(a)
+
+        Assert.Equal(a, r.Address)
+
+        Dim binder = New RoutineBinder(memory, debugging)
+        Dim tree = binder.BindRoutine(r)
+
+        Dim builder = New StringBuilder()
+        Dim dumper = New BoundNodeDumper(builder)
+        dumper.Dump(tree)
+
+        Dim expectedText = expected.Value _
+                                   .Trim() _
+                                   .Replace(vbLf, vbCrLf)
+
+        Assert.Equal(expectedText, builder.ToString())
+    End Sub
 
 End Module
