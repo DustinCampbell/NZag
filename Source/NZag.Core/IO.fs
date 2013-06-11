@@ -1,5 +1,6 @@
 ﻿namespace NZag.Core
 
+open System
 open System.Threading.Tasks
 open NZag.Utilities
 
@@ -11,11 +12,21 @@ type IOutputStream =
     abstract member WriteCharAsync : ch:char -> Task
     abstract member WriteTextAsync : text:string -> Task
 
+[<Flags>]
+type ZTextStyle =
+    | Roman = 0x00
+    | Reverse = 0x01
+    | Bold = 0x02
+    | Italic = 0x04
+    | FixedPitch = 0x08
+
 type IScreen =
     inherit IInputStream
     inherit IOutputStream
 
     abstract member ShowStatusAsync : unit -> Task
+
+    abstract SetTextStyleAsync : style:ZTextStyle -> Task
 
     abstract member ScreenHeightInLines : byte
     abstract member ScreenWidthInColumns : byte
@@ -49,6 +60,8 @@ module NullInstances =
             member x.WriteTextAsync _ = emptyTask
 
             member x.ShowStatusAsync() = emptyTask
+
+            member x.SetTextStyleAsync _ = emptyTask
 
             member x.ScreenHeightInLines = 0uy
             member x.ScreenWidthInColumns = 0uy

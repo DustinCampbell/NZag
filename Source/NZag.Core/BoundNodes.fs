@@ -203,15 +203,18 @@ type Statement =
 
     /// Discards a value (i.e. does nothing with it).
     | DiscardValueStmt of Expression
-
-    /// Prints the char represented by the given expression
-    | PrintCharStmt of Expression
-
-    /// Prints the text represented by the given expression
-    | PrintTextStmt of Expression
-
+    
     /// Seeds the random number generator with the given expression
     | SetRandomNumberSeedStmt of Expression
+
+    /// Prints the char represented by the given expression to the active window
+    | PrintCharStmt of Expression
+
+    /// Prints the text represented by the given expression to the active window
+    | PrintTextStmt of Expression
+
+    /// Sets the text style of the active window
+    | SetTextStyleStmt of Expression
 
     /// Outputs the text represented by the given expression for debugging
     | DebugOutputStmt of Expression * list<Expression>
@@ -399,12 +402,14 @@ module BoundNodeVisitors =
             fstmt (WriteMemoryWordStmt(rewriteExpr e1, rewriteExpr e2))
         | DiscardValueStmt(e) ->
             fstmt (DiscardValueStmt(rewriteExpr e))
+        | SetRandomNumberSeedStmt(e) ->
+            fstmt (SetRandomNumberSeedStmt(rewriteExpr e))
         | PrintCharStmt(e) ->
             fstmt (PrintCharStmt(rewriteExpr e))
         | PrintTextStmt(e) ->
             fstmt (PrintTextStmt(rewriteExpr e))
-        | SetRandomNumberSeedStmt(e) ->
-            fstmt (SetRandomNumberSeedStmt(rewriteExpr e))
+        | SetTextStyleStmt(e) ->
+            fstmt (SetTextStyleStmt(rewriteExpr e))
         | DebugOutputStmt(e, elist) ->
             fstmt (DebugOutputStmt(rewriteExpr e, elist |> List.map rewriteExpr))
         | RuntimeExceptionStmt(s) ->
@@ -476,9 +481,10 @@ module BoundNodeVisitors =
             | StackPushStmt(e)
             | StackUpdateStmt(e)
             | DiscardValueStmt(e)
+            | SetRandomNumberSeedStmt(e)
             | PrintCharStmt(e)
             | PrintTextStmt(e)
-            | SetRandomNumberSeedStmt(e) ->
+            | SetTextStyleStmt(e) ->
                 visitExpr e
             | BranchStmt(_,e,s) ->
                 visitExpr e
@@ -766,12 +772,16 @@ type BoundNodeDumper (builder : StringBuilder) =
         | DiscardValueStmt(e) ->
             append "discard: "
             dumpExpression e
+        | SetRandomNumberSeedStmt(e) ->
+            append "randomize"
+            parenthesize (fun () ->
+                dumpExpression e)
         | PrintCharStmt(e)
         | PrintTextStmt(e) ->
             append "print: "
             dumpExpression e
-        | SetRandomNumberSeedStmt(e) ->
-            append "randomize"
+        | SetTextStyleStmt(e) ->
+            append "set-text-style"
             parenthesize (fun () ->
                 dumpExpression e)
         | RuntimeExceptionStmt(s) ->

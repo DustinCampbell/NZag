@@ -11,19 +11,21 @@ type IMachine =
     abstract member Compile : Routine -> ZCompileResult
     abstract member GetCallSite : address:int -> ZFuncCallSite
 
-    abstract member ReadZText : address:int -> string
-    abstract member ReadZTextOfLength : address:int * length:int -> string
-
-    abstract member WriteOutputChar : ch:char -> unit
-    abstract member WriteOutputText : s:string -> unit
+    abstract member Verify : unit -> bool
 
     abstract member Randomize : seed:int16 -> unit
     abstract member NextRandomNumber : range:int16 -> uint16
 
+    abstract member ReadZText : address:int -> string
+    abstract member ReadZTextOfLength : address:int * length:int -> string
+
     abstract member ReadInputChar : unit -> char
     abstract member ReadInputText : textBuffer:int * parseBuffer:int -> int
 
-    abstract member Verify : unit -> bool
+    abstract member WriteOutputChar : ch:char -> unit
+    abstract member WriteOutputText : s:string -> unit
+
+    abstract member SetTextStyle : style:ZTextStyle -> unit
 
 and ZCompileResult =
   { Routine : Routine
@@ -142,15 +144,16 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
     let writeWord = typeof<Memory>.GetMethod("WriteWord", [|typeof<int>; typeof<uint16>|])
 
     let getCallSite = typeof<IMachine>.GetMethod("GetCallSite")
-    let readZText = typeof<IMachine>.GetMethod("ReadZText")
-    let readZTextOfLength = typeof<IMachine>.GetMethod("ReadZTextOfLength")
-    let writeOutputChar = typeof<IMachine>.GetMethod("WriteOutputChar")
-    let writeOutputText = typeof<IMachine>.GetMethod("WriteOutputText")
+    let verify = typeof<IMachine>.GetMethod("Verify")
     let randomize = typeof<IMachine>.GetMethod("Randomize")
     let nextRandomNumber = typeof<IMachine>.GetMethod("NextRandomNumber")
+    let readZText = typeof<IMachine>.GetMethod("ReadZText")
+    let readZTextOfLength = typeof<IMachine>.GetMethod("ReadZTextOfLength")
     let readInputChar = typeof<IMachine>.GetMethod("ReadInputChar")
     let readInputText = typeof<IMachine>.GetMethod("ReadInputText")
-    let verify = typeof<IMachine>.GetMethod("Verify")
+    let writeOutputChar = typeof<IMachine>.GetMethod("WriteOutputChar")
+    let writeOutputText = typeof<IMachine>.GetMethod("WriteOutputText")
+    let setTextStyle = typeof<IMachine>.GetMethod("SetTextStyle")
 
     let peekStack() =
         builder.Arguments.LoadStack()
@@ -389,6 +392,10 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
         | DiscardValueStmt(e) ->
             emitExpression e
             builder.EvaluationStack.Pop()
+        | SetRandomNumberSeedStmt(seed) ->
+            builder.Arguments.LoadMachine()
+            emitExpression seed
+            builder.Call(randomize)
         | PrintCharStmt(e) ->
             builder.Arguments.LoadMachine()
             emitExpression e
@@ -397,10 +404,10 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
             builder.Arguments.LoadMachine()
             emitExpression e
             builder.Call(writeOutputText)
-        | SetRandomNumberSeedStmt(seed) ->
+        | SetTextStyleStmt(e) ->
             builder.Arguments.LoadMachine()
-            emitExpression seed
-            builder.Call(randomize)
+            emitExpression e
+            builder.Call(setTextStyle)
         | DebugOutputStmt(e, elist) ->
             builder.DebugOutput(
                 (fun () -> emitExpression e),

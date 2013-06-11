@@ -147,17 +147,8 @@ type Machine (memory: Memory, debugging: bool) as this =
         member y.GetCallSite(address) =
             getCallSite address
 
-        member y.ReadZText(address) =
-            textReader.ReadString(RawAddress(address))
-        member y.ReadZTextOfLength(address, length) =
-            textReader.ReadString(RawAddress(address), length)
-
-        member y.WriteOutputChar(ch) =
-            let work = (outputStreams :> IOutputStream).WriteCharAsync(ch)
-            Async.RunSynchronously(work |> Async.AwaitTask)
-        member y.WriteOutputText(s) =
-            let work = (outputStreams :> IOutputStream).WriteTextAsync(s)
-            Async.RunSynchronously(work |> Async.AwaitTask)
+        member y.Verify() =
+            checksum = (memory |> Header.readChecksum)
 
         member y.Randomize(seed) =
             random <- if seed = 0s then new Random(int DateTime.Now.Ticks)
@@ -166,6 +157,11 @@ type Machine (memory: Memory, debugging: bool) as this =
             let minValue = 1us
             let maxValue = max minValue (uint16 (range - 1s))
             uint16 (random.Next(int minValue, int maxValue))
+
+        member y.ReadZText(address) =
+            textReader.ReadString(RawAddress(address))
+        member y.ReadZTextOfLength(address, length) =
+            textReader.ReadString(RawAddress(address), length)
 
         member y.ReadInputChar() =
             let readCharTask = screen.ReadCharAsync()
@@ -221,7 +217,13 @@ type Machine (memory: Memory, debugging: bool) as this =
 
             0
 
-        member y.Verify() =
-            checksum = (memory |> Header.readChecksum)
+        member y.WriteOutputChar(ch) =
+            let work = (outputStreams :> IOutputStream).WriteCharAsync(ch)
+            Async.RunSynchronously(work |> Async.AwaitTask)
+        member y.WriteOutputText(s) =
+            let work = (outputStreams :> IOutputStream).WriteTextAsync(s)
+            Async.RunSynchronously(work |> Async.AwaitTask)
 
+        member y.SetTextStyle(style) =
+            screen.SetTextStyleAsync(style).Wait()
 

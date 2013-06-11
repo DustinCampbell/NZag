@@ -929,6 +929,9 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         | "set_attr", Any, Op2(objNum, attrNum) ->
             writeObjectAttribute objNum attrNum true
 
+        | "set_text_style", AtLeast 4, Op1(textStyle) ->
+            SetTextStyleStmt(textStyle) |> addStatement
+
         | "sread", AtMost 3, Op2(textBuffer, parseBuffer) ->
             discard (ReadInputTextExpr(textBuffer, parseBuffer))
 

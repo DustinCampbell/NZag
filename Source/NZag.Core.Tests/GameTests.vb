@@ -45,6 +45,10 @@ Public Module GameTests
             Return Task.Factory.StartNew(Sub() Exit Sub)
         End Function
 
+        Public Function SetTextStyleAsync(style As ZTextStyle) As Task Implements IScreen.SetTextStyleAsync
+            Return Task.Factory.StartNew(Sub() Exit Sub)
+        End Function
+
         Public ReadOnly Property FontHeightInUnits As Byte Implements IScreen.FontHeightInUnits
             Get
                 Return 0
@@ -86,7 +90,6 @@ Public Module GameTests
                 Return _builder.ToString()
             End Get
         End Property
-
     End Class
 
     <Fact()>

@@ -21,7 +21,6 @@ namespace NZag.ViewModels
         private ZWindow mainWindow;
         private ZWindow upperWindow;
 
-        private int currentStatusHeight;
         private int machineStatusHeight;
 
         [ImportingConstructor]
@@ -65,7 +64,6 @@ namespace NZag.ViewModels
             var ch = await this.windowManager.ActiveWindow.ReadCharAsync();
 
             await ResetStatusHeightAsync();
-            this.currentStatusHeight = 0;
 
             return ch;
         }
@@ -86,7 +84,6 @@ namespace NZag.ViewModels
             }
 
             await ResetStatusHeightAsync();
-            this.currentStatusHeight = 0;
 
             return command;
         }
@@ -125,7 +122,6 @@ namespace NZag.ViewModels
                 if (height != 1)
                 {
                     await this.upperWindow.SetHeightAsync(1);
-                    this.currentStatusHeight = 1;
                     this.machineStatusHeight = 1;
                 }
             }
@@ -157,13 +153,13 @@ namespace NZag.ViewModels
             if (this.gameService.Machine.IsScoreGame())
             {
                 int score = (short)this.gameService.Machine.ReadGlobalVariable(1);
-                int moves = (ushort)this.gameService.Machine.ReadGlobalVariable(2);
+                int moves = this.gameService.Machine.ReadGlobalVariable(2);
                 rightText = string.Format("Score: {0,-8} Moves: {1,-6} ", score, moves);
             }
             else
             {
-                int hours = (ushort)this.gameService.Machine.ReadGlobalVariable(1);
-                int minutes = (ushort)this.gameService.Machine.ReadGlobalVariable(2);
+                int hours = this.gameService.Machine.ReadGlobalVariable(1);
+                int minutes = this.gameService.Machine.ReadGlobalVariable(2);
                 var pm = (hours / 12) > 0;
                 if (pm)
                 {
@@ -180,6 +176,33 @@ namespace NZag.ViewModels
                     forceFixedWidthFont: false);
 
                 await this.upperWindow.PutTextAsync(rightText, forceFixedWidthFont: false);
+            }
+        }
+
+        public async Task SetTextStyleAsync(ZTextStyle style)
+        {
+            var window = this.windowManager.ActiveWindow;
+
+            switch (style)
+            {
+                case ZTextStyle.Roman:
+                    await window.SetBoldAsync(false);
+                    await window.SetItalicAsync(false);
+                    await window.SetFixedPitchAsync(false);
+                    await window.SetReverseAsync(false);
+                    break;
+                case ZTextStyle.Bold:
+                    await window.SetBoldAsync(true);
+                    break;
+                case ZTextStyle.Italic:
+                    await window.SetItalicAsync(true);
+                    break;
+                case ZTextStyle.FixedPitch:
+                    await window.SetFixedPitchAsync(true);
+                    break;
+                case ZTextStyle.Reverse:
+                    await window.SetReverseAsync(true);
+                    break;
             }
         }
 
