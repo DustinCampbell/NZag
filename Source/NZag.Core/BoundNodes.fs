@@ -216,6 +216,18 @@ type Statement =
     /// Sets the text style of the active window
     | SetTextStyleStmt of Expression
 
+    /// Sets the active window
+    | SetWindowStmt of Expression
+
+    /// Clears the active window
+    | ClearWindowStmt of Expression
+
+    /// Splits the active window into two
+    | SplitWindowStmt of Expression
+
+    /// Moves the cursor in the active window to the given line and column
+    | SetCursorStmt of Expression * Expression
+
     /// Outputs the text represented by the given expression for debugging
     | DebugOutputStmt of Expression * list<Expression>
 
@@ -410,6 +422,14 @@ module BoundNodeVisitors =
             fstmt (PrintTextStmt(rewriteExpr e))
         | SetTextStyleStmt(e) ->
             fstmt (SetTextStyleStmt(rewriteExpr e))
+        | SetWindowStmt(e) ->
+            fstmt (SetWindowStmt(rewriteExpr e))
+        | ClearWindowStmt(e) ->
+            fstmt (ClearWindowStmt(rewriteExpr e))
+        | SplitWindowStmt(e) ->
+            fstmt (SplitWindowStmt(rewriteExpr e))
+        | SetCursorStmt(e1,e2) ->
+            fstmt (SetCursorStmt(rewriteExpr e1, rewriteExpr e2))
         | DebugOutputStmt(e, elist) ->
             fstmt (DebugOutputStmt(rewriteExpr e, elist |> List.map rewriteExpr))
         | RuntimeExceptionStmt(s) ->
@@ -484,7 +504,10 @@ module BoundNodeVisitors =
             | SetRandomNumberSeedStmt(e)
             | PrintCharStmt(e)
             | PrintTextStmt(e)
-            | SetTextStyleStmt(e) ->
+            | SetTextStyleStmt(e)
+            | SetWindowStmt(e)
+            | ClearWindowStmt(e)
+            | SplitWindowStmt(e) ->
                 visitExpr e
             | BranchStmt(_,e,s) ->
                 visitExpr e
@@ -493,7 +516,8 @@ module BoundNodeVisitors =
             | WriteGlobalStmt(e1,e2)
             | WriteComputedVarStmt(e1,e2)
             | WriteMemoryByteStmt(e1,e2)
-            | WriteMemoryWordStmt(e1,e2) ->
+            | WriteMemoryWordStmt(e1,e2)
+            | SetCursorStmt(e1,e2) ->
                 visitExpr e1
                 visitExpr e2
             | DebugOutputStmt(e, elist) ->
@@ -784,6 +808,24 @@ type BoundNodeDumper (builder : StringBuilder) =
             append "set-text-style"
             parenthesize (fun () ->
                 dumpExpression e)
+        | SetWindowStmt(e) ->
+            append "set-window"
+            parenthesize (fun () ->
+                dumpExpression e)
+        | ClearWindowStmt(e) ->
+            append "clear-window"
+            parenthesize (fun () ->
+                dumpExpression e)
+        | SplitWindowStmt(e) ->
+            append "split-window"
+            parenthesize (fun () ->
+                dumpExpression e)
+        | SetCursorStmt(line,column) ->
+            append "set-cursor"
+            parenthesize (fun () ->
+                dumpExpression line
+                append ", "
+                dumpExpression column)
         | RuntimeExceptionStmt(s) ->
             appendf "RUNTIME EXCEPTION: %s" s
         | DebugOutputStmt(e, args) ->

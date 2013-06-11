@@ -929,8 +929,20 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         | "set_attr", Any, Op2(objNum, attrNum) ->
             writeObjectAttribute objNum attrNum true
 
+        | "set_cursor", Is 6, Op3(line, column, window) ->
+            failcompile "set_cursor not implemented for version 6"
+
+        | "set_cursor", AtLeast 4, Op2(line, column) ->
+            SetCursorStmt(line, column) |> addStatement
+
         | "set_text_style", AtLeast 4, Op1(textStyle) ->
             SetTextStyleStmt(textStyle) |> addStatement
+
+        | "set_window", AtLeast 3, Op1(window) ->
+            SetWindowStmt(window) |> addStatement
+
+        | "split_window", AtLeast 3, Op1(lines) ->
+            SplitWindowStmt(lines) |> addStatement
 
         | "sread", AtMost 3, Op2(textBuffer, parseBuffer) ->
             discard (ReadInputTextExpr(textBuffer, parseBuffer))

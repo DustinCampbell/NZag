@@ -41,7 +41,39 @@ Public Module GameTests
                                          End Sub)
         End Function
 
+        Public Function ClearAsync(window As Integer) As Task Implements IScreen.ClearAsync
+            Return Task.Factory.StartNew(Sub() Exit Sub)
+        End Function
+
+        Public Function ClearAllAsync(unsplit As Boolean) As Task Implements IScreen.ClearAllAsync
+            Return Task.Factory.StartNew(Sub() Exit Sub)
+        End Function
+
+        Public Function SplitAsync(lines As Integer) As Task Implements IScreen.SplitAsync
+            Return Task.Factory.StartNew(Sub() Exit Sub)
+        End Function
+
+        Public Function UnsplitAsync() As Task Implements IScreen.UnsplitAsync
+            Return Task.Factory.StartNew(Sub() Exit Sub)
+        End Function
+
+        Public Function SetWindowAsync(window As Integer) As Task Implements IScreen.SetWindowAsync
+            Return Task.Factory.StartNew(Sub() Exit Sub)
+        End Function
+
         Public Function ShowStatusAsync() As Task Implements IScreen.ShowStatusAsync
+            Return Task.Factory.StartNew(Sub() Exit Sub)
+        End Function
+
+        Public Function GetCursorColumnAsync() As Task(Of Integer) Implements IScreen.GetCursorColumnAsync
+            Return Task.FromResult(0)
+        End Function
+
+        Public Function GetCursorLineAsync() As Task(Of Integer) Implements IScreen.GetCursorLineAsync
+            Return Task.FromResult(0)
+        End Function
+
+        Public Function SetCursorAsync(line As Integer, column As Integer) As Task Implements IScreen.SetCursorAsync
             Return Task.Factory.StartNew(Sub() Exit Sub)
         End Function
 
@@ -90,6 +122,7 @@ Public Module GameTests
                 Return _builder.ToString()
             End Get
         End Property
+
     End Class
 
     <Fact()>

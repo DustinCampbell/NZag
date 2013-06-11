@@ -58,6 +58,12 @@ namespace NZag.Windows
             this.parentWindow = newParentWindow;
         }
 
+        public Task ActivateAsync()
+        {
+            return RunOnUIThread(() =>
+                this.Manager.ActivateWindow(this));
+        }
+
         public virtual Task<bool> SetBoldAsync(bool value)
         {
             return Task.FromResult(false);

@@ -24,7 +24,19 @@ type IScreen =
     inherit IInputStream
     inherit IOutputStream
 
+    abstract member ClearAsync : window:int -> Task
+    abstract member ClearAllAsync : unsplit:bool -> Task
+
+    abstract member SplitAsync : lines:int -> Task
+    abstract member UnsplitAsync : unit -> Task
+
+    abstract member SetWindowAsync : window:int -> Task
+
     abstract member ShowStatusAsync : unit -> Task
+
+    abstract member GetCursorLineAsync : unit -> Task<int>
+    abstract member GetCursorColumnAsync : unit -> Task<int>
+    abstract member SetCursorAsync : line:int * column:int -> Task
 
     abstract SetTextStyleAsync : style:ZTextStyle -> Task
 
@@ -38,6 +50,7 @@ type IScreen =
 module NullInstances =
 
     let private emptyCharTask = async { return char 0 } |> Async.StartAsTask
+    let private emptyIntTask = async { return 0 } |> Async.StartAsTask
     let private emptyStringTask = async { return "" } |> Async.StartAsTask
     let private emptyTask = async { return () } |> Async.StartAsPlainTask
 
@@ -59,7 +72,19 @@ module NullInstances =
             member x.WriteCharAsync _ = emptyTask
             member x.WriteTextAsync _ = emptyTask
 
+            member x.ClearAsync _ = emptyTask
+            member x.ClearAllAsync _ = emptyTask
+
+            member x.SplitAsync _ = emptyTask
+            member x.UnsplitAsync() = emptyTask
+
+            member x.SetWindowAsync _ = emptyTask
+
             member x.ShowStatusAsync() = emptyTask
+
+            member x.GetCursorLineAsync() = emptyIntTask
+            member x.GetCursorColumnAsync() = emptyIntTask
+            member x.SetCursorAsync(line, column) = emptyTask
 
             member x.SetTextStyleAsync _ = emptyTask
 

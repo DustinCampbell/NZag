@@ -21,6 +21,7 @@ namespace NZag.ViewModels
         private ZWindow mainWindow;
         private ZWindow upperWindow;
 
+        private int currentStatusHeight;
         private int machineStatusHeight;
 
         [ImportingConstructor]
@@ -64,6 +65,7 @@ namespace NZag.ViewModels
             var ch = await this.windowManager.ActiveWindow.ReadCharAsync();
 
             await ResetStatusHeightAsync();
+            this.currentStatusHeight = 0;
 
             return ch;
         }
@@ -84,6 +86,7 @@ namespace NZag.ViewModels
             }
 
             await ResetStatusHeightAsync();
+            this.currentStatusHeight = 0;
 
             return command;
         }
@@ -98,6 +101,87 @@ namespace NZag.ViewModels
         {
             var forceFixedWidthFont = this.gameService.Machine.ForceFixedWidthFont();
             return this.windowManager.ActiveWindow.PutTextAsync(value, forceFixedWidthFont);
+        }
+
+        public async Task ClearAsync(int window)
+        {
+            if (window == 0)
+            {
+                await this.mainWindow.ClearAsync();
+            }
+            else if (window == 1 && this.upperWindow != null)
+            {
+                await this.upperWindow.ClearAsync();
+                await ResetStatusHeightAsync();
+                this.currentStatusHeight = 0;
+            }
+        }
+
+        public async Task ClearAllAsync(bool unsplit)
+        {
+            await this.mainWindow.ClearAsync();
+
+            if (this.upperWindow != null)
+            {
+                if (unsplit)
+                {
+                    await this.UnsplitAsync();
+                }
+                else
+                {
+                    await this.upperWindow.ClearAsync();
+                }
+            }
+        }
+
+        public async Task SplitAsync(int lines)
+        {
+            if (this.upperWindow == null)
+            {
+                return;
+            }
+
+            if (lines == 0 || lines > this.currentStatusHeight)
+            {
+                int height = await this.upperWindow.GetHeightAsync();
+                if (lines != height)
+                {
+                    await this.upperWindow.SetHeightAsync(lines);
+                    this.currentStatusHeight = lines;
+                }
+            }
+
+            this.machineStatusHeight = lines;
+
+            if (this.gameService.Machine.Memory.Version == 0)
+            {
+                await this.upperWindow.ClearAsync();
+            }
+        }
+
+        public async Task UnsplitAsync()
+        {
+            if (this.upperWindow == null)
+            {
+                return;
+            }
+
+            await this.upperWindow.SetHeightAsync(0);
+            await this.upperWindow.ClearAsync();
+            await ResetStatusHeightAsync();
+            this.currentStatusHeight = 0;
+        }
+
+        public async Task SetWindowAsync(int window)
+        {
+            if (window == 0)
+            {
+                await this.mainWindow.ActivateAsync();
+            }
+            else if (window == 1)
+            {
+                await this.upperWindow.ActivateAsync();
+            }
         }
 
         public async Task ShowStatusAsync()
@@ -177,6 +261,21 @@ namespace NZag.ViewModels
 
                 await this.upperWindow.PutTextAsync(rightText, forceFixedWidthFont: false);
             }
+        }
+
+        public Task<int> GetCursorColumnAsync()
+        {
+            return this.windowManager.ActiveWindow.GetCursorColumnAsync();
+        }
+
+        public Task<int> GetCursorLineAsync()
+        {
+            return this.windowManager.ActiveWindow.GetCursorLineAsync();
+        }
+
+        public Task SetCursorAsync(int line, int column)
+        {
+            return this.windowManager.ActiveWindow.SetCursorAsync(line, column);
         }
 
         public async Task SetTextStyleAsync(ZTextStyle style)

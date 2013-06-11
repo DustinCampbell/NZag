@@ -224,6 +224,17 @@ type Machine (memory: Memory, debugging: bool) as this =
             let work = (outputStreams :> IOutputStream).WriteTextAsync(s)
             Async.RunSynchronously(work |> Async.AwaitTask)
 
+        member y.SetWindow(window) =
+            screen.SetWindowAsync(window).Wait()
+        member y.SplitWindow(lines) =
+            if lines = 0 then
+                screen.UnsplitAsync().Wait()
+            else
+                screen.SplitAsync(lines).Wait()
+
+        member y.SetCursor(line, column) =
+            screen.SetCursorAsync(line, column).Wait()
+
         member y.SetTextStyle(style) =
             screen.SetTextStyleAsync(style).Wait()
 

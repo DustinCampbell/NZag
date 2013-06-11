@@ -25,6 +25,11 @@ type IMachine =
     abstract member WriteOutputChar : ch:char -> unit
     abstract member WriteOutputText : s:string -> unit
 
+    abstract member SetWindow : window:int -> unit
+    abstract member SplitWindow : lines:int -> unit
+
+    abstract member SetCursor : line:int * column:int -> unit
+
     abstract member SetTextStyle : style:ZTextStyle -> unit
 
 and ZCompileResult =
@@ -153,6 +158,9 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
     let readInputText = typeof<IMachine>.GetMethod("ReadInputText")
     let writeOutputChar = typeof<IMachine>.GetMethod("WriteOutputChar")
     let writeOutputText = typeof<IMachine>.GetMethod("WriteOutputText")
+    let splitWindow = typeof<IMachine>.GetMethod("SplitWindow")
+    let setWindow = typeof<IMachine>.GetMethod("SetWindow")
+    let setCursor = typeof<IMachine>.GetMethod("SetCursor")
     let setTextStyle = typeof<IMachine>.GetMethod("SetTextStyle")
 
     let peekStack() =
@@ -408,6 +416,19 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
             builder.Arguments.LoadMachine()
             emitExpression e
             builder.Call(setTextStyle)
+        | SetWindowStmt(e) ->
+            builder.Arguments.LoadMachine()
+            emitExpression e
+            builder.Call(setWindow)
+        | SplitWindowStmt(e) ->
+            builder.Arguments.LoadMachine()
+            emitExpression e
+            builder.Call(splitWindow)
+        | SetCursorStmt(line, column) ->
+            builder.Arguments.LoadMachine()
+            emitExpression line
+            emitExpression column
+            builder.Call(setCursor)
         | DebugOutputStmt(e, elist) ->
             builder.DebugOutput(
                 (fun () -> emitExpression e),

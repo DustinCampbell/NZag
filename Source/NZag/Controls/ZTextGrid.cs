@@ -13,8 +13,8 @@ namespace NZag.Controls
 
         private readonly Size fontCharSize;
 
-        private int cursorX;
-        private int cursorY;
+        private int cursorLine;
+        private int cursorColumn;
 
         private Typeface typeface;
         private bool bold;
@@ -53,22 +53,22 @@ namespace NZag.Controls
         {
             this.visuals.Clear();
             this.visualPairs.Clear();
-            this.cursorX = 0;
-            this.cursorY = 0;
+            this.cursorColumn = 0;
+            this.cursorLine = 0;
         }
 
         public void PutChar(char ch)
         {
             if (ch == '\n')
             {
-                this.cursorY += 1;
-                this.cursorX = 0;
+                this.cursorLine += 1;
+                this.cursorColumn = 0;
             }
             else
             {
                 // First, see if we've already inserted something at this position.
                 // If so, delete the old visuals.
-                var cursorPos = Tuple.Create(this.cursorX, this.cursorY);
+                var cursorPos = Tuple.Create(this.cursorColumn, this.cursorLine);
                 if (this.visualPairs.ContainsKey(cursorPos))
                 {
                     var visualPair = this.visualPairs[cursorPos];
@@ -80,8 +80,8 @@ namespace NZag.Controls
                 var backgroundVisual = new DrawingVisual();
                 var backgroundContext = backgroundVisual.RenderOpen();
 
-                var x = fontCharSize.Width * cursorX;
-                var y = fontCharSize.Height * cursorY;
+                var x = fontCharSize.Width * cursorColumn;
+                var y = fontCharSize.Height * cursorLine;
 
                 Brush foreground, background;
                 if (this.reverse)
@@ -128,7 +128,7 @@ namespace NZag.Controls
                 var newVisualPair = new VisualPair(backgroundVisual, textVisual);
                 this.visualPairs.Add(cursorPos, newVisualPair);
 
-                this.cursorX += 1;
+                this.cursorColumn += 1;
             }
         }
 
@@ -149,20 +149,20 @@ namespace NZag.Controls
             this.reverse = value;
         }
 
-        public int CursorX
+        public int CursorColumn
         {
-            get { return this.cursorX; }
+            get { return this.cursorColumn; }
         }
 
-        public int CursorY
+        public int CursorLine
         {
-            get { return this.cursorY; }
+            get { return this.cursorLine; }
         }
 
-        public void SetCursor(int x, int y)
+        public void SetCursor(int line, int column)
         {
-            this.cursorX = x;
-            this.cursorY = y;
+            this.cursorLine = line;
+            this.cursorColumn = column;
         }
 
         public void SetHeight(int lines)

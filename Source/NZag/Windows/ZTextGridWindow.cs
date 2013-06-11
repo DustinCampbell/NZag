@@ -91,13 +91,13 @@ namespace NZag.Windows
         public override Task<int> GetCursorColumnAsync()
         {
             return RunOnUIThread(() =>
-                this.textGrid.CursorX);
+                this.textGrid.CursorColumn);
         }
 
         public override Task<int> GetCursorLineAsync()
         {
             return RunOnUIThread(() =>
-                this.textGrid.CursorY);
+                this.textGrid.CursorLine);
         }
 
         public override Task SetCursorAsync(int line, int column)
