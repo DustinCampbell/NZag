@@ -1,6 +1,8 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
+*.script -crlf
+
 *.dll binary
 *.exe binary
 
