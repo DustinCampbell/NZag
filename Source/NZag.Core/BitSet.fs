@@ -3,6 +3,8 @@
 open System
 
 type IBitSet =
+    inherit IEquatable<IBitSet>
+
     abstract member Add : bit:int -> unit
     abstract member Clear : unit -> unit
     abstract member Contains : bit:int -> bool
@@ -50,6 +52,10 @@ module BitSet =
             validateBit bit length
             (value &&& (mask32 bit)) <> zero
 
+        let equals other =
+            validateBitSetLength other length
+            value = (box other :?> IBitSet32).UnderlyingValue
+
         let removeWhere (predicate: Func<int,bool,bool>) =
             for i = 0 to length - 1 do
                 if predicate.Invoke(i, contains i) then
@@ -58,6 +64,9 @@ module BitSet =
         let unionWith other =
             validateBitSetLength other length
             value <- value ||| (box other :?> IBitSet32).UnderlyingValue
+
+        interface IEquatable<IBitSet> with
+            member x.Equals other = equals other
 
         interface IBitSet32 with
             member x.UnderlyingValue = value
@@ -102,6 +111,10 @@ module BitSet =
             validateBit bit length
             (value &&& (mask64 bit)) <> zero
 
+        let equals other =
+            validateBitSetLength other length
+            value = (box other :?> IBitSet64).UnderlyingValue
+
         let removeWhere (predicate: Func<int,bool,bool>) =
             for i = 0 to length - 1 do
                 if predicate.Invoke(i, contains i) then
@@ -110,6 +123,9 @@ module BitSet =
         let unionWith other =
             validateBitSetLength other length
             value <- value ||| (box other :?> IBitSet64).UnderlyingValue
+
+        interface IEquatable<IBitSet> with
+            member x.Equals other = equals other
 
         interface IBitSet64 with
             member x.UnderlyingValue = value
@@ -163,6 +179,11 @@ module BitSet =
             let bit = bit % resolution
             (value.[index] &&& (mask64 bit)) <> zero
 
+        let equals other =
+            validateBitSetLength other length
+            let otherValue = (box other :?> IBitSetN).UnderlyingValue
+            Array.forall2 (fun v1 v2 -> v1 = v2) value otherValue
+
         let removeWhere (predicate: Func<int,bool,bool>) =
             for i = 0 to length - 1 do
                 if predicate.Invoke(i, contains i) then
@@ -173,6 +194,9 @@ module BitSet =
             let otherValue = (box other :?> IBitSetN).UnderlyingValue
             for i = 0 to byteCount - 1 do
                 value.[i] <- value.[i] ||| otherValue.[i]
+
+        interface IEquatable<IBitSet> with
+            member x.Equals other = equals other
 
         interface IBitSetN with
             member x.UnderlyingValue = value

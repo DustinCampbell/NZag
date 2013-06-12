@@ -145,6 +145,39 @@ Public Module BitSetTests
         Next
     End Sub
 
+    Private Sub EqualsTests(bitSet1 As IBitSet, bitSet2 As IBitSet)
+        Dim len = bitSet1.Length
+        Dim mid = len \ 2
+
+        bitSet1.Clear()
+        bitSet2.Clear()
+
+        Assert.True(bitSet1.Equals(bitSet2))
+        Assert.True(bitSet2.Equals(bitSet1))
+
+        For i = 0 To mid - 1
+            bitSet1(i) = True
+        Next
+
+        For i = mid To len - 1
+            bitSet2(i) = True
+        Next
+
+        Assert.False(bitSet1.Equals(bitSet2))
+        Assert.False(bitSet2.Equals(bitSet1))
+
+        bitSet1.Clear()
+        bitSet2.Clear()
+
+        For i = 0 To len - 1
+            bitSet1(i) = True
+            bitSet2(i) = True
+        Next
+
+        Assert.True(bitSet1.Equals(bitSet2))
+        Assert.True(bitSet2.Equals(bitSet1))
+    End Sub
+
     <Fact>
     Sub Test32Bits()
         SimpleTests(CreateBitSet(32))
@@ -188,6 +221,21 @@ Public Module BitSetTests
     <Fact>
     Sub TestRemoveWhere256()
         RemoveWhereTests(CreateBitSet(256))
+    End Sub
+
+    <Fact>
+    Sub TestEquals32()
+        EqualsTests(CreateBitSet(32), CreateBitSet(32))
+    End Sub
+
+    <Fact>
+    Sub TestEquals64()
+        EqualsTests(CreateBitSet(64), CreateBitSet(64))
+    End Sub
+
+    <Fact>
+    Sub TestEquals256()
+        EqualsTests(CreateBitSet(256), CreateBitSet(256))
     End Sub
 
 End Module
