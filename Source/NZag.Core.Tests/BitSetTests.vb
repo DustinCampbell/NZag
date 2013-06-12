@@ -2,6 +2,21 @@
 
 Public Module BitSetTests
 
+    Private Function CreateBitSet(length As Integer) As IBitSet
+        Dim bs = BitSet.Create(length)
+
+        Assert.NotNull(bs)
+        If bs.Length <= 32 Then
+            Assert.Equal("NZag.Utilities.BitSet+BitSet32", bs.GetType().FullName)
+        ElseIf bs.Length <= 64 Then
+            Assert.Equal("NZag.Utilities.BitSet+BitSet64", bs.GetType().FullName)
+        Else
+            Assert.Equal("NZag.Utilities.BitSet+BitSetN", bs.GetType().FullName)
+        End If
+
+        Return bs
+    End Function
+
     Private Sub SimpleTests(bitSet As IBitSet)
         ' Verify that IBitSet is initially cleared
         For i = 0 To bitSet.Length - 1
@@ -69,37 +84,7 @@ Public Module BitSetTests
         Next
     End Sub
 
-    <Fact>
-    Sub Test32Bits()
-        Dim bs = BitSet.Create(32)
-
-        Assert.NotNull(bs)
-        Assert.Equal("NZag.Utilities.BitSet+BitSet32", bs.GetType().FullName)
-
-        SimpleTests(bs)
-    End Sub
-
-    <Fact>
-    Sub Test64Bits()
-        Dim bs = BitSet.Create(64)
-
-        Assert.NotNull(bs)
-        Assert.Equal("NZag.Utilities.BitSet+BitSet64", bs.GetType().FullName)
-
-        SimpleTests(bs)
-    End Sub
-
-    <Fact>
-    Sub Test256Bits()
-        Dim bs = BitSet.Create(256)
-
-        Assert.NotNull(bs)
-        Assert.Equal("NZag.Utilities.BitSet+BitSetN", bs.GetType().FullName)
-
-        SimpleTests(bs)
-    End Sub
-
-    Private Sub OrWithTests(bitSet1 As IBitSet, bitSet2 As IBitSet)
+    Private Sub UnionWithTests(bitSet1 As IBitSet, bitSet2 As IBitSet)
         Dim len = bitSet1.Length
         Dim mid = len \ 2
 
@@ -114,7 +99,7 @@ Public Module BitSetTests
             bitSet2(i) = True
         Next
 
-        bitSet1.OrWith(bitSet2)
+        bitSet1.UnionWith(bitSet2)
 
         For i = 0 To len - 1
             Assert.True(bitSet1.Contains(i))
@@ -132,7 +117,7 @@ Public Module BitSetTests
             bitSet2(i) = True
         Next
 
-        bitSet1.OrWith(bitSet2)
+        bitSet1.UnionWith(bitSet2)
 
         For i = 0 To len - 1 Step 2
             Assert.True(bitSet1.Contains(i))
@@ -142,32 +127,7 @@ Public Module BitSetTests
         Next
     End Sub
 
-    <Fact>
-    Sub TestOrWith32()
-        Dim bs1 = BitSet.Create(32)
-        Dim bs2 = BitSet.Create(32)
-
-        OrWithTests(bs1, bs2)
-    End Sub
-
-    <Fact>
-    Sub TestOrWith64()
-        Dim bs1 = BitSet.Create(64)
-        Dim bs2 = BitSet.Create(64)
-
-        OrWithTests(bs1, bs2)
-    End Sub
-
-    <Fact>
-    Sub TestOrWith256()
-        Dim bs1 = BitSet.Create(256)
-        Dim bs2 = BitSet.Create(256)
-
-        OrWithTests(bs1, bs2)
-    End Sub
-
-    Sub RemoveWhereTests(bitSet As IBitSet)
-
+    Private Sub RemoveWhereTests(bitSet As IBitSet)
         bitSet.Clear()
 
         For i = 0 To bitSet.Length - 1
@@ -186,18 +146,48 @@ Public Module BitSetTests
     End Sub
 
     <Fact>
+    Sub Test32Bits()
+        SimpleTests(CreateBitSet(32))
+    End Sub
+
+    <Fact>
+    Sub Test64Bits()
+        SimpleTests(CreateBitSet(64))
+    End Sub
+
+    <Fact>
+    Sub Test256Bits()
+        SimpleTests(CreateBitSet(256))
+    End Sub
+
+    <Fact>
+    Sub TestUnionWith32()
+        UnionWithTests(CreateBitSet(32), CreateBitSet(32))
+    End Sub
+
+    <Fact>
+    Sub TestUnionWith64()
+        UnionWithTests(CreateBitSet(64), CreateBitSet(64))
+    End Sub
+
+    <Fact>
+    Sub TestUnionWith256()
+        UnionWithTests(CreateBitSet(256), CreateBitSet(256))
+    End Sub
+
+    <Fact>
     Sub TestRemoveWhere32()
-        RemoveWhereTests(BitSet.Create(32))
+        RemoveWhereTests(CreateBitSet(32))
     End Sub
 
     <Fact>
     Sub TestRemoveWhere64()
-        RemoveWhereTests(BitSet.Create(64))
+        RemoveWhereTests(CreateBitSet(64))
     End Sub
 
     <Fact>
     Sub TestRemoveWhere256()
-        RemoveWhereTests(BitSet.Create(256))
+        RemoveWhereTests(CreateBitSet(256))
     End Sub
 
 End Module

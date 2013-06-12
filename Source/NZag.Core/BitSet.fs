@@ -4,16 +4,13 @@ open System
 
 type IBitSet =
     abstract member Add : bit:int -> unit
+    abstract member Clear : unit -> unit
+    abstract member Contains : bit:int -> bool
     abstract member Remove : bit:int -> unit
     abstract member RemoveWhere : predicate:Func<int,bool,bool> -> unit
-    abstract member Clear : unit -> unit
-
-    abstract member Contains : bit:int -> bool
-
-    abstract member OrWith : other:IBitSet -> unit
+    abstract member UnionWith : other:IBitSet -> unit
 
     abstract member Item : index:int -> bool with get, set
-
     abstract member Length : int
 
 module BitSet =
@@ -58,7 +55,7 @@ module BitSet =
                 if predicate.Invoke(i, contains i) then
                     remove i
 
-        let orWith other =
+        let unionWith other =
             validateBitSetLength other length
             value <- value ||| (box other :?> IBitSet32).UnderlyingValue
 
@@ -67,11 +64,11 @@ module BitSet =
 
         interface IBitSet with
             member x.Add bit = add bit
-            member x.Remove bit = remove bit
-            member x.RemoveWhere predicate = removeWhere predicate
             member x.Clear() = clear()
             member x.Contains bit = contains bit
-            member x.OrWith other = orWith other
+            member x.Remove bit = remove bit
+            member x.RemoveWhere predicate = removeWhere predicate
+            member x.UnionWith other = unionWith other
 
             member x.Item
                 with get index = contains index
@@ -110,7 +107,7 @@ module BitSet =
                 if predicate.Invoke(i, contains i) then
                     remove i
 
-        let orWith other =
+        let unionWith other =
             validateBitSetLength other length
             value <- value ||| (box other :?> IBitSet64).UnderlyingValue
 
@@ -119,11 +116,11 @@ module BitSet =
 
         interface IBitSet with
             member x.Add bit = add bit
-            member x.Remove bit = remove bit
-            member x.RemoveWhere predicate = removeWhere predicate
             member x.Clear() = clear()
             member x.Contains bit = contains bit
-            member x.OrWith other = orWith other
+            member x.Remove bit = remove bit
+            member x.RemoveWhere predicate = removeWhere predicate
+            member x.UnionWith other = unionWith other
 
             member x.Item
                 with get index = contains index
@@ -171,7 +168,7 @@ module BitSet =
                 if predicate.Invoke(i, contains i) then
                     remove i
 
-        let orWith other =
+        let unionWith other =
             validateBitSetLength other length
             let otherValue = (box other :?> IBitSetN).UnderlyingValue
             for i = 0 to byteCount - 1 do
@@ -182,11 +179,11 @@ module BitSet =
 
         interface IBitSet with
             member x.Add bit = add bit
-            member x.Remove bit = remove bit
-            member x.RemoveWhere predicate = removeWhere predicate
             member x.Clear() = clear()
             member x.Contains bit = contains bit
-            member x.OrWith other = orWith other
+            member x.Remove bit = remove bit
+            member x.RemoveWhere predicate = removeWhere predicate
+            member x.UnionWith other = unionWith other
 
             member x.Item
                 with get index = contains index
