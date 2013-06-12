@@ -15,13 +15,18 @@ namespace NZag.ViewModels
     {
         private readonly GameService gameService;
         private readonly ScreenViewModel screenViewModel;
+        private readonly ProfilerViewModel profilerViewModel;
 
         [ImportingConstructor]
-        private MainWindowViewModel(GameService gameService, ScreenViewModel screenViewModel)
+        private MainWindowViewModel(
+            GameService gameService,
+            ScreenViewModel screenViewModel,
+            ProfilerViewModel profilerViewModel)
             : base("Views/MainWindowView")
         {
             this.gameService = gameService;
             this.screenViewModel = screenViewModel;
+            this.profilerViewModel = profilerViewModel;
 
             this.gameService.GameOpened += OnGameOpened;
             this.gameService.ScriptLoaded += OnScriptLoaded;
@@ -59,7 +64,7 @@ namespace NZag.ViewModels
         private void OnGameOpened(object sender, EventArgs e)
         {
             this.PropertyChanged("Title");
-            this.gameService.StartGame(this.screenViewModel);
+            this.gameService.StartGame(this.screenViewModel, this.profilerViewModel);
         }
 
         private void OnScriptLoaded(object sender, EventArgs e)

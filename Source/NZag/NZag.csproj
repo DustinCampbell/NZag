@@ -44,6 +44,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Services\GameService.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
+    <Compile Include="ViewModels\ProfilerViewModel.cs" />
     <Compile Include="ViewModels\ScreenViewModel.cs" />
     <Compile Include="Windows\ZBlankWindow.cs" />
     <Compile Include="Windows\ZPairWindow.cs" />

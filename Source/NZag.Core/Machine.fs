@@ -4,6 +4,9 @@ open System
 open NZag.Reflection
 open NZag.Utilities
 
+type IProfiler =
+    abstract member RoutineCompiled : routine:Routine * compileTime:TimeSpan -> unit
+
 type Machine (memory: Memory, debugging: bool) as this =
 
     let mainRoutineAddress = memory |> Header.readMainRoutineAddress
@@ -41,8 +44,15 @@ type Machine (memory: Memory, debugging: bool) as this =
         memory.WriteByte(0x32, 1uy) // standard revision major version
         memory.WriteByte(0x33, 0uy) // standard revision minor version
 
+    let mutable profiler = None
+
+    let registerProfiler (p: IProfiler) =
+        profiler <- Some(p)
+
     let compile =
         let compileAux (routine: Routine) =
+            let watch = System.Diagnostics.Stopwatch.StartNew()
+
             let dynamicMethod =
                 new System.Reflection.Emit.DynamicMethod(
                     name = sprintf "%4x_%d_locals" routine.Address.IntValue routine.Locals.Length,
@@ -59,9 +69,21 @@ type Machine (memory: Memory, debugging: bool) as this =
 
             let zfunc = dynamicMethod.CreateDelegate(typeof<ZFunc>, this) :?> ZFunc
 
-            { Routine = routine
-              ZFunc = zfunc
-              CallSites = callSites.ToArray() }
+            watch.Stop()
+            let compileTime = watch.Elapsed
+
+            let result = {
+                Routine = routine
+                ZFunc = zfunc
+                CallSites = callSites.ToArray()
+                CompileTime = compileTime
+            }
+
+            match profiler with
+            | Some(p) -> p.RoutineCompiled(routine, compileTime)
+            | None -> ()
+
+            result
 
         memoize compileAux
 
@@ -86,6 +108,9 @@ type Machine (memory: Memory, debugging: bool) as this =
 
     member x.Randomize seed =
         (x :> IMachine).Randomize(seed)
+
+    member x.RegisterProfiler profiler =
+        registerProfiler profiler
 
     member x.RegisterScreen newScreen =
         screen <- newScreen

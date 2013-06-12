@@ -72,8 +72,13 @@ namespace NZag.Services
             OnGameOpened();
         }
 
-        public void StartGame(IScreen screen)
+        public void StartGame(IScreen screen, IProfiler profiler = null)
         {
+            if (profiler != null)
+            {
+                this.machine.RegisterProfiler(profiler);
+            }
+
             this.machine.RegisterScreen(screen);
             this.machine.Randomize(42);
             this.machine.RunAsync();

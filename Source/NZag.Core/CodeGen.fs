@@ -1,5 +1,6 @@
 ﻿namespace NZag.Core
 
+open System
 open NZag.Reflection
 open NZag.Utilities
 
@@ -35,7 +36,8 @@ type IMachine =
 and ZCompileResult =
   { Routine : Routine
     ZFunc : ZFunc
-    CallSites : ZFuncCallSite[] }
+    CallSites : ZFuncCallSite[]
+    CompileTime : TimeSpan }
 
 and ZFunc = delegate of memory:Memory
                       * locals:uint16[]
