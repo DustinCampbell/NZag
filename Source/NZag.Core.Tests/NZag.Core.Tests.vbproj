@@ -44,6 +44,7 @@
     <Compile Include="BinderTests_Zork1.vb" />
     <Compile Include="BinderTests_CZech.vb" />
     <Compile Include="BinderTests_Advent.vb" />
+    <Compile Include="BitSetTests.vb" />
     <Compile Include="GameTests.vb" />
     <Compile Include="Helpers.vb" />
     <Compile Include="InstructionTests.vb" />
