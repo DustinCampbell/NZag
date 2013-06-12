@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.20610.1 PREVIEW
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NZag.Core", "Source\NZag.Core\NZag.Core.fsproj", "{12CDD537-31E7-461D-9AB7-E13A02EC6BF3}"
 EndProject
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "NZag.Core.Tests", "Source\NZag.Core.Tests\NZag.Core.Tests.vbproj", "{3034FEFD-C014-42D6-BF34-B3C265EFD4A7}"
