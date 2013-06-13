@@ -9,11 +9,14 @@ type IBitSet =
     abstract member Clear : unit -> unit
     abstract member Contains : bit:int -> bool
     abstract member Remove : bit:int -> unit
-    abstract member RemoveWhere : predicate:Func<int,bool,bool> -> unit
+    abstract member RemoveWhere : predicate:Func<int,bool> -> unit
     abstract member UnionWith : other:IBitSet -> unit
 
     abstract member Item : index:int -> bool with get, set
     abstract member Length : int
+
+    abstract member AllSet : seq<int>
+    abstract member Clone : unit -> IBitSet
 
 module BitSet =
 
@@ -56,9 +59,9 @@ module BitSet =
             validateBitSetLength other length
             value = (box other :?> IBitSet32).UnderlyingValue
 
-        let removeWhere (predicate: Func<int,bool,bool>) =
+        let removeWhere (predicate: Func<int,bool>) =
             for i = 0 to length - 1 do
-                if predicate.Invoke(i, contains i) then
+                if contains i && predicate.Invoke(i) then
                     remove i
 
         let unionWith other =
@@ -86,6 +89,18 @@ module BitSet =
                     else remove index
 
             member x.Length = length
+
+            member x.AllSet =
+                seq {
+                    for i = 0 to length - 1 do
+                        if contains i then
+                            yield i
+                }
+
+            member x.Clone() =
+                let res = new BitSet32(length) :> IBitSet
+                res.UnionWith(x)
+                res
 
     type private IBitSet64 =
         abstract member UnderlyingValue : uint64
@@ -115,9 +130,9 @@ module BitSet =
             validateBitSetLength other length
             value = (box other :?> IBitSet64).UnderlyingValue
 
-        let removeWhere (predicate: Func<int,bool,bool>) =
+        let removeWhere (predicate: Func<int,bool>) =
             for i = 0 to length - 1 do
-                if predicate.Invoke(i, contains i) then
+                if contains i && predicate.Invoke(i) then
                     remove i
 
         let unionWith other =
@@ -146,6 +161,18 @@ module BitSet =
 
             member x.Length = length
 
+            member x.AllSet =
+                seq {
+                    for i = 0 to length - 1 do
+                        if contains i then
+                            yield i
+                }
+
+            member x.Clone() =
+                let res = new BitSet64(length) :> IBitSet
+                res.UnionWith(x)
+                res
+
     type private IBitSetN =
         abstract member UnderlyingValue : uint64[]
 
@@ -155,7 +182,10 @@ module BitSet =
         [<Literal>]
         let resolution = 64
 
-        let byteCount = length / resolution
+        let byteCount =
+            let res = length / resolution
+            if length % resolution > 0 then res + 1 else res
+
         let value = Array.zeroCreate byteCount
 
         let add bit =
@@ -184,9 +214,9 @@ module BitSet =
             let otherValue = (box other :?> IBitSetN).UnderlyingValue
             Array.forall2 (fun v1 v2 -> v1 = v2) value otherValue
 
-        let removeWhere (predicate: Func<int,bool,bool>) =
+        let removeWhere (predicate: Func<int,bool>) =
             for i = 0 to length - 1 do
-                if predicate.Invoke(i, contains i) then
+                if contains i && predicate.Invoke(i) then
                     remove i
 
         let unionWith other =
@@ -217,9 +247,21 @@ module BitSet =
 
             member x.Length = length
 
+            member x.AllSet =
+                seq {
+                    for i = 0 to length - 1 do
+                        if contains i then
+                            yield i
+                }
+
+            member x.Clone() =
+                let res = new BitSetN(length) :> IBitSet
+                res.UnionWith(x)
+                res
+
     [<CompiledName("Create")>]
     let create length =
-        if length <= 0 then argOutOfRange "length" "length must be greater than zero."
+        if length < 0 then argOutOfRange "length" "length must be greater than or equal to zero."
 
         if length <= 32 then
             new BitSet32(length) :> IBitSet

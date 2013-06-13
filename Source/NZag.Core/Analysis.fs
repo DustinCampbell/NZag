@@ -177,34 +177,76 @@ module Graphs =
         override x.ToString() =
             sprintf "Definition = %d; Temp = %d" x.ID x.Temp
 
-    type StatementFlowInfo =
-      { Statement : Statement
-        InDefinitions : int[] }
-
-    type StatementFlowInfoBuilder(statement: Statement) =
-
-        let mutable ins = [||]
-
-        member x.GetIns() = ins
-
-        member x.SetIns newIns =
-            ins <- newIns
-
-        member x.GetStatementFlowInfo() =
-          { Statement = statement
-            InDefinitions = ins }
-
-    type DataFlowBlockInfo(definitionIds: int[], statements: StatementFlowInfo[], inDefinitions: int[], outDefinitions: int[]) =
+    type DataFlowBlockInfo(definitionIds: int[], statements: Statement[], ins: IBitSet, outs: IBitSet) =
 
         member x.DefinitionIds = definitionIds
         member x.Statements = statements
-        member x.InDefinitions = inDefinitions
-        member x.OutDefinitions = outDefinitions
+        member x.Ins = ins
+        member x.Outs = outs
 
     type DataFlowAnalysis =
       { Definitions : Definition[]
         DefinitionsByTemp : int[][]
         Graph : Graph<DataFlowBlockInfo> }
+
+    [<CompiledNameAttribute("ComputeIns")>]
+    let computeIns(dataFlowAnalysis: DataFlowAnalysis, block: Block<DataFlowBlockInfo>, statement: Statement) =
+        let blockId = block.ID
+        let blockDefinitionIds = block.Data.DefinitionIds
+        let blockStatements = block.Data.Statements
+        let ins = block.Data.Ins
+
+        let definitions = dataFlowAnalysis.Definitions
+        let outs = BitSet.create definitions.Length
+        outs.UnionWith(ins)
+
+        let mutable stop = false
+        let mutable index = 0
+
+        while not stop do
+            if statement = blockStatements.[index] then
+                stop <- true
+            else
+                let definitionId = blockDefinitionIds.[index]
+                if definitionId >= 0 then
+                    let definition = definitions.[definitionId]
+
+                    outs.RemoveWhere(fun defId -> definitions.[defId].Temp = definition.Temp)
+                    outs.Add(definitionId)
+
+                index <- index + 1
+                if index = blockDefinitionIds.Length then
+                    stop <- true
+
+        outs
+
+    [<CompiledNameAttribute("ComputeOuts")>]
+    let computeOuts(dataFlowAnalysis: DataFlowAnalysis, block: Block<DataFlowBlockInfo>, statement: Statement) =
+        let blockId = block.ID
+        let blockDefinitionIds = block.Data.DefinitionIds
+        let blockStatements = block.Data.Statements
+        let ins = block.Data.Ins
+
+        let definitions = dataFlowAnalysis.Definitions
+        let outs = BitSet.create definitions.Length
+        outs.UnionWith(ins)
+
+        let mutable stop = false
+        let mutable index = 0
+
+        while not stop do
+            let definitionId = blockDefinitionIds.[index]
+            if definitionId >= 0 then
+                let definition = definitions.[definitionId]
+
+                outs.RemoveWhere(fun defId -> definitions.[defId].Temp = definition.Temp)
+                outs.Add(definitionId)
+
+            index <- index + 1
+            if index = blockDefinitionIds.Length || statement = blockStatements.[index] then
+                stop <- true
+
+        outs
 
     [<CompiledNameAttribute("AnalyzeDataFlow")>]
     let analyzeDataFlow (graph : Graph<ControlFlowData>) =
@@ -218,7 +260,6 @@ module Graphs =
         let definitionsByBlock = new ResizeArray<_>(blockCount)
         let insByBlock = new ResizeArray<_>(blockCount)
         let outsByBlock = new ResizeArray<_>(blockCount)
-        let statementInfosByBlock = new ResizeArray<_>(blockCount)
 
         // Because our block arrays contains the entry and exit blocks,
         // we need to translate the block id to get the right index.
@@ -250,9 +291,6 @@ module Graphs =
 
         let setOutsByBlock id outs =
             outsByBlock |> setDataByBlock id outs
-
-        let getStatementInfosByBlock id =
-            statementInfosByBlock |> getDataByBlock id
 
         // First, collect all of the definitions
         do
@@ -300,6 +338,7 @@ module Graphs =
                         blockDefinitions.Add(-1)
 
         let definitionCount = definitions.Count
+        let createBitSet() = BitSet.create definitionCount
 
         do
             // Note: The use of -3 below may seem arbitrary but it's the first
@@ -317,61 +356,45 @@ module Graphs =
 
                 if lastBlockIdSeen <> -3 && blockId <> Entry then
                     for i = lastBlockIdSeen + 1 to blockId - 1 do
-                        insByBlock.Add(HashSet.create())
-                        outsByBlock.Add(HashSet.create())
-                        statementInfosByBlock.Add(ResizeArray.create())
+                        insByBlock.Add(createBitSet())
+                        outsByBlock.Add(createBitSet())
 
                 lastBlockIdSeen <- blockId
 
                 let statements = block.Data.Statements
                 let count = statements.Length
 
-                insByBlock.Add(HashSet.create())
-                outsByBlock.Add(HashSet.create())
+                insByBlock.Add(createBitSet())
+                outsByBlock.Add(createBitSet())
 
-                let blockStatementInfos = new ResizeArray<_>(count)
-                statementInfosByBlock.Add(blockStatementInfos)
+        let computeBlockIns (block: Block<ControlFlowData>) =
+            let ins = createBitSet()
 
-                for i = 0 to count - 1 do
-                    let statement = statements.[i]
+            for predecessorId in block.Predecessors do
+                let outs = getOutsByBlock predecessorId
+                ins.UnionWith(outs)
 
-                    blockStatementInfos.Add(new StatementFlowInfoBuilder(statement))
+            ins
 
-        let computeIns (block: Block<ControlFlowData>) =
-            let res = HashSet.create()
-
-            block.Predecessors
-            |> Array.iter (fun p ->
-                let outs = getOutsByBlock p
-                res |> HashSet.unionWith outs)
-
-            res
-
-        let computeOuts (block : Block<ControlFlowData>) =
+        let computeBlockOuts (block : Block<ControlFlowData>) =
             let blockId = block.ID
             let blockDefinitions = getDefinitionsByBlock blockId
 
-            let ins = computeIns block
+            let ins = computeBlockIns block
             setInsByBlock blockId ins
 
-            let currentOuts = HashSet.createFrom ins
-
-            let blockStatementInfos = getStatementInfosByBlock blockId
+            let outs = createBitSet()
+            outs.UnionWith(ins)
 
             for i = 0 to blockDefinitions.Count - 1 do
-                let currentIns = currentOuts |> HashSet.toArray
-
                 let definitionId = blockDefinitions.[i]
                 if definitionId >= 0 then
                     let definition = definitions.[definitionId]
 
-                    currentOuts |> HashSet.removeWhere (fun d -> definitions.[d].Temp = definition.Temp)
-                    currentOuts |> HashSet.add definitionId
+                    outs.RemoveWhere(fun defId -> definitions.[defId].Temp = definition.Temp)
+                    outs.Add(definitionId)
 
-                let statementInfoBuilder = blockStatementInfos.[i]
-                statementInfoBuilder.SetIns(currentIns)
-
-            currentOuts
+            outs
 
         let stop = ref false
         while not (!stop) do
@@ -380,47 +403,55 @@ module Graphs =
             graph.Blocks
             |> Seq.skip 1
             |> Seq.iter (fun b ->
-                let currentOuts = getOutsByBlock b.ID
-                let newOuts = computeOuts b
-                if not (currentOuts |> HashSet.equals newOuts) then
+                let outs = getOutsByBlock b.ID
+                let newOuts = computeBlockOuts b
+                if not (outs.Equals(newOuts)) then
                     setOutsByBlock b.ID newOuts
                     stop := false)
 
         // Everything's computed. Now we can go ahead and locate usages for each definition
         for i = 0 to blockCount - 1 do
             let block = graph.Blocks.[i]
-            let statements = block.Data.Statements
-            let statementCount = statements.Length
-            let blockStatementInfos = getStatementInfosByBlock block.ID
+            let blockId = block.ID
+            let blockDefinitionIds = getDefinitionsByBlock blockId
+            let blockStatements = block.Data.Statements
+            let statementCount = blockStatements.Length
+
+            let ins = (getInsByBlock blockId).Clone()
 
             for j = 0 to statementCount - 1 do
-                let statement = statements.[j]
-                statement |> walkStatement
+
+                blockStatements.[j] |> walkStatement
                     (fun s -> ())
                     (fun e ->
                         match e with
                         | TempExpr(temp) ->
-                            let statementInfo = blockStatementInfos.[j]
-                            let inDefIds = statementInfo.GetIns()
-                            for inDefId in inDefIds do
-                                let def = definitions.[inDefId]
+                            for i in ins.AllSet do
+                                let def = definitions.[i]
                                 if def.Temp = temp then
                                     def.AddUsage()
 
                         | e -> ())
+
+                let definitionId = blockDefinitionIds.[j]
+                if definitionId >= 0 then
+                    let definition = definitions.[definitionId]
+
+                    ins.RemoveWhere(fun defId -> definitions.[defId].Temp = definition.Temp)
+                    ins.Add(definitionId)
 
         let blocks =
             graph.Blocks
             |> Array.map (fun b ->
 
                 let definitionIds = getDefinitionsByBlock b.ID |> ResizeArray.toArray
-                let statements = getStatementInfosByBlock b.ID |> ResizeArray.toArray |> Array.map (fun builder -> builder.GetStatementFlowInfo())
-                let inDefinitions = getInsByBlock b.ID |> HashSet.toArray
-                let outDefinitions = getOutsByBlock b.ID |> HashSet.toArray
+                let statements = b.Data.Statements
+                let ins = getInsByBlock b.ID
+                let outs = getOutsByBlock b.ID
 
                 {
                     ID = b.ID
-                    Data = new DataFlowBlockInfo(definitionIds, statements, inDefinitions, outDefinitions)
+                    Data = new DataFlowBlockInfo(definitionIds, statements, ins, outs)
                     Predecessors = b.Predecessors
                     Successors = b.Successors
                 }
@@ -434,5 +465,3 @@ module Graphs =
           Graph =
             { Tree = graph.Tree;
               Blocks = blocks } }
-
-

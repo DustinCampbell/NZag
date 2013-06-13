@@ -1,6 +1,6 @@
 ﻿Imports ControlFlowGraph = NZag.Core.Graphs.Graph(Of NZag.Core.Graphs.ControlFlowData)
 Imports ControlFlowBlock = NZag.Core.Graphs.Block(Of NZag.Core.Graphs.ControlFlowData)
-Imports DataFlowsBlock = NZag.Core.Graphs.Block(Of NZag.Core.Graphs.DataFlowBlockInfo)
+Imports DataFlowBlock = NZag.Core.Graphs.Block(Of NZag.Core.Graphs.DataFlowBlockInfo)
 Imports DataFlowAnalysis = NZag.Core.Graphs.DataFlowAnalysis
 
 Public Module AnalysisTests
@@ -20,31 +20,31 @@ Public Module AnalysisTests
                                  NoOutDefs),
                 DefinitionsBlock(0,
                                  NoInDefs,
-                                 Outs(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)),
+                                 Outs(0, 1, 2, 3)),
                 DefinitionsBlock(1,
-                                 Ins(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 12, 13, 14, 14, 14, 15, 16),
-                                 Outs(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 12, 13, 14, 14, 14, 15, 16)),
+                                 Ins(0, 1, 2, 3, 3, 4, 5, 6, 6, 6),
+                                 Outs(0, 1, 2, 3, 3, 4, 5, 6, 6, 6)),
                 DefinitionsBlock(2,
-                                 Ins(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 12, 13, 14, 14, 14, 15, 16),
-                                 Outs(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 12, 13, 14, 15, 16)),
+                                 Ins(0, 1, 2, 3, 3, 4, 5, 6, 6, 6),
+                                 Outs(0, 1, 2, 3, 3, 4, 5, 6)),
                 DefinitionsBlock(3,
-                                 Ins(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 12, 13, 14, 14, 14, 15, 16),
-                                 Outs(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 12, 13, 14, 14, 14, 15, 16)),
+                                 Ins(0, 1, 2, 3, 3, 4, 5, 6, 6, 6),
+                                 Outs(0, 1, 2, 3, 3, 4, 5, 6, 6, 6)),
                 DefinitionsBlock(4,
-                                 Ins(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 12, 13, 14, 14, 14, 15, 16),
-                                 Outs(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 12, 13, 14, 15, 16)),
+                                 Ins(0, 1, 2, 3, 3, 4, 5, 6, 6, 6),
+                                 Outs(0, 1, 2, 3, 3, 4, 5, 6)),
                 DefinitionsBlock(5,
-                                 Ins(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 12, 13, 14, 14, 14, 15, 16),
-                                 Outs(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 12, 13, 14, 15, 16)),
+                                 Ins(0, 1, 2, 3, 3, 4, 5, 6, 6, 6),
+                                 Outs(0, 1, 2, 3, 3, 4, 5, 6)),
                 DefinitionsBlock(6,
-                                 Ins(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 12, 13, 14, 14, 14, 15, 16),
-                                 Outs(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 14, 14, 15, 16)),
+                                 Ins(0, 1, 2, 3, 3, 4, 5, 6, 6, 6),
+                                 Outs(0, 1, 2, 3, 4, 5, 6, 6, 6)),
                 DefinitionsBlock(7,
-                                 Ins(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 12, 13, 14, 14, 14, 15, 16),
-                                 Outs(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 12, 13, 14, 14, 14, 15, 16, 17, 18, 19, 20, 21)),
+                                 Ins(0, 1, 2, 3, 3, 4, 5, 6, 6, 6),
+                                 Outs(0, 1, 2, 3, 3, 4, 5, 6, 6, 6, 7, 8, 9, 10)),
                 DefinitionsBlock(Graphs.Exit,
-                                 Ins(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 12, 13, 14, 14, 14, 15, 16, 17, 18, 19, 20, 21),
-                                 Outs(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 12, 13, 14, 14, 14, 15, 16, 17, 18, 19, 20, 21)))
+                                 Ins(0, 1, 2, 3, 3, 4, 5, 6, 6, 6, 7, 8, 9, 10),
+                                 Outs(0, 1, 2, 3, 3, 4, 5, 6, 6, 6, 7, 8, 9, 10)))
 
         Test(CZech, &H1AC8, expected)
     End Sub
@@ -198,7 +198,7 @@ Public Module AnalysisTests
             Assert.Equal(0, b.Successors.Length)
         End Sub
 
-    Private Function DefinitionsGraph(ParamArray actions() As Action(Of DataFlowAnalysis, DataFlowsBlock)) As Action(Of DataFlowAnalysis)
+    Private Function DefinitionsGraph(ParamArray actions() As Action(Of DataFlowAnalysis, DataFlowBlock)) As Action(Of DataFlowAnalysis)
         Return Sub(dfa)
                    Assert.Equal(actions.Length, dfa.Graph.Blocks.Length)
 
@@ -208,7 +208,7 @@ Public Module AnalysisTests
                End Sub
     End Function
 
-    Private Function DefinitionsBlock(id As Integer, ParamArray actions() As Action(Of DataFlowAnalysis, DataFlowsBlock)) As Action(Of DataFlowAnalysis, DataFlowsBlock)
+    Private Function DefinitionsBlock(id As Integer, ParamArray actions() As Action(Of DataFlowAnalysis, DataFlowBlock)) As Action(Of DataFlowAnalysis, DataFlowBlock)
         Return Sub(dfa, b)
                    Assert.Equal(id, b.ID)
 
@@ -218,11 +218,11 @@ Public Module AnalysisTests
                End Sub
     End Function
 
-    Private Function Ins(ParamArray ids() As Integer) As Action(Of DataFlowAnalysis, DataFlowsBlock)
+    Private Function Ins(ParamArray ids() As Integer) As Action(Of DataFlowAnalysis, DataFlowBlock)
         Return Sub(dfa, b)
-                   Dim orderedIns = b.Data.InDefinitions _
-                        .Select(Function(d) dfa.Definitions(d)) _
-                        .OrderBy(Function(d) d.Temp).ToArray()
+                   Dim orderedIns = b.Data.Ins.AllSet _
+                       .Select(Function(d) dfa.Definitions(d)) _
+                       .OrderBy(Function(d) d.Temp).ToArray()
 
                    Assert.Equal(ids.Length, orderedIns.Length)
 
@@ -232,16 +232,16 @@ Public Module AnalysisTests
                End Sub
     End Function
 
-    Private ReadOnly NoInDefs As Action(Of DataFlowAnalysis, DataFlowsBlock) =
+    Private ReadOnly NoInDefs As Action(Of DataFlowAnalysis, DataFlowBlock) =
         Sub(dfa, b)
-            Assert.Equal(0, b.Data.InDefinitions.Count)
+            Assert.Equal(0, b.Data.Ins.AllSet.Count())
         End Sub
 
-    Private Function Outs(ParamArray ids() As Integer) As Action(Of DataFlowAnalysis, DataFlowsBlock)
+    Private Function Outs(ParamArray ids() As Integer) As Action(Of DataFlowAnalysis, DataFlowBlock)
         Return Sub(dfa, b)
-                   Dim orderedOuts = b.Data.OutDefinitions _
-                        .Select(Function(d) dfa.Definitions(d)) _
-                        .OrderBy(Function(d) d.Temp).ToArray()
+                   Dim orderedOuts = b.Data.Outs.AllSet _
+                       .Select(Function(d) dfa.Definitions(d)) _
+                       .OrderBy(Function(d) d.Temp).ToArray()
 
                    Assert.Equal(ids.Length, orderedOuts.Length)
 
@@ -251,9 +251,9 @@ Public Module AnalysisTests
                End Sub
     End Function
 
-    Private ReadOnly NoOutDefs As Action(Of DataFlowAnalysis, DataFlowsBlock) =
+    Private ReadOnly NoOutDefs As Action(Of DataFlowAnalysis, DataFlowBlock) =
         Sub(rd, b)
-            Assert.Equal(0, b.Data.OutDefinitions.Count)
+            Assert.Equal(0, b.Data.Outs.AllSet.Count())
         End Sub
 
     Private Sub Test(gameName As String, address As Integer, expected As Action(Of ControlFlowGraph))

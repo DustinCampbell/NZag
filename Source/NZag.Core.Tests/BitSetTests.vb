@@ -134,7 +134,7 @@ Public Module BitSetTests
             bitSet(i) = True
         Next
 
-        bitSet.RemoveWhere(Function(i, v) i Mod 2 = 0)
+        bitSet.RemoveWhere(Function(i) i Mod 2 = 0)
 
         For i = 0 To bitSet.Length - 1
             If i Mod 2 = 0 Then

@@ -1,5 +1,7 @@
 ﻿namespace NZag.Core
 
+open NZag.Utilities
+
 module Graphs =
 
     val Entry : int
@@ -35,23 +37,25 @@ module Graphs =
         member Value : Expression
         member UsageCount : int
 
-    type StatementFlowInfo =
-      { Statement : Statement
-        InDefinitions : int[] }
-
     type DataFlowBlockInfo =
 
-        new : int[] * StatementFlowInfo[] * int[] * int[] -> DataFlowBlockInfo
+        new : int[] * Statement[] * IBitSet * IBitSet -> DataFlowBlockInfo
 
         member DefinitionIds : int[]
-        member Statements : StatementFlowInfo[]
-        member InDefinitions : int[]
-        member OutDefinitions : int[]
+        member Statements : Statement[]
+        member Ins : IBitSet
+        member Outs : IBitSet
 
     type DataFlowAnalysis =
       { Definitions : Definition[]
         DefinitionsByTemp : int[][]
         Graph : Graph<DataFlowBlockInfo> }
+
+    [<CompiledNameAttribute("ComputeIns")>]
+    val computeIns : dataFlowAnalysis:DataFlowAnalysis * block:Block<DataFlowBlockInfo> * statement:Statement -> IBitSet
+
+    [<CompiledNameAttribute("ComputeOuts")>]
+    val computeOuts : dataFlowAnalysis:DataFlowAnalysis * block:Block<DataFlowBlockInfo> * statement:Statement -> IBitSet
 
     [<CompiledNameAttribute("AnalyzeDataFlow")>]
     val analyzeDataFlow : graph:Graph<ControlFlowData> -> DataFlowAnalysis
