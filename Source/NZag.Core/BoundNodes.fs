@@ -539,6 +539,171 @@ module BoundNodeVisitors =
         let walkStmt = walkStatement fstmt fexpr
         tree.Statements |> List.iter walkStmt
 
+[<AbstractClass>]
+type BoundTreeBuilder() =
+
+    member x.AssignTemp temp value =
+        let write = WriteTempStmt(temp, value)
+        x.AddStatement(write)
+
+    member x.InitTemp value =
+        let temp = x.NewTemp()
+        x.AssignTemp temp value
+        TempExpr(temp)
+
+    member x.InitMutableTemp value =
+        let temp = x.NewTemp()
+        x.AssignTemp temp value
+
+        let read = TempExpr(temp)
+        let write v = WriteTempStmt(temp, v) |> x.AddStatement
+
+        read, write
+
+    member x.MarkLabel label =
+        let label = LabelStmt(label)
+        x.AddStatement(label)
+
+    member x.JumpTo label =
+        let jump = JumpStmt(label)
+        x.AddStatement(jump)
+
+    member x.BranchIf condition expression label =
+        let jump = JumpStmt(label)
+        let branch = BranchStmt(condition, expression, jump)
+        x.AddStatement(branch)
+
+    member x.BranchIfFalse expression label =
+        label |> x.BranchIf false expression
+
+    member x.BranchIfTrue expression label =
+        label |> x.BranchIf true expression
+
+    member x.Return expression =
+        let ret = ReturnStmt(expression)
+        x.AddStatement(ret)
+
+    member x.IfThen condition whenTrue =
+        let whenTrueLabel = x.NewLabel()
+        let doneLabel = x.NewLabel()
+
+        doneLabel |> x.BranchIfFalse condition
+
+        x.MarkLabel(whenTrueLabel)
+        whenTrue()
+
+        x.MarkLabel(doneLabel)
+
+    member x.IfThenElse condition whenTrue whenFalse =
+        let whenTrueLabel = x.NewLabel()
+        let whenFalseLabel = x.NewLabel()
+        let doneLabel = x.NewLabel()
+
+        whenFalseLabel |> x.BranchIfFalse condition
+
+        x.MarkLabel(whenTrueLabel)
+        whenTrue()
+        x.JumpTo(doneLabel)
+
+        x.MarkLabel(whenFalseLabel)
+        whenFalse()
+
+        x.MarkLabel(doneLabel)
+
+    member x.LoopWhile condition whileFalse =
+        let startLabel = x.NewLabel()
+
+        x.MarkLabel(startLabel)
+        whileFalse()
+
+        startLabel |> x.BranchIfTrue condition
+
+    abstract member AddStatement : statement:Statement -> unit
+    abstract member NewTemp : unit -> int
+    abstract member NewLabel : unit -> int
+
+    abstract member Statements : List<Statement>
+    abstract member TempCount : int
+    abstract member LabelCount : int
+
+    abstract member GetTree : unit -> BoundTree
+
+type BoundTreeCreator(routine: Routine) =
+    inherit BoundTreeBuilder()
+
+    let statements = ResizeArray.create()
+    let mutable tempCount = 0
+    let mutable labelCount = 0
+
+    let newLabel() =
+        let newLabel = labelCount
+        labelCount <- labelCount + 1
+        newLabel
+
+    let newTemp() =
+        let newTemp = tempCount
+        tempCount <- tempCount + 1
+        newTemp
+
+    let jumpTargetMap =
+        let d = Dictionary.create()
+        for a in routine.JumpTargets do
+            d.Add(a, newLabel())
+        d
+
+    member x.IsJumpTarget address =
+        jumpTargetMap.ContainsKey(address)
+
+    member x.GetJumpTargetLabel address =
+        jumpTargetMap.[address]
+
+    override x.AddStatement(statement: Statement) =
+        statements.Add(statement)
+
+    override x.NewTemp() =
+        newTemp()
+
+    override x.NewLabel() =
+        newLabel()
+
+    override x.Statements = statements |> List.ofSeq
+    override x.TempCount = tempCount
+    override x.LabelCount = labelCount
+
+    override x.GetTree() =
+        { Statements = statements |> Seq.toList; TempCount = tempCount; LabelCount = labelCount; Routine = routine }
+
+type BoundTreeUpdater(tree : BoundTree) =
+    inherit BoundTreeBuilder()
+
+    let mutable statements = ResizeArray.create()
+    let mutable tempCount = tree.TempCount
+    let mutable labelCount = tree.LabelCount
+
+    override x.AddStatement(statement: Statement) =
+        statements.Add(statement)
+
+    override x.NewTemp() =
+        let newTemp = tempCount
+        tempCount <- tempCount + 1
+        newTemp
+
+    override x.NewLabel() =
+        let newLabel = labelCount
+        labelCount <- labelCount + 1
+        newLabel
+
+    override x.Statements = statements |> List.ofSeq
+    override x.TempCount = tempCount
+    override x.LabelCount = labelCount
+
+    member x.Update f =
+        for s in tree.Statements do
+            f s x
+
+    override x.GetTree() =
+        { Statements = statements |> Seq.toList; TempCount = tempCount; LabelCount = labelCount; Routine = tree.Routine }
+
 type BoundNodeDumper (builder : StringBuilder) =
 
     let indentLevel = ref 0

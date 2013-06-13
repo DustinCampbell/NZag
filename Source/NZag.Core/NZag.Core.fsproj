@@ -28,6 +28,7 @@
     <Compile Include="BoundNodes.fs" />
     <Compile Include="Analysis.fsi" />
     <Compile Include="Analysis.fs" />
+    <Compile Include="Optimization.fs" />
     <Compile Include="Binder.fs" />
     <Compile Include="CodeGen.fs" />
     <Compile Include="Machine.fs" />

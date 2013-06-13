@@ -459,6 +459,10 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
     static member Compile(memory: Memory, routine: Routine, machine: IMachine, builder: ILBuilder, callSites: ResizeArray<ZFuncCallSite>, debugging: bool) =
         let binder = new RoutineBinder(memory, debugging)
         let tree = binder.BindRoutine(routine)
+        let tree =
+            Optimization.optimize tree
+            |> Optimization.cleanupLabels
+            |> Optimization.cleanupTemps
 
         let codeGenerator = new CodeGenerator(tree, machine, builder, callSites)
         codeGenerator.CompileTree(tree)
