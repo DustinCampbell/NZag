@@ -155,6 +155,8 @@ type Machine (memory: Memory, debugging: bool) as this =
 
     interface IMachine with
 
+        member m.Debugging = debugging
+
         member y.GetInitialLocalArray(routine) =
             let result = getOrCreateLocalArray()
 
@@ -205,6 +207,9 @@ type Machine (memory: Memory, debugging: bool) as this =
             let text = readTextTask.Result
 
             let text = text.ToLower()
+
+            if debugging then
+                System.Diagnostics.Debug.WriteLine(sprintf "TEXT INPUT: %s" text)
 
             // Write text to textBuffer
             let mutable address = textBuffer + 1

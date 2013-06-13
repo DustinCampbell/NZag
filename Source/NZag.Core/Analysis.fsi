@@ -30,6 +30,8 @@ module Graphs =
 
         new : int * int * int * int * Expression -> Definition
 
+        member GetBlockUsageCount : blockId:int -> int
+
         member ID : int
         member Temp : int
         member BlockID : int

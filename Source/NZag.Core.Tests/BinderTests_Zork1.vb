@@ -484,6 +484,85 @@ LABEL 1a
     End Sub
 
 #End Region
+#Region "Zork1_4FA2"
+
+#Region "ZCode"
+    ' 4fa9:  41 86 0b 59             JE              G76,#0b [FALSE] 4fc4
+    ' 4fad:  41 87 0b 55             JE              G77,#0b [FALSE] 4fc4
+    ' 4fb1:  b3 ...                  PRINT_RET       "Those things aren't here!"
+    ' 4fc4:  41 86 0b 48             JE              G76,#0b [FALSE] 4fce
+    ' 4fc8:  2d 01 66                STORE           L00,G56
+    ' 4fcb:  8c 00 08                JUMP            4fd4
+    ' 4fce:  2d 01 65                STORE           L00,G55
+    ' 4fd1:  0d 02 00                STORE           L01,#00
+    ' 4fd4:  0d 7c 00                STORE           G6c,#00
+    ' 4fd7:  0d 70 00                STORE           G60,#00
+    ' 4fda:  61 7f 90 56             JE              G6f,G80 [FALSE] 4ff2
+    ' 4fde:  b2 ...                  PRINT           "You can't see any"
+    ' 4fe7:  e0 2f 28 49 02 00       CALL            5092 (L01) -> -(SP)
+    ' 4fed:  b3 ...                  PRINT_RET       " here!"
+    ' 4ff2:  b2 ...                  PRINT           "The "
+    ' 4ff5:  aa 7f                   PRINT_OBJ       G6f
+    ' 4ff7:  b2 ...                  PRINT           " seems confused. "I don't see
+    'any"
+    ' 500a:  e0 2f 28 49 02 00       CALL            5092 (L01) -> -(SP)
+    ' 5010:  b3 ...                  PRINT_RET       " here!""
+#End Region
+
+    <Fact>
+    Sub Zork1_4FA2()
+        Dim expected =
+<![CDATA[
+# temps: 8
+
+LABEL 00
+    temp00 <- L01
+LABEL 01
+    temp01 <- read-word(235d)
+    if (temp01 = 0b) is false then
+        jump-to: LABEL 04
+LABEL 02
+    temp02 <- read-word(235f)
+    if (temp02 = 0b) is false then
+        jump-to: LABEL 04
+LABEL 03
+    print: "Those things aren't here!"
+    return: 1
+LABEL 04
+    temp03 <- read-word(235d)
+    if (temp03 = 0b) is false then
+        jump-to: LABEL 06
+LABEL 05
+    jump-to: LABEL 07
+LABEL 06
+    temp00 <- 00
+LABEL 07
+    write-word(2349) <- 00
+    write-word(2331) <- 00
+    temp04 <- read-word(234f)
+    temp05 <- read-word(2371)
+    if (temp04 = temp05) is false then
+        jump-to: LABEL 09
+LABEL 08
+    print: "You can't see any"
+    push-SP: call 5092 (temp00)
+    print: " here!"
+    return: 1
+LABEL 09
+    print: "The "
+    temp06 <- read-word(234f)
+    temp07 <- read-word((((temp06 - 1) * 9) + 2ee) + 7)
+    print: read-text(temp07 + 1, read-byte(temp07))
+    print: " seems confused. "I don't see any"
+    push-SP: call 5092 (temp00)
+    print: " here!""
+    return: 1
+]]>
+
+        TestBinder(Zork1, &H4FA2, expected)
+    End Sub
+
+#End Region
 #Region "Zork1_552A"
 
 #Region "ZCode"
@@ -1460,50 +1539,51 @@ LABEL 69
     Sub Zork1_6A52()
         Dim expected =
 <![CDATA[
-# temps: 12
+# temps: 14
 
 LABEL 00
     temp00 <- L00
     temp01 <- L01
     temp02 <- L02
 LABEL 01
-    temp00 <- read-byte((((temp00 - 1) * 9) + 2ee) + 6)
-    if (read-byte((((temp00 - 1) * 9) + 2ee) + 6) <> 0) is false then
+    temp03 <- temp00
+    temp00 <- read-byte((((temp03 - 1) * 9) + 2ee) + 6)
+    if (read-byte((((temp03 - 1) * 9) + 2ee) + 6) <> 0) is false then
         return: 0
 LABEL 02
     if (temp02 = 02) is true then
         jump-to: LABEL 0d
 LABEL 03
-    temp03 <- read-word((((temp00 - 1) * 9) + 2ee) + 7)
-    temp04 <- uint16((temp03 + 1) + (read-byte(temp03) * 2))
-    temp05 <- 0
+    temp04 <- read-word((((temp00 - 1) * 9) + 2ee) + 7)
+    temp05 <- uint16((temp04 + 1) + (read-byte(temp04) * 2))
+    temp06 <- 0
 LABEL 04
-    temp06 <- read-byte(temp04)
-    if ((temp06 & 1f) <= 12) is false then
+    temp07 <- read-byte(temp05)
+    if ((temp07 & 1f) <= 12) is false then
         jump-to: LABEL 06
 LABEL 05
-    temp05 <- 1
+    temp06 <- 1
     jump-to: LABEL 07
 LABEL 06
-    temp07 <- read-byte(temp04)
-    temp04 <- uint16((temp04 + 1) + ((temp07 >> 5) + 1))
+    temp08 <- read-byte(temp05)
+    temp05 <- uint16((temp05 + 1) + ((temp08 >> 5) + 1))
 LABEL 07
-    if (temp05 = 0) is true then
+    if (temp06 = 0) is true then
         jump-to: LABEL 04
-    if ((temp06 & 1f) = 12) is false then
+    if ((temp07 & 1f) = 12) is false then
         jump-to: LABEL 09
 LABEL 08
-    push-SP: (temp04 + 1)
+    push-SP: (temp05 + 1)
     jump-to: LABEL 0a
 LABEL 09
     push-SP: 0
 LABEL 0a
-    temp08 <- pop-SP
-    if (temp08 = 0) is true then
+    temp09 <- pop-SP
+    if (temp09 = 0) is true then
         jump-to: LABEL 0d
 LABEL 0b
-    temp09 <- call 6d1c (temp00, temp01)
-    if (temp09 = 0) is true then
+    temp0a <- call 6d1c (temp00, temp01)
+    if (temp0a = 0) is true then
         jump-to: LABEL 0d
 LABEL 0c
     push-SP: call 6aba (temp00, temp01)
@@ -1540,11 +1620,12 @@ LABEL 16
 LABEL 17
     push-SP: 00
 LABEL 18
-    temp0a <- pop-SP
-    temp0b <- call 6a52 (temp00, temp01, temp0a)
+    temp0b <- pop-SP
+    temp0c <- call 6a52 (temp00, temp01, temp0b)
 LABEL 19
-    temp00 <- read-byte((((temp00 - 1) * 9) + 2ee) + 5)
-    if (read-byte((((temp00 - 1) * 9) + 2ee) + 5) <> 0) is true then
+    temp0d <- temp00
+    temp00 <- read-byte((((temp0d - 1) * 9) + 2ee) + 5)
+    if (read-byte((((temp0d - 1) * 9) + 2ee) + 5) <> 0) is true then
         jump-to: LABEL 02
 LABEL 1a
     return: 1
@@ -1935,7 +2016,7 @@ LABEL 4a
     Sub Zork1_101E0()
         Dim expected =
 <![CDATA[
-# temps: 16
+# temps: 18
 
 LABEL 00
     temp00 <- L03
@@ -2044,8 +2125,9 @@ LABEL 21
     if (temp02 = 0) is true then
         jump-to: LABEL 24
 LABEL 22
-    temp02 <- read-byte((((temp02 - 1) * 9) + 2ee) + 5)
-    if (read-byte((((temp02 - 1) * 9) + 2ee) + 5) <> 0) is false then
+    temp0c <- temp02
+    temp02 <- read-byte((((temp0c - 1) * 9) + 2ee) + 5)
+    if (read-byte((((temp0c - 1) * 9) + 2ee) + 5) <> 0) is false then
         jump-to: LABEL 24
 LABEL 23
     jump-to: LABEL 25
@@ -2060,39 +2142,40 @@ LABEL 26
     if (((read-byte(((temp02 - 1) * 9) + 2ee) & 0002) <> 0) = 1) is false then
         jump-to: LABEL 21
 LABEL 27
-    temp0c <- 0
+    temp0d <- temp02
+    temp0e <- 0
     if (read-byte(6eb) = 0) is false then
         jump-to: LABEL 29
 LABEL 28
-    temp0d <- 0
+    temp0f <- 0
     jump-to: LABEL 2a
 LABEL 29
-    temp0d <- read-byte((((read-byte(6eb) - 1) * 9) + 2ee) + 6)
+    temp0f <- read-byte((((read-byte(6eb) - 1) * 9) + 2ee) + 6)
 LABEL 2a
-    if (temp0d <> 72) is false then
+    if (temp0f <> 72) is false then
         jump-to: LABEL 30
 LABEL 2b
-    temp0e <- temp0d
+    temp10 <- temp0f
 LABEL 2c
-    temp0f <- read-byte((((temp0e - 1) * 9) + 2ee) + 5)
-    if (temp0f = 72) is false then
+    temp11 <- read-byte((((temp10 - 1) * 9) + 2ee) + 5)
+    if (temp11 = 72) is false then
         jump-to: LABEL 2e
 LABEL 2d
-    temp0c <- temp0e
-    temp0e <- 0
+    temp0e <- temp10
+    temp10 <- 0
     jump-to: LABEL 2f
 LABEL 2e
-    temp0e <- temp0f
+    temp10 <- temp11
 LABEL 2f
-    if (temp0e <> 0) is true then
+    if (temp10 <> 0) is true then
         jump-to: LABEL 2c
 LABEL 30
-    if (temp0c <> 0) is false then
+    if (temp0e <> 0) is false then
         jump-to: LABEL 32
 LABEL 31
-    write-byte((((temp0c - 1) * 9) + 2ee) + 5) <- read-byte(6ec)
+    write-byte((((temp0e - 1) * 9) + 2ee) + 5) <- read-byte(6ec)
 LABEL 32
-    if (temp0d = 72) is false then
+    if (temp0f = 72) is false then
         jump-to: LABEL 34
 LABEL 33
     write-byte((((read-byte(6eb) - 1) * 9) + 2ee) + 6) <- read-byte(6ec)
@@ -2102,9 +2185,9 @@ LABEL 34
     if (temp02 <> 0) is false then
         jump-to: LABEL 36
 LABEL 35
-    write-byte(6eb) <- temp02
-    write-byte(6ec) <- read-byte((((temp02 - 1) * 9) + 2ee) + 6)
-    write-byte((((temp02 - 1) * 9) + 2ee) + 6) <- 72
+    write-byte(6eb) <- temp0d
+    write-byte(6ec) <- read-byte((((temp0d - 1) * 9) + 2ee) + 6)
+    write-byte((((temp0d - 1) * 9) + 2ee) + 6) <- 72
 LABEL 36
     write-byte(6e7) <- byte(read-byte(6e7) & not 0020)
     write-byte(6e7) <- byte(read-byte(6e7) | 0001)

@@ -69,7 +69,7 @@ Last test: quit!
         Await Test(CZech, expected)
     End Function
 
-    <Fact(Skip:="Broken by recent optimization work")>
+    <Fact()>
     Async Function RunZork1() As Task
         Dim expected =
 <![CDATA[

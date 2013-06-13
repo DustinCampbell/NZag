@@ -1206,24 +1206,26 @@ type RoutineBinder(memory: Memory, debugging: bool) =
         let block = ref None
         let index = ref 0
 
+        let getBlock() =
+            match !block with
+            | Some(b) -> b
+            | None -> failcompile "No block set"
+
         let setBlock id =
             block := Some(dataFlowAnalysis.Graph.Blocks |> Array.find (fun b -> b.ID = id))
 
         let getDefinitions t =
-            match !block with
-            | Some(b) ->
-                let index = !index
-                let ins = Graphs.computeIns(dataFlowAnalysis, b, index)
+            let b = getBlock()
+            let index = !index
+            let ins = Graphs.computeIns(dataFlowAnalysis, b, index)
 
-                let arr = new ResizeArray<_>(ins.Length)
-                for d in ins.AllSet do
-                    let definition = dataFlowAnalysis.Definitions.[d]
-                    if definition.Temp = t then
-                        arr.Add(definition.Value)
+            let arr = new ResizeArray<_>(ins.Length)
+            for d in ins.AllSet do
+                let definition = dataFlowAnalysis.Definitions.[d]
+                if definition.Temp = t then
+                    arr.Add(definition)
 
-                arr.ToArray()
-            | None ->
-                failcompile "Couldn't find statement info"
+            arr.ToArray()
 
         tree |> updateTree (fun s updater ->
             let s' =
@@ -1241,12 +1243,27 @@ type RoutineBinder(memory: Memory, debugging: bool) =
                     (fun e ->
                         match e with
                         | TempExpr(t) ->
-                            match getDefinitions t with
+                            let definitions = getDefinitions t
+
                             // If this temp only has a single definition of a constant expression
                             // at this point, use the constant.
-                            | [|ConstantExpr(_) as v|] -> v
-                            | [|TempExpr(_) as t|] -> t
-                            | _ -> e
+                            if definitions.Length = 1 then
+                                let definition = definitions.[0]
+
+                                match definition.Value with
+                                | ConstantExpr(_) as c ->
+                                    // We can propagate any constant
+                                    c
+                                | TempExpr(_) as t ->
+                                    // For temps, we are a bit more conservative. We only
+                                    // propagate if the definition has a single usage within the current block.
+
+                                    let usageCount = definition.GetBlockUsageCount(getBlock().ID)
+                                    if usageCount = 1 then t
+                                    else e
+                                | _ -> e
+                            else
+                                e
                         | e -> e)
 
             updater.AddStatement(s'))

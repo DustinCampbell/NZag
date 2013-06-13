@@ -64,7 +64,7 @@ namespace NZag.Services
             using (var file = File.OpenRead(fileName))
             {
                 var memory = Memory.CreateFrom(file);
-                this.machine = new Machine(memory, debugging: true);
+                this.machine = new Machine(memory, debugging: false);
             }
 
             this.gameFileName = fileName;

@@ -1,10 +1,13 @@
 ﻿namespace NZag.Core
 
 open System
+open System.Diagnostics
 open NZag.Reflection
 open NZag.Utilities
 
 type IMachine =
+
+    abstract member Debugging : bool
 
     abstract member GetInitialLocalArray : Routine -> uint16[]
     abstract member ReleaseLocalArray : uint16[] -> unit
@@ -60,9 +63,17 @@ and ZFuncCallSite(machine: IMachine, routine: Routine) =
     let invoke memory locals stack sp argCount =
         try
             let compileResult = getCompileResult()
+
+            if machine.Debugging then
+                Debug.Indent()
+                Debug.WriteLine(sprintf "-- %s --" compileResult.ZFunc.Method.Name)
+
             compileResult.ZFunc.Invoke(memory, locals, stack, sp, compileResult.CallSites, argCount)
         finally
             machine.ReleaseLocalArray(locals)
+
+            if machine.Debugging then
+                Debug.Unindent()
 
     member x.Invoke0(memory, stack, sp) =
         let locals = machine.GetInitialLocalArray(routine)

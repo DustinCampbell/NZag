@@ -163,9 +163,20 @@ module Graphs =
     type Definition(id: int, temp: int, blockId: int, statementIndex: int, value: Expression) =
 
         let mutable usageCount = 0
+        let usageByBlockMap = new System.Collections.Generic.Dictionary<_,_>()
 
-        member x.AddUsage() =
+        member x.AddUsage(blockId) =
             usageCount <- usageCount + 1
+
+            let usagesInBlock =
+                match usageByBlockMap.TryGetValue(blockId) with
+                | (true, v) -> v + 1
+                | (false, _) -> 1
+
+            usageByBlockMap.[blockId] <- usagesInBlock
+
+        member x.GetBlockUsageCount blockId =
+            usageByBlockMap.[blockId]
 
         member x.ID = id
         member x.Temp = temp
@@ -427,7 +438,7 @@ module Graphs =
                             for i in ins.AllSet do
                                 let def = definitions.[i]
                                 if def.Temp = temp then
-                                    def.AddUsage()
+                                    def.AddUsage(blockId)
 
                         | e -> ())
 
