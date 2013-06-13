@@ -190,10 +190,9 @@ module Graphs =
         Graph : Graph<DataFlowBlockInfo> }
 
     [<CompiledNameAttribute("ComputeIns")>]
-    let computeIns(dataFlowAnalysis: DataFlowAnalysis, block: Block<DataFlowBlockInfo>, statement: Statement) =
+    let computeIns(dataFlowAnalysis: DataFlowAnalysis, block: Block<DataFlowBlockInfo>, statementIndex: int) =
         let blockId = block.ID
         let blockDefinitionIds = block.Data.DefinitionIds
-        let blockStatements = block.Data.Statements
         let ins = block.Data.Ins
 
         let definitions = dataFlowAnalysis.Definitions
@@ -204,7 +203,7 @@ module Graphs =
         let mutable index = 0
 
         while not stop do
-            if statement = blockStatements.[index] then
+            if statementIndex = index then
                 stop <- true
             else
                 let definitionId = blockDefinitionIds.[index]
@@ -221,10 +220,9 @@ module Graphs =
         outs
 
     [<CompiledNameAttribute("ComputeOuts")>]
-    let computeOuts(dataFlowAnalysis: DataFlowAnalysis, block: Block<DataFlowBlockInfo>, statement: Statement) =
+    let computeOuts(dataFlowAnalysis: DataFlowAnalysis, block: Block<DataFlowBlockInfo>, statementIndex: int) =
         let blockId = block.ID
         let blockDefinitionIds = block.Data.DefinitionIds
-        let blockStatements = block.Data.Statements
         let ins = block.Data.Ins
 
         let definitions = dataFlowAnalysis.Definitions
@@ -243,7 +241,7 @@ module Graphs =
                 outs.Add(definitionId)
 
             index <- index + 1
-            if index = blockDefinitionIds.Length || statement = blockStatements.[index] then
+            if index = blockDefinitionIds.Length || statementIndex = index then
                 stop <- true
 
         outs

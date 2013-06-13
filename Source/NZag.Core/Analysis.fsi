@@ -52,10 +52,10 @@ module Graphs =
         Graph : Graph<DataFlowBlockInfo> }
 
     [<CompiledNameAttribute("ComputeIns")>]
-    val computeIns : dataFlowAnalysis:DataFlowAnalysis * block:Block<DataFlowBlockInfo> * statement:Statement -> IBitSet
+    val computeIns : dataFlowAnalysis:DataFlowAnalysis * block:Block<DataFlowBlockInfo> * statementIndex:int -> IBitSet
 
     [<CompiledNameAttribute("ComputeOuts")>]
-    val computeOuts : dataFlowAnalysis:DataFlowAnalysis * block:Block<DataFlowBlockInfo> * statement:Statement -> IBitSet
+    val computeOuts : dataFlowAnalysis:DataFlowAnalysis * block:Block<DataFlowBlockInfo> * statementIndex:int -> IBitSet
 
     [<CompiledNameAttribute("AnalyzeDataFlow")>]
     val analyzeDataFlow : graph:Graph<ControlFlowData> -> DataFlowAnalysis
