@@ -137,7 +137,7 @@ type BoundTreeCreator(routine: Routine) =
     override x.LabelCount = labelCount
 
     override x.GetTree() =
-        { Statements = statements |> Seq.toList; TempCount = tempCount; LabelCount = labelCount }
+        { Statements = statements |> Seq.toList; TempCount = tempCount; LabelCount = labelCount; Routine = routine }
 
 type BoundTreeUpdater(tree : BoundTree) =
     inherit BoundTreeBuilder()
@@ -168,7 +168,7 @@ type BoundTreeUpdater(tree : BoundTree) =
             f s x
 
     override x.GetTree() =
-        { Statements = statements |> Seq.toList; TempCount = tempCount; LabelCount = labelCount }
+        { Statements = statements |> Seq.toList; TempCount = tempCount; LabelCount = labelCount; Routine = tree.Routine }
 
 type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: bool) =
 
@@ -1063,7 +1063,55 @@ type RoutineBinder(memory: Memory, debugging: bool) =
 
         let newStatements = tree.Statements |> List.map rewriteTemps
 
-        { Statements = newStatements; TempCount = !nextTempIndex; LabelCount = tree.LabelCount }
+        { Statements = newStatements; TempCount = !nextTempIndex; LabelCount = tree.LabelCount; Routine = tree.Routine }
+
+    let lower_ReplaceLocalsWithTemps tree =
+        if tree.Routine.Locals.Length = 0 then
+            tree
+        else
+            let hasComputedVariables = ref false
+
+            tree |> walkTree
+                (fun s ->
+                    match s with
+                    | WriteComputedVarStmt(_) -> hasComputedVariables := true
+                    | s -> ())
+                (fun e ->
+                    match e with
+                    | ReadComputedVarExpr(_) -> hasComputedVariables := true
+                    | e -> ())
+
+            if !hasComputedVariables then
+                tree
+            else
+                let updater = new BoundTreeUpdater(tree)
+
+                // First create temps for each local
+                let label = updater.NewLabel()
+                updater.MarkLabel(label)
+
+                let localTemps = Array.zeroCreate tree.Routine.Locals.Length
+                for i = 0 to localTemps.Length - 1 do
+                    localTemps.[i] <- updater.InitMutableTemp(ReadLocalExpr(byteConst (byte i)))
+
+                for s in tree.Statements do
+                    let s' =
+                        s |> rewriteStatement
+                            (fun s -> s)
+                            (fun e ->
+                                match e with
+                                | ReadLocalExpr(ConstantExpr(Int32Value i)) ->
+                                    let read,_ = localTemps.[i]
+                                    read
+                                | e -> e)
+
+                    match s' with
+                    | WriteLocalStmt(ConstantExpr(Int32Value i), value) ->
+                        let _,write = localTemps.[i]
+                        write value
+                    | s -> updater.AddStatement(s)
+
+                updater.GetTree()
 
     let lower_GlobalVariableReadsAndWrites tree =
         let globalVariableTableAddress =
@@ -1164,8 +1212,8 @@ type RoutineBinder(memory: Memory, debugging: bool) =
         let getDefinitions t =
             match !block with
             | Some(b) ->
-                let statement = b.Data.Statements.[!index]
-                let ins = Graphs.computeIns(dataFlowAnalysis, b, statement)
+                let index = !index
+                let ins = Graphs.computeIns(dataFlowAnalysis, b, index)
 
                 let arr = new ResizeArray<_>(ins.Length)
                 for d in ins.AllSet do
@@ -1197,8 +1245,6 @@ type RoutineBinder(memory: Memory, debugging: bool) =
                             // If this temp only has a single definition of a constant expression
                             // at this point, use the constant.
                             | [|ConstantExpr(_) as v|] -> v
-                            // If this temp only has a single definition of another temp at this point,
-                            // use the temp.
                             | [|TempExpr(_) as t|] -> t
                             | _ -> e
                         | e -> e)
@@ -1343,14 +1389,31 @@ type RoutineBinder(memory: Memory, debugging: bool) =
             | None ->
                 failcompile "Couldn't find block"
 
+        let hasSideEffects v =
+            let result = ref false
+
+            v |> walkExpression
+                (fun e ->
+                    match e with
+                    | StackPopExpr
+                    | CallExpr(_,_)
+                    | ReadInputCharExpr
+                    | ReadInputTextExpr(_,_)
+                    | ReadTimedInputCharExpr(_,_,_)
+                    | ReadTimedInputTextExpr(_,_,_,_) ->
+                        result := true
+                    | e -> ())
+
+            !result
+
         tree |> updateTree (fun s updater ->
             let s' = match s with
                      | LabelStmt(l) ->
                          index := 0
                          setBlock(l)
                          Some(s)
-                     | WriteTempStmt(t,_) ->
-                         if hasUsages t then Some(s)
+                     | WriteTempStmt(t,v) ->
+                         if hasSideEffects v || hasUsages t then Some(s)
                          else None
                      | s ->
                          Some(s)
@@ -1502,6 +1565,7 @@ type RoutineBinder(memory: Memory, debugging: bool) =
 
     let lower tree =
         tree
+        |> lower_ReplaceLocalsWithTemps
         |> lower_ComputedVariableReadsAndWrites
         |> lower_GlobalVariableReadsAndWrites
 
