@@ -1,7 +1,7 @@
 ﻿Imports ControlFlowGraph = NZag.Core.Graphs.Graph(Of NZag.Core.Graphs.ControlFlowData)
 Imports ControlFlowBlock = NZag.Core.Graphs.Block(Of NZag.Core.Graphs.ControlFlowData)
-Imports DefinitionsBlock = NZag.Core.Graphs.Block(Of NZag.Core.Graphs.DefinitionData)
-Imports ReachingDefinitions = NZag.Core.Graphs.ReachingDefinitions
+Imports DataFlowsBlock = NZag.Core.Graphs.Block(Of NZag.Core.Graphs.DataFlowBlockInfo)
+Imports DataFlowAnalysis = NZag.Core.Graphs.DataFlowAnalysis
 
 Public Module AnalysisTests
 
@@ -198,30 +198,30 @@ Public Module AnalysisTests
             Assert.Equal(0, b.Successors.Length)
         End Sub
 
-    Private Function DefinitionsGraph(ParamArray actions() As Action(Of ReachingDefinitions, DefinitionsBlock)) As Action(Of ReachingDefinitions)
-        Return Sub(rd)
-                   Assert.Equal(actions.Length, rd.Graph.Blocks.Length)
+    Private Function DefinitionsGraph(ParamArray actions() As Action(Of DataFlowAnalysis, DataFlowsBlock)) As Action(Of DataFlowAnalysis)
+        Return Sub(dfa)
+                   Assert.Equal(actions.Length, dfa.Graph.Blocks.Length)
 
                    For i = 0 To actions.Length - 1
-                       actions(i)(rd, rd.Graph.Blocks(i))
+                       actions(i)(dfa, dfa.Graph.Blocks(i))
                    Next
                End Sub
     End Function
 
-    Private Function DefinitionsBlock(id As Integer, ParamArray actions() As Action(Of ReachingDefinitions, DefinitionsBlock)) As Action(Of ReachingDefinitions, DefinitionsBlock)
-        Return Sub(rd, b)
+    Private Function DefinitionsBlock(id As Integer, ParamArray actions() As Action(Of DataFlowAnalysis, DataFlowsBlock)) As Action(Of DataFlowAnalysis, DataFlowsBlock)
+        Return Sub(dfa, b)
                    Assert.Equal(id, b.ID)
 
                    For Each action In actions
-                       action(rd, b)
+                       action(dfa, b)
                    Next
                End Sub
     End Function
 
-    Private Function Ins(ParamArray ids() As Integer) As Action(Of ReachingDefinitions, DefinitionsBlock)
-        Return Sub(rd, b)
+    Private Function Ins(ParamArray ids() As Integer) As Action(Of DataFlowAnalysis, DataFlowsBlock)
+        Return Sub(dfa, b)
                    Dim orderedIns = b.Data.InDefinitions _
-                        .Select(Function(d) rd.Definitions(d)) _
+                        .Select(Function(d) dfa.Definitions(d)) _
                         .OrderBy(Function(d) d.Temp).ToArray()
 
                    Assert.Equal(ids.Length, orderedIns.Length)
@@ -232,15 +232,15 @@ Public Module AnalysisTests
                End Sub
     End Function
 
-    Private ReadOnly NoInDefs As Action(Of ReachingDefinitions, DefinitionsBlock) =
-        Sub(rd, b)
+    Private ReadOnly NoInDefs As Action(Of DataFlowAnalysis, DataFlowsBlock) =
+        Sub(dfa, b)
             Assert.Equal(0, b.Data.InDefinitions.Count)
         End Sub
 
-    Private Function Outs(ParamArray ids() As Integer) As Action(Of ReachingDefinitions, DefinitionsBlock)
-        Return Sub(rd, b)
+    Private Function Outs(ParamArray ids() As Integer) As Action(Of DataFlowAnalysis, DataFlowsBlock)
+        Return Sub(dfa, b)
                    Dim orderedOuts = b.Data.OutDefinitions _
-                        .Select(Function(d) rd.Definitions(d)) _
+                        .Select(Function(d) dfa.Definitions(d)) _
                         .OrderBy(Function(d) d.Temp).ToArray()
 
                    Assert.Equal(ids.Length, orderedOuts.Length)
@@ -251,7 +251,7 @@ Public Module AnalysisTests
                End Sub
     End Function
 
-    Private ReadOnly NoOutDefs As Action(Of ReachingDefinitions, DefinitionsBlock) =
+    Private ReadOnly NoOutDefs As Action(Of DataFlowAnalysis, DataFlowsBlock) =
         Sub(rd, b)
             Assert.Equal(0, b.Data.OutDefinitions.Count)
         End Sub
@@ -272,7 +272,7 @@ Public Module AnalysisTests
         expected(graph)
     End Sub
 
-    Private Sub Test(gameName As String, address As Integer, expected As Action(Of ReachingDefinitions))
+    Private Sub Test(gameName As String, address As Integer, expected As Action(Of DataFlowAnalysis))
         Dim memory = GameMemory(gameName)
         Dim reader = New RoutineReader(memory)
 
@@ -284,9 +284,9 @@ Public Module AnalysisTests
         Dim binder = New RoutineBinder(memory, debugging:=False)
         Dim tree = binder.BindRoutine(r)
         Dim cfg = Graphs.BuildControlFlowGraph(tree)
-        Dim rd = Graphs.ComputeReachingDefinitions(cfg)
+        Dim dfa = Graphs.AnalyzeDataFlow(cfg)
 
-        expected(rd)
+        expected(dfa)
     End Sub
 
 End Module

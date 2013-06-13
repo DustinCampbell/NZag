@@ -25,26 +25,33 @@ module Graphs =
     val buildControlFlowGraph : tree:BoundTree -> Graph<ControlFlowData>
 
     type Definition =
-      { Temp : int
-        BlockID : int
-        StatementIndex : int
-        Value : Expression }
+
+        new : int * int * int * int * Expression -> Definition
+
+        member ID : int
+        member Temp : int
+        member BlockID : int
+        member StatementIndex : int
+        member Value : Expression
+        member UsageCount : int
 
     type StatementFlowInfo =
       { Statement : Statement
-        InDefinitions : int[]
-        OutDefinitions : int[] }
+        InDefinitions : int[] }
 
-    type DefinitionData =
-      { Statements : StatementFlowInfo[]
-        InDefinitions : int[]
-        OutDefinitions : int[] }
+    type DataFlowBlockInfo =
 
-    type ReachingDefinitions =
+        new : int[] * StatementFlowInfo[] * int[] * int[] -> DataFlowBlockInfo
+
+        member DefinitionIds : int[]
+        member Statements : StatementFlowInfo[]
+        member InDefinitions : int[]
+        member OutDefinitions : int[]
+
+    type DataFlowAnalysis =
       { Definitions : Definition[]
         DefinitionsByTemp : int[][]
-        Usages : int[]
-        Graph : Graph<DefinitionData> }
+        Graph : Graph<DataFlowBlockInfo> }
 
-    [<CompiledNameAttribute("ComputeReachingDefinitions")>]
-    val computeReachingDefinitions : graph:Graph<ControlFlowData> -> ReachingDefinitions
+    [<CompiledNameAttribute("AnalyzeDataFlow")>]
+    val analyzeDataFlow : graph:Graph<ControlFlowData> -> DataFlowAnalysis

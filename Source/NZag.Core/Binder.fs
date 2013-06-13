@@ -1163,20 +1163,20 @@ type RoutineBinder(memory: Memory, debugging: bool) =
 
     let optimize_PropagateConstants tree =
         let graph = Graphs.buildControlFlowGraph tree
-        let reachingDefinitions = Graphs.computeReachingDefinitions graph
+        let dataFlowAnalysis = Graphs.analyzeDataFlow graph
 
         let block = ref None
         let index = ref 0
 
         let setBlock id =
-            block := Some(reachingDefinitions.Graph.Blocks |> Array.find (fun b -> b.ID = id))
+            block := Some(dataFlowAnalysis.Graph.Blocks |> Array.find (fun b -> b.ID = id))
 
         let getDefinitions t =
             match !block with
             | Some(b) ->
                 b.Data.Statements.[!index].InDefinitions
-                    |> Array.filter (fun d -> reachingDefinitions.Definitions.[d].Temp = t)
-                    |> Array.map (fun d -> reachingDefinitions.Definitions.[d].Value)
+                    |> Array.filter (fun d -> dataFlowAnalysis.Definitions.[d].Temp = t)
+                    |> Array.map (fun d -> dataFlowAnalysis.Definitions.[d].Value)
             | None ->
                 failcompile "Couldn't find statement info"
 
@@ -1321,26 +1321,26 @@ type RoutineBinder(memory: Memory, debugging: bool) =
 
     let optimize_RemoveUnusedTemps tree =
         let graph = Graphs.buildControlFlowGraph tree
-        let reachingDefinitions = Graphs.computeReachingDefinitions graph
+        let dataFlowAnalysis = Graphs.analyzeDataFlow graph
 
         let block = ref None
         let index = ref 0
 
         let setBlock id =
-            block := Some(reachingDefinitions.Graph.Blocks |> Array.find (fun b -> b.ID = id))
+            block := Some(dataFlowAnalysis.Graph.Blocks |> Array.find (fun b -> b.ID = id))
 
         let hasUsages t =
             match !block with
             | Some(b) ->
                 let defs =
-                    reachingDefinitions.DefinitionsByTemp.[t]
+                    dataFlowAnalysis.DefinitionsByTemp.[t]
                     |> Array.filter (fun d ->
-                        let def = reachingDefinitions.Definitions.[d]
+                        let def = dataFlowAnalysis.Definitions.[d]
                         def.BlockID = b.ID && def.StatementIndex = !index
                     )
 
                 match defs with
-                | [|d|] -> reachingDefinitions.Usages.[d] > 0
+                | [|d|] -> dataFlowAnalysis.Definitions.[d].UsageCount > 0
                 | _ -> failcompile "Expected a single definition"
 
             | None ->
