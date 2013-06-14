@@ -166,10 +166,11 @@ Module Helpers
 
         Dim binder = New RoutineBinder(memory, debugging)
         Dim tree = binder.BindRoutine(r)
+        Dim optimized = Optimization.optimize(tree)
 
         Dim builder = New StringBuilder()
         Dim dumper = New BoundNodeDumper(builder)
-        dumper.Dump(tree)
+        dumper.Dump(optimized)
 
         Dim expectedText = expected.Value _
                                    .Trim() _

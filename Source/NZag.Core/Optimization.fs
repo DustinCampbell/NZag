@@ -475,7 +475,7 @@ module Optimization =
             | s -> updater.AddStatement(s))
 
     let optimize tree =
-        tree |> fixedpoint (fun tree ->
+        let optimized = tree |> fixedpoint (fun tree ->
             tree
             |> optimize_PropagateConstants
             |> optimize_FoldConstants
@@ -484,3 +484,7 @@ module Optimization =
             |> optimize_EliminateDeadBranches
             |> optimize_EliminateDeadBlocks
             |> optimize_EliminateRedundantLabels)
+
+        optimized
+        |> cleanupLabels
+        |> cleanupTemps

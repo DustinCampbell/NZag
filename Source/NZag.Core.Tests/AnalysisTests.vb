@@ -275,7 +275,8 @@ Public Module AnalysisTests
 
         Dim binder = New RoutineBinder(memory, debugging:=False)
         Dim tree = binder.BindRoutine(r)
-        Dim graph = Graphs.BuildControlFlowGraph(tree)
+        Dim optimized = Optimization.optimize(tree)
+        Dim graph = Graphs.BuildControlFlowGraph(optimized)
 
         expected(graph)
     End Sub
@@ -291,7 +292,8 @@ Public Module AnalysisTests
 
         Dim binder = New RoutineBinder(memory, debugging:=False)
         Dim tree = binder.BindRoutine(r)
-        Dim cfg = Graphs.BuildControlFlowGraph(tree)
+        Dim optimized = Optimization.optimize(tree)
+        Dim cfg = Graphs.BuildControlFlowGraph(optimized)
         Dim dfa = Graphs.AnalyzeDataFlow(cfg)
 
         expected(dfa)
