@@ -13,7 +13,7 @@ type IMachine =
     abstract member ReleaseLocalArray : uint16[] -> unit
 
     abstract member Compile : Routine -> ZCompileResult
-    abstract member GetCallSite : address:int -> ZFuncCallSite
+    abstract member GetInvoker : address:int -> ZFuncInvoker
 
     abstract member Verify : unit -> bool
 
@@ -39,18 +39,18 @@ type IMachine =
 and ZCompileResult =
   { Routine : Routine
     ZFunc : ZFunc
-    CallSites : ZFuncCallSite[]
+    Invokers : ZFuncInvoker[]
     CompileTime : TimeSpan }
 
 and ZFunc = delegate of memory:Memory
                       * locals:uint16[]
                       * stack:uint16[]
                       * sp:int
-                      * callSites:ZFuncCallSite[]
+                      * invokers:ZFuncInvoker[]
                       * argCount:int
                      -> uint16
 
-and ZFuncCallSite(machine: IMachine, routine: Routine) =
+and ZFuncInvoker(machine: IMachine, routine: Routine) =
 
     let mutable compileResult = None
 
@@ -68,7 +68,7 @@ and ZFuncCallSite(machine: IMachine, routine: Routine) =
                 Debug.Indent()
                 Debug.WriteLine(sprintf "-- %s --" compileResult.ZFunc.Method.Name)
 
-            compileResult.ZFunc.Invoke(memory, locals, stack, sp, compileResult.CallSites, argCount)
+            compileResult.ZFunc.Invoke(memory, locals, stack, sp, compileResult.Invokers, argCount)
         finally
             machine.ReleaseLocalArray(locals)
 
@@ -147,21 +147,22 @@ and ZFuncCallSite(machine: IMachine, routine: Routine) =
         parameterTypes.[argCount+1] <- typeof<uint16[]>
         parameterTypes.[argCount+2] <- typeof<int>
 
-        typeof<ZFuncCallSite>.GetMethod(name, parameterTypes)
+        typeof<ZFuncInvoker>.GetMethod(name, parameterTypes)
 
-type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuilder, callSites: ResizeArray<ZFuncCallSite>) =
+type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuilder, invokerList: ResizeArray<ZFuncInvoker>) =
 
     let labels = Array.init tree.LabelCount (fun i -> builder.NewLabel())
     let temps = Array.init tree.TempCount (fun i -> builder.NewLocal(typeof<uint16>))
 
-    let unexpectedNodeFound o = failcompilef "Encountered %s, which should not appear in a lowered tree." (o.GetType().Name)
+    let unexpectedNodeFound o =
+        failcompilef "Encountered %s, which should not appear in a lowered tree." (o.GetType().Name)
 
     let readByte = typeof<Memory>.GetMethod("ReadByte", [|typeof<int>|])
     let readWord = typeof<Memory>.GetMethod("ReadWord", [|typeof<int>|])
     let writeByte = typeof<Memory>.GetMethod("WriteByte", [|typeof<int>; typeof<byte>|])
     let writeWord = typeof<Memory>.GetMethod("WriteWord", [|typeof<int>; typeof<uint16>|])
 
-    let getCallSite = typeof<IMachine>.GetMethod("GetCallSite")
+    let getInvoker = typeof<IMachine>.GetMethod("GetInvoker")
     let verify = typeof<IMachine>.GetMethod("Verify")
     let randomize = typeof<IMachine>.GetMethod("Randomize")
     let nextRandomNumber = typeof<IMachine>.GetMethod("NextRandomNumber")
@@ -347,13 +348,13 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
         builder.Arguments.LoadStack()
         builder.Arguments.LoadSP()
 
-        builder.Call(ZFuncCallSite.GetInvokeMethod(args.Length))
+        builder.Call(ZFuncInvoker.GetInvokeMethod(args.Length))
 
     and emitDirectCall address args =
         // Create a new routine caller
-        let callSite = machine.GetCallSite(address)
-        let index = callSites.Count
-        callSites.Add(callSite)
+        let invoker = machine.GetInvoker(address)
+        let index = invokerList.Count
+        invokerList.Add(invoker)
 
         // load routine caller
         builder.Arguments.LoadCallSites()
@@ -365,7 +366,7 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
     and emitComputedCall address args =
         builder.Arguments.LoadMachine()
         emitExpression address
-        builder.Call(getCallSite)
+        builder.Call(getInvoker)
 
         emitCallSiteInvoke args
 
@@ -456,13 +457,21 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
         for s in tree.Statements do
             emitStatement s
 
-    static member Compile(memory: Memory, routine: Routine, machine: IMachine, builder: ILBuilder, callSites: ResizeArray<ZFuncCallSite>, debugging: bool) =
-        let binder = new RoutineBinder(memory, debugging)
-        let tree = binder.BindRoutine(routine)
-        let tree =
-            Optimization.optimize tree
-            |> Optimization.cleanupLabels
-            |> Optimization.cleanupTemps
+    static member Compile(memory: Memory, routine: Routine, machine: IMachine,
+                          builder: ILBuilder, invokerList: ResizeArray<ZFuncInvoker>,
+                          optimize: bool, debugging: bool) =
 
-        let codeGenerator = new CodeGenerator(tree, machine, builder, callSites)
+        let binder = new RoutineBinder(memory, debugging)
+
+        let tree =
+            let boundTree = binder.BindRoutine(routine)
+            if optimize then
+                boundTree
+                |> Optimization.optimize
+                |> Optimization.cleanupLabels
+                |> Optimization.cleanupTemps
+            else
+                boundTree
+
+        let codeGenerator = new CodeGenerator(tree, machine, builder, invokerList)
         codeGenerator.CompileTree(tree)

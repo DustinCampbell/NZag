@@ -2,6 +2,7 @@
 
 open System
 open System.Collections.Generic
+open System.Diagnostics
 open System.IO
 open System.Text
 open System.Threading.Tasks
@@ -48,6 +49,15 @@ module Exceptions =
 
     let argOutOfRange name format =
         Printf.ksprintf (fun s -> raise <| ArgumentOutOfRangeException(name, s)) format
+
+module Measurement =
+
+    let start() =
+        Stopwatch.StartNew()
+
+    let stop (watch: Stopwatch) =
+        watch.Stop()
+        watch.Elapsed
 
 [<RequireQualifiedAccess>]
 module Async =

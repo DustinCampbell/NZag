@@ -49,60 +49,66 @@ type Machine (memory: Memory, debugging: bool) as this =
     let registerProfiler (p: IProfiler) =
         profiler <- Some(p)
 
-    let compile =
-        let compileAux (routine: Routine) =
-            let watch = System.Diagnostics.Stopwatch.StartNew()
+    let compiledRoutines = Dictionary.create()
 
-            let dynamicMethod =
-                new System.Reflection.Emit.DynamicMethod(
-                    name = sprintf "%4x_%d_locals" routine.Address.IntValue routine.Locals.Length,
-                    returnType = typeof<uint16>,
-                    parameterTypes = [|typeof<Machine>; typeof<Memory>; typeof<uint16[]>; typeof<uint16[]>; typeof<int>; typeof<ZFuncCallSite[]>; typeof<int>|],
-                    owner = typeof<Machine>,
-                    skipVisibility = true)
+    let compileRoutine (routine: Routine) optimize =
+        let watch = Measurement.start()
 
-            let generator = dynamicMethod.GetILGenerator()
-            let builder = new ILBuilder(generator)
-            let callSites = ResizeArray.create()
+        let dynamicMethod =
+            new System.Reflection.Emit.DynamicMethod(
+                name = sprintf "%4x_%d_locals" routine.Address.IntValue routine.Locals.Length,
+                returnType = typeof<uint16>,
+                parameterTypes = [|typeof<Machine>; typeof<Memory>; typeof<uint16[]>; typeof<uint16[]>; typeof<int>; typeof<ZFuncInvoker[]>; typeof<int>|],
+                owner = typeof<Machine>,
+                skipVisibility = true)
 
-            CodeGenerator.Compile(memory, routine, this, builder, callSites, debugging)
+        let generator = dynamicMethod.GetILGenerator()
+        let builder = new ILBuilder(generator)
+        let invokers = ResizeArray.create()
 
-            let zfunc = dynamicMethod.CreateDelegate(typeof<ZFunc>, this) :?> ZFunc
+        CodeGenerator.Compile(memory, routine, this, builder, invokers, optimize, debugging)
 
-            watch.Stop()
-            let compileTime = watch.Elapsed
+        let zfunc = dynamicMethod.CreateDelegate(typeof<ZFunc>, this) :?> ZFunc
 
-            let result = {
-                Routine = routine
-                ZFunc = zfunc
-                CallSites = callSites.ToArray()
-                CompileTime = compileTime
-            }
+        let compileTime = watch |> Measurement.stop
 
-            match profiler with
-            | Some(p) -> p.RoutineCompiled(routine, compileTime)
-            | None -> ()
+        let result = {
+            Routine = routine
+            ZFunc = zfunc
+            Invokers = invokers.ToArray()
+            CompileTime = compileTime
+        }
 
-            result
+        match profiler with
+        | Some(p) -> p.RoutineCompiled(routine, compileTime)
+        | None -> ()
 
-        memoize compileAux
+        result
+
+    let compile (routine: Routine) optimize =
+        match compiledRoutines.TryGetValue(routine.Address) with
+        | (true, res) -> res
+        | (false, _) ->
+            let res = compileRoutine routine optimize
+            compiledRoutines.[routine.Address] <- res
+            res
 
     let getRoutine =
         let reader = new RoutineReader(memory)
 
         memoize (fun (address: Address) -> reader.ReadRoutine(address))
 
-    let getCallSite =
-        memoize (fun address -> new ZFuncCallSite(this, RawAddress(address) |> getRoutine))
+    let getInvoker =
+        memoize (fun address -> new ZFuncInvoker(this, RawAddress(address) |> getRoutine))
 
     member x.Memory = memory
 
     member x.RunAsync() =
         async {
             let reader = new RoutineReader(memory)
-            let callSite = getCallSite mainRoutineAddress.IntValue
+            let invoker = getInvoker mainRoutineAddress.IntValue
             let stack = Array.zeroCreate 1024
-            callSite.Invoke0(memory, stack, 0) |> ignore
+            invoker.Invoke0(memory, stack, 0) |> ignore
         }
         |> Async.StartAsPlainTask
 
@@ -170,9 +176,9 @@ type Machine (memory: Memory, debugging: bool) as this =
             releaseLocalArray locals
 
         member y.Compile(routine) =
-            compile routine
-        member y.GetCallSite(address) =
-            getCallSite address
+            compile routine true
+        member y.GetInvoker(address) =
+            getInvoker address
 
         member y.Verify() =
             checksum = (memory |> Header.readChecksum)
