@@ -9,10 +9,10 @@ type IMachine =
 
     abstract member Debugging : bool
 
-    abstract member GetInitialLocalArray : Routine -> uint16[]
-    abstract member ReleaseLocalArray : uint16[] -> unit
+    abstract member GetInitialLocalArray : routine:Routine -> uint16[]
+    abstract member ReleaseLocalArray : localArray:uint16[] -> unit
 
-    abstract member Compile : Routine -> ZCompileResult
+    abstract member Compile : routine:Routine * optimize:bool -> ZCompiledRoutine
     abstract member GetInvoker : address:int -> ZFuncInvoker
 
     abstract member Verify : unit -> bool
@@ -36,9 +36,10 @@ type IMachine =
 
     abstract member SetTextStyle : style:ZTextStyle -> unit
 
-and ZCompileResult =
+and ZCompiledRoutine =
   { Routine : Routine
     ZFunc : ZFunc
+    Optimized: bool
     Invokers : ZFuncInvoker[]
     CompileTime : TimeSpan }
 
@@ -52,23 +53,36 @@ and ZFunc = delegate of memory:Memory
 
 and ZFuncInvoker(machine: IMachine, routine: Routine) =
 
-    let mutable compileResult = None
+    let mutable compiledRoutine = None
+    let mutable invocationCount = 0
 
-    let getCompileResult() = 
-        if compileResult = None then
-            compileResult <- Some(machine.Compile(routine))
-
-        compileResult.Value
+    let getCompiledRoutine() = 
+        match compiledRoutine with
+        | Some(res) ->
+            if invocationCount > 10 && not res.Optimized then
+                // Re-compile with optimizations
+                let res = machine.Compile(routine, true)
+                compiledRoutine <- Some(res)
+                res
+            else
+                res
+        | None ->
+            // First-time, compile wihtout optimizations
+            let res = machine.Compile(routine, false)
+            compiledRoutine <- Some(res)
+            res
 
     let invoke memory locals stack sp argCount =
         try
-            let compileResult = getCompileResult()
+            let compiledRoutine = getCompiledRoutine()
+
+            invocationCount <- invocationCount + 1
 
             if machine.Debugging then
                 Debug.Indent()
-                Debug.WriteLine(sprintf "-- %s --" compileResult.ZFunc.Method.Name)
+                Debug.WriteLine(sprintf "-- %s --" compiledRoutine.ZFunc.Method.Name)
 
-            compileResult.ZFunc.Invoke(memory, locals, stack, sp, compileResult.Invokers, argCount)
+            compiledRoutine.ZFunc.Invoke(memory, locals, stack, sp, compiledRoutine.Invokers, argCount)
         finally
             machine.ReleaseLocalArray(locals)
 

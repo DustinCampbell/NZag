@@ -49,7 +49,7 @@ type Machine (memory: Memory, debugging: bool) as this =
     let registerProfiler (p: IProfiler) =
         profiler <- Some(p)
 
-    let compiledRoutines = Dictionary.create()
+    let compiledRoutineMap = Dictionary.create()
 
     let compileRoutine (routine: Routine) optimize =
         let watch = Measurement.start()
@@ -75,6 +75,7 @@ type Machine (memory: Memory, debugging: bool) as this =
         let result = {
             Routine = routine
             ZFunc = zfunc
+            Optimized = optimize
             Invokers = invokers.ToArray()
             CompileTime = compileTime
         }
@@ -86,20 +87,30 @@ type Machine (memory: Memory, debugging: bool) as this =
         result
 
     let compile (routine: Routine) optimize =
-        match compiledRoutines.TryGetValue(routine.Address) with
+        let res = compileRoutine routine optimize
+        compiledRoutineMap.[routine.Address] <- res
+        res
+
+    let getCompiledRoutine (routine: Routine) optimize =
+        match compiledRoutineMap.TryGetValue(routine.Address) with
         | (true, res) -> res
-        | (false, _) ->
-            let res = compileRoutine routine optimize
-            compiledRoutines.[routine.Address] <- res
-            res
+        | (false, _) -> compile routine optimize
 
     let getRoutine =
         let reader = new RoutineReader(memory)
 
         memoize (fun (address: Address) -> reader.ReadRoutine(address))
 
-    let getInvoker =
-        memoize (fun address -> new ZFuncInvoker(this, RawAddress(address) |> getRoutine))
+    let invokerMap = Dictionary.create()
+
+    let getInvoker address =
+        match invokerMap.TryGetValue(address) with
+        | (true, res) -> res
+        | (false, _) ->
+            let routine = RawAddress(address) |> getRoutine
+            let res = new ZFuncInvoker(this, routine)
+            invokerMap.[address] <- res
+            res
 
     member x.Memory = memory
 
@@ -175,8 +186,8 @@ type Machine (memory: Memory, debugging: bool) as this =
         member y.ReleaseLocalArray(locals) =
             releaseLocalArray locals
 
-        member y.Compile(routine) =
-            compile routine true
+        member y.Compile(routine, optimize) =
+            compile routine optimize
         member y.GetInvoker(address) =
             getInvoker address
 
