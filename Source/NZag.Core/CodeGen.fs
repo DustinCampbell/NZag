@@ -37,7 +37,7 @@ type IMachine =
     abstract member ClearWindow : window:int16 -> unit
     abstract member SplitWindow : lines:int16 -> unit
 
-    abstract member SetCursor : line:int16 * column:int16 -> unit
+    abstract member SetCursor : line:int * column:int -> unit
 
     abstract member SetTextStyle : style:ZTextStyle -> unit
 
@@ -166,7 +166,7 @@ and ZFuncInvoker(machine: IMachine, routine: Routine) =
         parameterTypes.[argCount+1] <- typeof<uint16[]>
         parameterTypes.[argCount+2] <- typeof<int>
 
-        typeof<ZFuncInvoker>.GetMethod(name, parameterTypes)
+        Reflect<ZFuncInvoker>.GetMethod(name, parameterTypes)
 
 type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuilder, invokerList: ResizeArray<ZFuncInvoker>) =
 
@@ -176,28 +176,28 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
     let unexpectedNodeFound o =
         failcompilef "Encountered %s, which should not appear in a lowered tree." (o.GetType().Name)
 
-    let readByte = typeof<Memory>.GetMethod("ReadByte", [|typeof<int>|])
-    let readWord = typeof<Memory>.GetMethod("ReadWord", [|typeof<int>|])
-    let writeByte = typeof<Memory>.GetMethod("WriteByte", [|typeof<int>; typeof<byte>|])
-    let writeWord = typeof<Memory>.GetMethod("WriteWord", [|typeof<int>; typeof<uint16>|])
+    let readByte  = Reflect<Memory>.GetMethod<int>("ReadByte")
+    let readWord  = Reflect<Memory>.GetMethod<int>("ReadWord")
+    let writeByte = Reflect<Memory>.GetMethod<int, byte>("WriteByte")
+    let writeWord = Reflect<Memory>.GetMethod<int, uint16>("WriteWord")
 
-    let getInvoker = typeof<IMachine>.GetMethod("GetInvoker")
-    let verify = typeof<IMachine>.GetMethod("Verify")
-    let randomize = typeof<IMachine>.GetMethod("Randomize")
-    let nextRandomNumber = typeof<IMachine>.GetMethod("NextRandomNumber")
-    let readZText = typeof<IMachine>.GetMethod("ReadZText")
-    let readZTextOfLength = typeof<IMachine>.GetMethod("ReadZTextOfLength")
-    let readInputChar = typeof<IMachine>.GetMethod("ReadInputChar")
-    let readTimedInputChar = typeof<IMachine>.GetMethod("ReadTimedInputChar")
-    let readInputText = typeof<IMachine>.GetMethod("ReadInputText")
-    let selectOutputStream = typeof<IMachine>.GetMethod("SelectOutputStream")
-    let writeOutputChar = typeof<IMachine>.GetMethod("WriteOutputChar")
-    let writeOutputText = typeof<IMachine>.GetMethod("WriteOutputText")
-    let splitWindow = typeof<IMachine>.GetMethod("SplitWindow")
-    let setWindow = typeof<IMachine>.GetMethod("SetWindow")
-    let clearWindow = typeof<IMachine>.GetMethod("ClearWindow")
-    let setCursor = typeof<IMachine>.GetMethod("SetCursor")
-    let setTextStyle = typeof<IMachine>.GetMethod("SetTextStyle")
+    let getInvoker         = Reflect<IMachine>.GetMethod<int>("GetInvoker")
+    let verify             = Reflect<IMachine>.GetMethod("Verify")
+    let randomize          = Reflect<IMachine>.GetMethod<int16>("Randomize")
+    let nextRandomNumber   = Reflect<IMachine>.GetMethod<int16>("NextRandomNumber")
+    let readZText          = Reflect<IMachine>.GetMethod<int>("ReadZText")
+    let readZTextOfLength  = Reflect<IMachine>.GetMethod<int, int>("ReadZTextOfLength")
+    let readInputChar      = Reflect<IMachine>.GetMethod("ReadInputChar")
+    let readTimedInputChar = Reflect<IMachine>.GetMethod<uint16, uint16>("ReadTimedInputChar")
+    let readInputText      = Reflect<IMachine>.GetMethod<int, int>("ReadInputText")
+    let selectOutputStream = Reflect<IMachine>.GetMethod<int16>("SelectOutputStream")
+    let writeOutputChar    = Reflect<IMachine>.GetMethod<char>("WriteOutputChar")
+    let writeOutputText    = Reflect<IMachine>.GetMethod<string>("WriteOutputText")
+    let splitWindow        = Reflect<IMachine>.GetMethod<int16>("SplitWindow")
+    let setWindow          = Reflect<IMachine>.GetMethod<int16>("SetWindow")
+    let clearWindow        = Reflect<IMachine>.GetMethod<int16>("ClearWindow")
+    let setCursor          = Reflect<IMachine>.GetMethod<int, int>("SetCursor")
+    let setTextStyle       = Reflect<IMachine>.GetMethod<ZTextStyle>("SetTextStyle")
 
     let peekStack() =
         builder.Arguments.LoadStack()
@@ -315,7 +315,8 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
             temp.Store()
 
             temp.LoadAddress()
-            builder.Call(typeof<int16>.GetMethod("ToString", [||]))
+            let toString = Reflect<int16>.GetMethod("ToString")
+            builder.Call(toString)
 
         | CallExpr(a,args) ->
             match a with

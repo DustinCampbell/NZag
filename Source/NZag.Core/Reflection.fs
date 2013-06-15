@@ -5,6 +5,43 @@ open System.Reflection
 open System.Reflection.Emit
 open NZag.Utilities
 
+type TypeArray =
+
+    static member Empty : Type[] = [||]
+    static member One<'T>() = [|typeof<'T>|]
+    static member Two<'T1,'T2>() = [|typeof<'T1>; typeof<'T2>|]
+    static member Three<'T1,'T2,'T3>() = [|typeof<'T1>; typeof<'T2>; typeof<'T3>|]
+    static member Four<'T1,'T2,'T3,'T4>() = [|typeof<'T1>; typeof<'T2>; typeof<'T3>; typeof<'T4>|]
+    static member Five<'T1,'T2,'T3,'T4,'T5>() = [|typeof<'T1>; typeof<'T2>; typeof<'T3>; typeof<'T4>; typeof<'T5>|]
+    static member Six<'T1,'T2,'T3,'T4,'T5,'T6>() = [|typeof<'T1>; typeof<'T2>; typeof<'T3>; typeof<'T4>; typeof<'T5>; typeof<'T6>|]
+    static member Seven<'T1,'T2,'T3,'T4,'T5,'T6,'T7>() = [|typeof<'T1>; typeof<'T2>; typeof<'T3>; typeof<'T4>; typeof<'T5>; typeof<'T6>; typeof<'T7>|]
+    static member Eight<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'T8>() = [|typeof<'T1>; typeof<'T2>; typeof<'T3>; typeof<'T4>; typeof<'T5>; typeof<'T6>; typeof<'T7>; typeof<'T8>|]
+
+type Reflect<'T> private () =
+
+    static let getMethod (name: string) (argTypes: Type[]) =
+        let res = typeof<'T>.GetMethod(name, argTypes)
+        if res = null then failwithf "Could not find %s.%s with args, %A" typeof<'T>.FullName name argTypes
+        res
+
+    static member GetMethod(name: string) =
+        getMethod name TypeArray.Empty
+
+    static member GetMethod(name: string, argTypes: Type[]) =
+        getMethod name argTypes
+
+    static member GetMethod<'T1>(name: string) =
+        getMethod name (TypeArray.One<'T1>())
+
+    static member GetMethod<'T1,'T2>(name: string) =
+        getMethod name (TypeArray.Two<'T1,'T2>())
+
+    static member GetMethod<'T1,'T2,'T3>(name: string) =
+        getMethod name (TypeArray.Three<'T1,'T2,'T3>())
+
+    static member GetMethod<'T1,'T2,'T3,'T4>(name: string) =
+        getMethod name (TypeArray.Four<'T1,'T2,'T3,'T4>())
+
 type IArguments =
     abstract member LoadMachine : unit -> unit
     abstract member LoadMemory : unit -> unit
@@ -295,10 +332,10 @@ type ILBuilder (generator: ILGenerator) =
         loadFormat()
         argsArray.Load()
 
-        let stringFormat = typeof<System.String>.GetMethod("Format", [|typeof<string>; typeof<obj[]>|])
+        let stringFormat = Reflect<System.String>.GetMethod<string, obj>("Format")
         x.Call(stringFormat)
 
-        let debugWriteLine = typeof<System.Diagnostics.Debug>.GetMethod("WriteLine", [|typeof<string>|])
+        let debugWriteLine = Reflect<System.Diagnostics.Debug>.GetMethod<string>("WriteLine")
         x.Call(debugWriteLine)
 
     member x.ThrowException<'T when 'T :> Exception>() =

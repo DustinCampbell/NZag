@@ -54,11 +54,17 @@ type Machine (memory: Memory, debugging: bool) as this =
     let compileRoutine (routine: Routine) optimize =
         let watch = Measurement.start()
 
+        let methodName =
+            if optimize then
+                sprintf "%4x_%d_locals_optimized" routine.Address.IntValue routine.Locals.Length
+            else
+                sprintf "%4x_%d_locals" routine.Address.IntValue routine.Locals.Length
+
         let dynamicMethod =
             new System.Reflection.Emit.DynamicMethod(
-                name = sprintf "%4x_%d_locals" routine.Address.IntValue routine.Locals.Length,
+                name = methodName,
                 returnType = typeof<uint16>,
-                parameterTypes = [|typeof<Machine>; typeof<Memory>; typeof<uint16[]>; typeof<uint16[]>; typeof<int>; typeof<ZFuncInvoker[]>; typeof<int>|],
+                parameterTypes = TypeArray.Seven<Machine, Memory, uint16[], uint16[], int, ZFuncInvoker[], int>(),
                 owner = typeof<Machine>,
                 skipVisibility = true)
 
@@ -302,7 +308,7 @@ type Machine (memory: Memory, debugging: bool) as this =
                 screen.SplitAsync(int lines).Wait()
 
         member y.SetCursor(line, column) =
-            screen.SetCursorAsync(int line, int column).Wait()
+            screen.SetCursorAsync(line, column).Wait()
 
         member y.SetTextStyle(style) =
             screen.SetTextStyleAsync(style).Wait()
