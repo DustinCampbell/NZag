@@ -264,6 +264,24 @@ type Machine (memory: Memory, debugging: bool) as this =
 
             0
 
+        member y.ReadTimedInputChar(time, routine) =
+            // TODO: Support timed input
+            let readCharTask = screen.ReadCharAsync()
+            let ch = readCharTask.Result
+
+            ch
+
+        member y.SelectOutputStream number =
+            match number with
+            |  1s -> outputStreams.SelectScreenStream()
+            | -1s -> outputStreams.DeselectScreenStream()
+            |  2s -> outputStreams.SelectTranscriptStream()
+            | -2s -> outputStreams.DeselectTranscriptStream()
+            |  3s -> failruntime "Unexpected: An address must be supplied when selecting a memory stream"
+            | -3s -> outputStreams.DeselectMemoryStream()
+            | -4s | 4s -> failruntime "Stream 4 is not supported"
+            |  _ -> failruntimef "Invalid stream number %d" number
+
         member y.WriteOutputChar(ch) =
             let work = (outputStreams :> IOutputStream).WriteCharAsync(ch)
             Async.RunSynchronously(work |> Async.AwaitTask)
@@ -272,19 +290,19 @@ type Machine (memory: Memory, debugging: bool) as this =
             Async.RunSynchronously(work |> Async.AwaitTask)
 
         member y.SetWindow(window) =
-            screen.SetWindowAsync(window).Wait()
+            screen.SetWindowAsync(int window).Wait()
         member y.ClearWindow(window) =
-            if window >= 0 then screen.ClearAsync(window).Wait()
-            elif window = -1 then screen.ClearAllAsync(true).Wait()
-            elif window = -2 then screen.ClearAllAsync(false).Wait()
+            if window >= 0s then screen.ClearAsync(int window).Wait()
+            elif window = -1s then screen.ClearAllAsync(true).Wait()
+            elif window = -2s then screen.ClearAllAsync(false).Wait()
         member y.SplitWindow(lines) =
-            if lines = 0 then
+            if lines = 0s then
                 screen.UnsplitAsync().Wait()
             else
-                screen.SplitAsync(lines).Wait()
+                screen.SplitAsync(int lines).Wait()
 
         member y.SetCursor(line, column) =
-            screen.SetCursorAsync(line, column).Wait()
+            screen.SetCursorAsync(int line, int column).Wait()
 
         member y.SetTextStyle(style) =
             screen.SetTextStyleAsync(style).Wait()

@@ -310,7 +310,7 @@ module Optimization =
                     | CallExpr(_,_)
                     | ReadInputCharExpr
                     | ReadInputTextExpr(_,_)
-                    | ReadTimedInputCharExpr(_,_,_)
+                    | ReadTimedInputCharExpr(_,_)
                     | ReadTimedInputTextExpr(_,_,_,_) ->
                         result := true
                     | e -> ())

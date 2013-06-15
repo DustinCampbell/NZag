@@ -151,7 +151,7 @@ type Expression =
     | ReadInputTextExpr of Expression * Expression
     
     /// Reads timed user char input.
-    | ReadTimedInputCharExpr of Expression * Expression * Expression
+    | ReadTimedInputCharExpr of Expression * Expression
 
     /// Reads timed user text input using the specified addresses for storing text and parse results respectively.
     | ReadTimedInputTextExpr of Expression * Expression * Expression * Expression
@@ -206,6 +206,9 @@ type Statement =
     
     /// Seeds the random number generator with the given expression
     | SetRandomNumberSeedStmt of Expression
+
+    /// Selects the given output stream
+    | SelectOutputStreamStmt of Expression
 
     /// Prints the char represented by the given expression to the active window
     | PrintCharStmt of Expression
@@ -375,8 +378,8 @@ module BoundNodeVisitors =
             fexpr ReadInputCharExpr
         | ReadInputTextExpr(e1,e2) ->
             fexpr (ReadInputTextExpr(rewriteExpr e1, rewriteExpr e2))
-        | ReadTimedInputCharExpr(e1,e2,e3) ->
-            fexpr (ReadTimedInputCharExpr(rewriteExpr e1, rewriteExpr e2, rewriteExpr e3))
+        | ReadTimedInputCharExpr(e1,e2) ->
+            fexpr (ReadTimedInputCharExpr(rewriteExpr e1, rewriteExpr e2))
         | ReadTimedInputTextExpr(e1,e2,e3,e4) ->
             fexpr (ReadTimedInputTextExpr(rewriteExpr e1, rewriteExpr e2, rewriteExpr e3, rewriteExpr e4))
         | VerifyExpr ->
@@ -417,6 +420,8 @@ module BoundNodeVisitors =
             fstmt (DiscardValueStmt(rewriteExpr e))
         | SetRandomNumberSeedStmt(e) ->
             fstmt (SetRandomNumberSeedStmt(rewriteExpr e))
+        | SelectOutputStreamStmt(e) ->
+            fstmt (SelectOutputStreamStmt(rewriteExpr e))
         | PrintCharStmt(e) ->
             fstmt (PrintCharStmt(rewriteExpr e))
         | PrintTextStmt(e) ->
@@ -470,13 +475,10 @@ module BoundNodeVisitors =
                 visitExpr e
             | BinaryOperationExpr(_,e1,e2)
             | ReadMemoryTextOfLengthExpr(e1,e2)
-            | ReadInputTextExpr(e1,e2) ->
+            | ReadInputTextExpr(e1,e2)
+            | ReadTimedInputCharExpr(e1,e2) ->
                 visitExpr e1
                 visitExpr e2
-            | ReadTimedInputCharExpr(e1,e2,e3) ->
-                visitExpr e1
-                visitExpr e2
-                visitExpr e3
             | ReadTimedInputTextExpr(e1,e2,e3,e4) ->
                 visitExpr e1
                 visitExpr e2
@@ -503,6 +505,7 @@ module BoundNodeVisitors =
             | StackUpdateStmt(e)
             | DiscardValueStmt(e)
             | SetRandomNumberSeedStmt(e)
+            | SelectOutputStreamStmt(e)
             | PrintCharStmt(e)
             | PrintTextStmt(e)
             | SetTextStyleStmt(e)
@@ -875,14 +878,12 @@ type BoundNodeDumper (builder : StringBuilder) =
                 dumpExpression e1
                 append ", "
                 dumpExpression e2)
-        | ReadTimedInputCharExpr(e1,e2,e3) ->
+        | ReadTimedInputCharExpr(e1,e2) ->
             append "read-timed-input-char"
             parenthesize (fun () ->
                 dumpExpression e1
                 append ", "
-                dumpExpression e2
-                append ", "
-                dumpExpression e3)
+                dumpExpression e2)
         | ReadTimedInputTextExpr(e1,e2,e3,e4) ->
             append "read-timed-input-text"
             parenthesize (fun () ->
@@ -964,6 +965,10 @@ type BoundNodeDumper (builder : StringBuilder) =
             dumpExpression e
         | SetRandomNumberSeedStmt(e) ->
             append "randomize"
+            parenthesize (fun () ->
+                dumpExpression e)
+        | SelectOutputStreamStmt(e) ->
+            append "select-output-stream"
             parenthesize (fun () ->
                 dumpExpression e)
         | PrintCharStmt(e)

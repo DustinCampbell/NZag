@@ -387,6 +387,10 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
                 (fun () ->
                     store (number .>>. ((negate places) .&. (int32Const 0x1f))))
 
+        | "buffer_mode", AtLeast 4, Op1(flag) ->
+            // TODO: Do we need to do anything with this -- we always buffer!
+            discard zero
+
         | "call", Any, OpAndList(address, args)
         | "call_1s", AtLeast 4, OpAndList(address, args)
         | "call_2s", AtLeast 4, OpAndList(address, args)
@@ -639,6 +643,9 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         | "or", Any, Op2(left, right) ->
             store (left .|. right)
 
+        | "output_stream", AtLeast 3, Op1(number) ->
+            SelectOutputStreamStmt(number) |> addStatement
+
         | "piracy", AtLeast 5, NoOps ->
             branchIf (one)
 
@@ -739,6 +746,9 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
         | "read_char", AtLeast 4, Op1(input) ->
             store (ReadInputCharExpr)
+
+        | "read_char", AtLeast 4, Op3(input, time, routine) ->
+            store (ReadTimedInputCharExpr(time, routine))
 
         | "remove_obj", Any, Op1(objNum) ->
             removeObject objNum

@@ -166,6 +166,9 @@ type OutputStreamCollection(memory: Memory) =
 
         memoryStreams |> Stack.push (new MemoryOutputStream(memory, address) :> IOutputStream)
 
+    member x.DeselectMemoryStream() =
+        memoryStreams |> Stack.pop |> ignore
+
     interface IOutputStream with
 
         // If a member stream is active, we don't output to other streams

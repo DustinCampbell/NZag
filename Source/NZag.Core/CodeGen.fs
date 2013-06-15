@@ -26,14 +26,18 @@ type IMachine =
     abstract member ReadInputChar : unit -> char
     abstract member ReadInputText : textBuffer:int * parseBuffer:int -> int
 
+    abstract member ReadTimedInputChar : time:uint16 * routine:uint16 -> char
+
+    abstract member SelectOutputStream : number:int16 -> unit
+
     abstract member WriteOutputChar : ch:char -> unit
     abstract member WriteOutputText : s:string -> unit
 
-    abstract member SetWindow : window:int -> unit
-    abstract member ClearWindow : window:int -> unit
-    abstract member SplitWindow : lines:int -> unit
+    abstract member SetWindow : window:int16 -> unit
+    abstract member ClearWindow : window:int16 -> unit
+    abstract member SplitWindow : lines:int16 -> unit
 
-    abstract member SetCursor : line:int * column:int -> unit
+    abstract member SetCursor : line:int16 * column:int16 -> unit
 
     abstract member SetTextStyle : style:ZTextStyle -> unit
 
@@ -184,7 +188,9 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
     let readZText = typeof<IMachine>.GetMethod("ReadZText")
     let readZTextOfLength = typeof<IMachine>.GetMethod("ReadZTextOfLength")
     let readInputChar = typeof<IMachine>.GetMethod("ReadInputChar")
+    let readTimedInputChar = typeof<IMachine>.GetMethod("ReadTimedInputChar")
     let readInputText = typeof<IMachine>.GetMethod("ReadInputText")
+    let selectOutputStream = typeof<IMachine>.GetMethod("SelectOutputStream")
     let writeOutputChar = typeof<IMachine>.GetMethod("WriteOutputChar")
     let writeOutputText = typeof<IMachine>.GetMethod("WriteOutputText")
     let splitWindow = typeof<IMachine>.GetMethod("SplitWindow")
@@ -346,6 +352,11 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
         | ReadInputCharExpr ->
             builder.Arguments.LoadMachine()
             builder.Call(readInputChar)
+        | ReadTimedInputCharExpr(time, routine) ->
+            builder.Arguments.LoadMachine()
+            emitExpression time
+            emitExpression routine
+            builder.Call(readTimedInputChar)
         | VerifyExpr ->
             builder.Arguments.LoadMachine()
             builder.Call(verify)
@@ -434,6 +445,10 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
             builder.Arguments.LoadMachine()
             emitExpression seed
             builder.Call(randomize)
+        | SelectOutputStreamStmt(e) ->
+            builder.Arguments.LoadMachine()
+            emitExpression e
+            builder.Call(selectOutputStream)
         | PrintCharStmt(e) ->
             builder.Arguments.LoadMachine()
             emitExpression e
