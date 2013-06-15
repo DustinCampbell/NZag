@@ -182,7 +182,7 @@ type OutputStreamCollection(memory: Memory) =
                 else
                     async { return () } |> Async.StartAsPlainTask
             else
-                memoryStreams |> Stack.pop |> (fun stream -> stream.WriteCharAsync(ch))
+                memoryStreams |> Stack.peek |> (fun stream -> stream.WriteCharAsync(ch))
 
         member x.WriteTextAsync s =
             if memoryStreams |> Stack.isEmpty then
@@ -193,4 +193,4 @@ type OutputStreamCollection(memory: Memory) =
                 else
                     async { return () } |> Async.StartAsPlainTask
             else
-                memoryStreams |> Stack.pop |> (fun stream -> stream.WriteTextAsync(s))
+                memoryStreams |> Stack.peek |> (fun stream -> stream.WriteTextAsync(s))

@@ -297,6 +297,7 @@ module Stack =
 
     let push v (s: Stack<_>) = s.Push(v)
     let pop (s: Stack<_>) = s.Pop()
+    let peek (s: Stack<_>) = s.Peek()
 
 [<AutoOpen>]
 module Functions =

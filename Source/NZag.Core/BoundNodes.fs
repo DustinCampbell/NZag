@@ -210,6 +210,9 @@ type Statement =
     /// Selects the given output stream
     | SelectOutputStreamStmt of Expression
 
+    /// Selects the given memory output stream
+    | SelectMemoryOutputStreamStmt of Expression * Expression
+
     /// Prints the char represented by the given expression to the active window
     | PrintCharStmt of Expression
 
@@ -422,6 +425,8 @@ module BoundNodeVisitors =
             fstmt (SetRandomNumberSeedStmt(rewriteExpr e))
         | SelectOutputStreamStmt(e) ->
             fstmt (SelectOutputStreamStmt(rewriteExpr e))
+        | SelectMemoryOutputStreamStmt(e1,e2) ->
+            fstmt (SelectMemoryOutputStreamStmt(rewriteExpr e1, rewriteExpr e2))
         | PrintCharStmt(e) ->
             fstmt (PrintCharStmt(rewriteExpr e))
         | PrintTextStmt(e) ->
@@ -521,6 +526,7 @@ module BoundNodeVisitors =
             | WriteComputedVarStmt(e1,e2)
             | WriteMemoryByteStmt(e1,e2)
             | WriteMemoryWordStmt(e1,e2)
+            | SelectMemoryOutputStreamStmt(e1,e2)
             | SetCursorStmt(e1,e2) ->
                 visitExpr e1
                 visitExpr e2
@@ -971,6 +977,12 @@ type BoundNodeDumper (builder : StringBuilder) =
             append "select-output-stream"
             parenthesize (fun () ->
                 dumpExpression e)
+        | SelectMemoryOutputStreamStmt(number, table) ->
+            append "select-output-stream"
+            parenthesize (fun () ->
+                dumpExpression number
+                append ", "
+                dumpExpression table)
         | PrintCharStmt(e)
         | PrintTextStmt(e) ->
             append "print: "

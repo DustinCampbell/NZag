@@ -279,11 +279,24 @@ type Machine (memory: Memory, debugging: bool) as this =
 
         member y.SelectOutputStream number =
             match number with
+            |  0s -> ()
             |  1s -> outputStreams.SelectScreenStream()
             | -1s -> outputStreams.DeselectScreenStream()
             |  2s -> outputStreams.SelectTranscriptStream()
             | -2s -> outputStreams.DeselectTranscriptStream()
             |  3s -> failruntime "Unexpected: An address must be supplied when selecting a memory stream"
+            | -3s -> outputStreams.DeselectMemoryStream()
+            | -4s | 4s -> failruntime "Stream 4 is not supported"
+            |  _ -> failruntimef "Invalid stream number %d" number
+
+        member y.SelectOutputStream(number, table) =
+            match number with
+            |  0s -> ()
+            |  1s -> outputStreams.SelectScreenStream()
+            | -1s -> outputStreams.DeselectScreenStream()
+            |  2s -> outputStreams.SelectTranscriptStream()
+            | -2s -> outputStreams.DeselectTranscriptStream()
+            |  3s -> outputStreams.SelectMemoryStream(ByteAddress(table))
             | -3s -> outputStreams.DeselectMemoryStream()
             | -4s | 4s -> failruntime "Stream 4 is not supported"
             |  _ -> failruntimef "Invalid stream number %d" number

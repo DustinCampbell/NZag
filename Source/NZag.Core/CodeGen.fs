@@ -29,6 +29,7 @@ type IMachine =
     abstract member ReadTimedInputChar : time:uint16 * routine:uint16 -> char
 
     abstract member SelectOutputStream : number:int16 -> unit
+    abstract member SelectOutputStream : number:int16 * table:uint16 -> unit
 
     abstract member WriteOutputChar : ch:char -> unit
     abstract member WriteOutputText : s:string -> unit
@@ -181,23 +182,24 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
     let writeByte = Reflect<Memory>.GetMethod<int, byte>("WriteByte")
     let writeWord = Reflect<Memory>.GetMethod<int, uint16>("WriteWord")
 
-    let getInvoker         = Reflect<IMachine>.GetMethod<int>("GetInvoker")
-    let verify             = Reflect<IMachine>.GetMethod("Verify")
-    let randomize          = Reflect<IMachine>.GetMethod<int16>("Randomize")
-    let nextRandomNumber   = Reflect<IMachine>.GetMethod<int16>("NextRandomNumber")
-    let readZText          = Reflect<IMachine>.GetMethod<int>("ReadZText")
-    let readZTextOfLength  = Reflect<IMachine>.GetMethod<int, int>("ReadZTextOfLength")
-    let readInputChar      = Reflect<IMachine>.GetMethod("ReadInputChar")
-    let readTimedInputChar = Reflect<IMachine>.GetMethod<uint16, uint16>("ReadTimedInputChar")
-    let readInputText      = Reflect<IMachine>.GetMethod<int, int>("ReadInputText")
-    let selectOutputStream = Reflect<IMachine>.GetMethod<int16>("SelectOutputStream")
-    let writeOutputChar    = Reflect<IMachine>.GetMethod<char>("WriteOutputChar")
-    let writeOutputText    = Reflect<IMachine>.GetMethod<string>("WriteOutputText")
-    let splitWindow        = Reflect<IMachine>.GetMethod<int16>("SplitWindow")
-    let setWindow          = Reflect<IMachine>.GetMethod<int16>("SetWindow")
-    let clearWindow        = Reflect<IMachine>.GetMethod<int16>("ClearWindow")
-    let setCursor          = Reflect<IMachine>.GetMethod<int, int>("SetCursor")
-    let setTextStyle       = Reflect<IMachine>.GetMethod<ZTextStyle>("SetTextStyle")
+    let getInvoker          = Reflect<IMachine>.GetMethod<int>("GetInvoker")
+    let verify              = Reflect<IMachine>.GetMethod("Verify")
+    let randomize           = Reflect<IMachine>.GetMethod<int16>("Randomize")
+    let nextRandomNumber    = Reflect<IMachine>.GetMethod<int16>("NextRandomNumber")
+    let readZText           = Reflect<IMachine>.GetMethod<int>("ReadZText")
+    let readZTextOfLength   = Reflect<IMachine>.GetMethod<int, int>("ReadZTextOfLength")
+    let readInputChar       = Reflect<IMachine>.GetMethod("ReadInputChar")
+    let readTimedInputChar  = Reflect<IMachine>.GetMethod<uint16, uint16>("ReadTimedInputChar")
+    let readInputText       = Reflect<IMachine>.GetMethod<int, int>("ReadInputText")
+    let selectOutputStream1 = Reflect<IMachine>.GetMethod<int16>("SelectOutputStream")
+    let selectOutputStream2 = Reflect<IMachine>.GetMethod<int16, uint16>("SelectOutputStream")
+    let writeOutputChar     = Reflect<IMachine>.GetMethod<char>("WriteOutputChar")
+    let writeOutputText     = Reflect<IMachine>.GetMethod<string>("WriteOutputText")
+    let splitWindow         = Reflect<IMachine>.GetMethod<int16>("SplitWindow")
+    let setWindow           = Reflect<IMachine>.GetMethod<int16>("SetWindow")
+    let clearWindow         = Reflect<IMachine>.GetMethod<int16>("ClearWindow")
+    let setCursor           = Reflect<IMachine>.GetMethod<int, int>("SetCursor")
+    let setTextStyle        = Reflect<IMachine>.GetMethod<ZTextStyle>("SetTextStyle")
 
     let peekStack() =
         builder.Arguments.LoadStack()
@@ -449,7 +451,12 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
         | SelectOutputStreamStmt(e) ->
             builder.Arguments.LoadMachine()
             emitExpression e
-            builder.Call(selectOutputStream)
+            builder.Call(selectOutputStream1)
+        | SelectMemoryOutputStreamStmt(number, table) ->
+            builder.Arguments.LoadMachine()
+            emitExpression number
+            emitExpression table
+            builder.Call(selectOutputStream2)
         | PrintCharStmt(e) ->
             builder.Arguments.LoadMachine()
             emitExpression e

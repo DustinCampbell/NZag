@@ -646,6 +646,9 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         | "output_stream", AtLeast 3, Op1(number) ->
             SelectOutputStreamStmt(number) |> addStatement
 
+        | "output_stream", AtLeast 5, Op2(number, table) ->
+            SelectMemoryOutputStreamStmt(number, table) |> addStatement
+
         | "piracy", AtLeast 5, NoOps ->
             branchIf (one)
 
