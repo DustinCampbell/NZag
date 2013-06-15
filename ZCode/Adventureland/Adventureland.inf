@@ -1,6 +1,4 @@
-
-<!-- saved from url=(0149)https://raw.github.com/DustinCampbell/ZDebug/master/ZCode/adventureland/Adventureland.inf?login=DustinCampbell&token=d2889752e992da8db68918aa00ba3f73 -->
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body><pre style="word-wrap: break-word; white-space: pre-wrap;">! ----------------------------------------------------------------------------
+! ----------------------------------------------------------------------------
 !  Adventureland 961111             One of the standard Inform 6 example games
 !
 !                                             Designed by Scott Adams: c. 1979
@@ -873,4 +871,3 @@ Verb "help"     *                                -&gt; Help;
 Verb "find"     * special                        -&gt; Find;
 
 ! ----------------------------------------------------------------------------
-</pre></body></html>
