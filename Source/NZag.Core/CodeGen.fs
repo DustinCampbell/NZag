@@ -30,6 +30,7 @@ type IMachine =
     abstract member WriteOutputText : s:string -> unit
 
     abstract member SetWindow : window:int -> unit
+    abstract member ClearWindow : window:int -> unit
     abstract member SplitWindow : lines:int -> unit
 
     abstract member SetCursor : line:int * column:int -> unit
@@ -188,6 +189,7 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
     let writeOutputText = typeof<IMachine>.GetMethod("WriteOutputText")
     let splitWindow = typeof<IMachine>.GetMethod("SplitWindow")
     let setWindow = typeof<IMachine>.GetMethod("SetWindow")
+    let clearWindow = typeof<IMachine>.GetMethod("ClearWindow")
     let setCursor = typeof<IMachine>.GetMethod("SetCursor")
     let setTextStyle = typeof<IMachine>.GetMethod("SetTextStyle")
 
@@ -448,6 +450,10 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
             builder.Arguments.LoadMachine()
             emitExpression e
             builder.Call(setWindow)
+        | ClearWindowStmt(e) ->
+            builder.Arguments.LoadMachine()
+            emitExpression e
+            builder.Call(clearWindow)
         | SplitWindowStmt(e) ->
             builder.Arguments.LoadMachine()
             emitExpression e

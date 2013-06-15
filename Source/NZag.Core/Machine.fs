@@ -273,6 +273,10 @@ type Machine (memory: Memory, debugging: bool) as this =
 
         member y.SetWindow(window) =
             screen.SetWindowAsync(window).Wait()
+        member y.ClearWindow(window) =
+            if window >= 0 then screen.ClearAsync(window).Wait()
+            elif window = -1 then screen.ClearAllAsync(true).Wait()
+            elif window = -2 then screen.ClearAllAsync(false).Wait()
         member y.SplitWindow(lines) =
             if lines = 0 then
                 screen.UnsplitAsync().Wait()

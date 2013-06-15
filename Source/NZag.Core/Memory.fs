@@ -602,7 +602,7 @@ module Header =
 
     let readMainRoutineAddress (memory: Memory) =
         let initialPC = offset_InitialPC |> memory.ReadWord
-        if memory.Version < 6 then
+        if memory.Version <> 6 then
             ByteAddress(initialPC - 1us)
         else
             RoutineAddress(initialPC)

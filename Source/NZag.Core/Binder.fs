@@ -428,6 +428,9 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
             store (left ./. right)
 
+        | "erase_window", AtLeast 4, Op1(window) ->
+            ClearWindowStmt(window) |> addStatement
+
         | "get_child", Any, Op1(objNum) ->
             let child = readObjectChild objNum
             store child
