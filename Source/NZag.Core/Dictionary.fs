@@ -28,6 +28,7 @@ module Dictionary =
 
                 if wordSeparators |> Array.exists ((=) ch) then
                     tokens.Add({Start = i; Length = 1; Text = ch.ToString()})
+                    start <- -1
 
             elif ch = ' ' then
                 let length = i - start

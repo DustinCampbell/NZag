@@ -20,6 +20,7 @@ namespace NZag.ViewModels
         private readonly ReadOnlyBulkObservableCollection<RoutineViewModel> readOnlyRoutines;
 
         private bool refreshingData;
+        private object gate = new object();
 
         [ImportingConstructor]
         private ProfilerViewModel()
@@ -67,23 +68,26 @@ namespace NZag.ViewModels
 
         private void RefreshData()
         {
-            var routinesCopy = this.routines;
-
-            routinesCopy.BeginBulkOperation();
-            try
+            lock (gate)
             {
-                routinesCopy.Clear();
-                foreach (var pair in this.routineList)
+                var routinesCopy = this.routines;
+
+                routinesCopy.BeginBulkOperation();
+                try
                 {
-                    routinesCopy.Add(pair.Value);
+                    routinesCopy.Clear();
+                    foreach (var pair in this.routineList)
+                    {
+                        routinesCopy.Add(pair.Value);
+                    }
                 }
-            }
-            finally
-            {
-                routinesCopy.EndBulkOperation();
-            }
+                finally
+                {
+                    routinesCopy.EndBulkOperation();
+                }
 
-            refreshingData = false;
+                refreshingData = false;
+            }
         }
 
         public ReadOnlyBulkObservableCollection<RoutineViewModel> Routines
