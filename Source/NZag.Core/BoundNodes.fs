@@ -284,6 +284,14 @@ module BoundNodeConstruction =
     let six = int32Const 6
     let seven = int32Const 7
     let eight = int32Const 8
+    let nine = int32Const 9
+    let ten = int32Const 10
+    let eleven = int32Const 11
+    let twelve = int32Const 12
+    let thirteen = int32Const 13
+    let fourteen = int32Const 14
+    let fifteen = int32Const 15
+    let sixteen = int32Const 16
 
     let toByte v = ConversionExpr(ConversionKind.ToByte, v)
     let toInt16 v = ConversionExpr(ConversionKind.ToInt16, v)
@@ -317,6 +325,13 @@ module ConversionPatterns =
 
     let (|ToInt16|_|) = function
         | ConversionExpr(ConversionKind.ToInt16, v) -> Some(v)
+        | _ -> None
+
+[<AutoOpen>]
+module ConstantExprPatterns =
+
+    let (|ByteConst|_|) = function
+        | ConstantExpr(Byte(b)) -> Some(b)
         | _ -> None
 
 module BoundNodeVisitors =

@@ -361,7 +361,7 @@ LABEL 03
     Sub CZech_AA4()
         Dim expected =
 <![CDATA[
-# temps: 21
+# temps: 19
 
 LABEL 00
     temp00 <- L00
@@ -404,10 +404,9 @@ LABEL 02
     temp08 <- pop-SP
     discard: call 7e4 (temp08, 01, 0b2a)
     write-word(4f0) <- 03
+    write-word(4f0) <- (int16(read-word(4f0)) - int16(1))
     temp09 <- read-word(4f0)
-    write-word(4f0) <- (int16(temp09) - int16(1))
-    temp0a <- read-word(4f0)
-    discard: call 7e4 (temp0a, 02, 0b2b)
+    discard: call 7e4 (temp09, 02, 0b2b)
     print: "inc"
     discard: call cb0 (05, 06)
     discard: call cb0 (ffff, 00)
@@ -415,17 +414,16 @@ LABEL 02
     discard: call cb0 (7fff, 8000)
     push-SP: 01
     push-SP: 0a
-    temp0b <- peek-SP
-    update-SP: (int16(temp0b) + int16(1))
+    temp0a <- peek-SP
+    update-SP: (int16(temp0a) + int16(1))
+    temp0b <- pop-SP
+    discard: call 7e4 (temp0b, 0b, 0b2d)
     temp0c <- pop-SP
-    discard: call 7e4 (temp0c, 0b, 0b2d)
-    temp0d <- pop-SP
-    discard: call 7e4 (temp0d, 01, 0b2e)
+    discard: call 7e4 (temp0c, 01, 0b2e)
     write-word(4f0) <- 03
-    temp0e <- read-word(4f0)
-    write-word(4f0) <- (int16(temp0e) + int16(1))
-    temp0f <- read-word(4f0)
-    discard: call 7e4 (temp0f, 04, 0b2f)
+    write-word(4f0) <- (int16(read-word(4f0)) + int16(1))
+    temp0d <- read-word(4f0)
+    discard: call 7e4 (temp0d, 04, 0b2f)
     print: "\n    dec_chk"
     discard: call 8e0 ()
     discard: call 8e0 ()
@@ -437,22 +435,22 @@ LABEL 02
     discard: call 8e0 ()
     push-SP: 01
     push-SP: 0a
-    temp10 <- peek-SP
-    temp11 <- (int16(temp10) - int16(1))
-    update-SP: temp11
-    if (int16(temp11) < int16(05)) is true then
+    temp0e <- peek-SP
+    temp0f <- (int16(temp0e) - int16(1))
+    update-SP: temp0f
+    if (int16(temp0f) < int16(05)) is true then
         jump-to: LABEL 04
 LABEL 03
     discard: call 8e0 ()
-    temp12 <- pop-SP
-    discard: call 7e4 (temp12, 09, 0b31)
-    temp13 <- pop-SP
-    discard: call 7e4 (temp13, 01, 0b33)
+    temp10 <- pop-SP
+    discard: call 7e4 (temp10, 09, 0b31)
+    temp11 <- pop-SP
+    discard: call 7e4 (temp11, 01, 0b33)
     jump-to: LABEL 05
 LABEL 04
     print: "\nbad ["
-    temp14 <- read-word(4f2)
-    print: number-to-text(int16(temp14))
+    temp12 <- read-word(4f2)
+    print: number-to-text(int16(temp12))
     print: "]\n"
     discard: call 8ec ()
 LABEL 05
@@ -1305,7 +1303,7 @@ LABEL 07
     Sub CZech_1B34()
         Dim expected =
 <![CDATA[
-# temps: 148
+# temps: 144
 
 LABEL 00
     L02 <- 33
@@ -1334,7 +1332,7 @@ LABEL 01
     L0a <- 2d
     L0b <- 2c
     L08 <- 0b6d
-    jump-to: LABEL 187
+    jump-to: LABEL 15b
 LABEL 02
     temp03 <- read-word(6ce)
     if (temp03 = 01) is false then
@@ -1360,7 +1358,7 @@ LABEL 08
     L0a <- 2d
     L0b <- 2c
     L08 <- 0b71
-    jump-to: LABEL 187
+    jump-to: LABEL 15b
 LABEL 09
     temp06 <- read-word(6ce)
     if (temp06 = 02) is false then
@@ -1386,7 +1384,7 @@ LABEL 0f
     L0a <- 2d
     L0b <- 2c
     L08 <- 0b77
-    jump-to: LABEL 187
+    jump-to: LABEL 15b
 LABEL 10
     temp09 <- read-word(6ce)
     if (temp09 = 03) is false then
@@ -1412,7 +1410,7 @@ LABEL 16
     L0a <- 2d
     L0b <- 2c
     L08 <- 0b7e
-    jump-to: LABEL 187
+    jump-to: LABEL 15b
 LABEL 17
     temp0c <- read-word(6ce)
     if (temp0c = 04) is false then
@@ -1423,7 +1421,7 @@ LABEL 18
     L0a <- 2d
     L0b <- 2d
     L08 <- 0b85
-    jump-to: LABEL 187
+    jump-to: LABEL 15b
 LABEL 19
     temp0e <- read-word(6ce)
     if (temp0e = 05) is false then
@@ -1448,7 +1446,7 @@ LABEL 1f
     L0a <- 33
     L0b <- 2d
     L08 <- 0b88
-    jump-to: LABEL 187
+    jump-to: LABEL 15b
 LABEL 20
     temp11 <- read-word(6ce)
     if (temp11 = 06) is false then
@@ -1473,7 +1471,7 @@ LABEL 26
     L0a <- 2d
     L0b <- 2d
     L08 <- 0b8f
-    jump-to: LABEL 187
+    jump-to: LABEL 15b
 LABEL 27
     temp14 <- read-word(6ce)
     if (temp14 = 0a) is false then
@@ -1484,280 +1482,210 @@ LABEL 28
     L0a <- 53
     L0b <- 2c
     L08 <- 0b96
-    jump-to: LABEL 187
+    jump-to: LABEL 15b
 LABEL 29
     temp15 <- read-word(6ce)
     if (temp15 = 0b) is false then
-        jump-to: LABEL 34
+        jump-to: LABEL 30
 LABEL 2a
     temp16 <- L03
     if (temp16 = 0) is false then
         jump-to: LABEL 2c
 LABEL 2b
-    jump-to: LABEL 2e
+    update-SP: 53
+    jump-to: LABEL 2f
 LABEL 2c
     if (temp16 < 10) is false then
         jump-to: LABEL 2e
 LABEL 2d
-    jump-to: LABEL 2e
-LABEL 2e
-    if (temp16 = 0) is false then
-        jump-to: LABEL 30
-LABEL 2f
-    update-SP: 53
-    jump-to: LABEL 33
-LABEL 30
-    if (temp16 < 10) is false then
-        jump-to: LABEL 32
-LABEL 31
     L(temp16 - 1) <- 53
-    jump-to: LABEL 33
-LABEL 32
+    jump-to: LABEL 2f
+LABEL 2e
     write-word(((temp16 - 10) * 2) + 4f0) <- 53
-LABEL 33
+LABEL 2f
     L0a <- 53
     L0b <- 2c
     L08 <- 0b99
-    jump-to: LABEL 187
-LABEL 34
+    jump-to: LABEL 15b
+LABEL 30
     temp17 <- read-word(6ce)
     if (temp17 = 0c) is false then
-        jump-to: LABEL 3f
-LABEL 35
+        jump-to: LABEL 37
+LABEL 31
     temp18 <- L03
     if (temp18 = 0) is false then
-        jump-to: LABEL 37
-LABEL 36
-    jump-to: LABEL 39
-LABEL 37
-    if (temp18 < 10) is false then
-        jump-to: LABEL 39
-LABEL 38
-    jump-to: LABEL 39
-LABEL 39
-    if (temp18 = 0) is false then
-        jump-to: LABEL 3b
-LABEL 3a
+        jump-to: LABEL 33
+LABEL 32
     update-SP: 53
-    jump-to: LABEL 3e
-LABEL 3b
+    jump-to: LABEL 36
+LABEL 33
     if (temp18 < 10) is false then
-        jump-to: LABEL 3d
-LABEL 3c
+        jump-to: LABEL 35
+LABEL 34
     L(temp18 - 1) <- 53
-    jump-to: LABEL 3e
-LABEL 3d
+    jump-to: LABEL 36
+LABEL 35
     write-word(((temp18 - 10) * 2) + 4f0) <- 53
-LABEL 3e
+LABEL 36
     L0a <- 53
     L0b <- 2c
     L08 <- 0b9e
-    jump-to: LABEL 187
-LABEL 3f
+    jump-to: LABEL 15b
+LABEL 37
     temp19 <- read-word(6ce)
     if (temp19 = 0d) is false then
-        jump-to: LABEL 4a
-LABEL 40
+        jump-to: LABEL 3e
+LABEL 38
     temp1a <- L06
     if (temp1a = 0) is false then
-        jump-to: LABEL 42
-LABEL 41
-    jump-to: LABEL 44
-LABEL 42
-    if (temp1a < 10) is false then
-        jump-to: LABEL 44
-LABEL 43
-    jump-to: LABEL 44
-LABEL 44
-    if (temp1a = 0) is false then
-        jump-to: LABEL 46
-LABEL 45
+        jump-to: LABEL 3a
+LABEL 39
     update-SP: 53
-    jump-to: LABEL 49
-LABEL 46
+    jump-to: LABEL 3d
+LABEL 3a
     if (temp1a < 10) is false then
-        jump-to: LABEL 48
-LABEL 47
+        jump-to: LABEL 3c
+LABEL 3b
     L(temp1a - 1) <- 53
-    jump-to: LABEL 49
-LABEL 48
+    jump-to: LABEL 3d
+LABEL 3c
     write-word(((temp1a - 10) * 2) + 4f0) <- 53
-LABEL 49
+LABEL 3d
     L09 <- 53
     L0a <- 2d
     L0b <- 2c
     L08 <- 0ba4
-    jump-to: LABEL 187
-LABEL 4a
+    jump-to: LABEL 15b
+LABEL 3e
     temp1b <- read-word(6ce)
     if (temp1b = 0e) is false then
-        jump-to: LABEL 55
-LABEL 4b
+        jump-to: LABEL 45
+LABEL 3f
     temp1c <- L06
     if (temp1c = 0) is false then
-        jump-to: LABEL 4d
-LABEL 4c
-    jump-to: LABEL 4f
-LABEL 4d
-    if (temp1c < 10) is false then
-        jump-to: LABEL 4f
-LABEL 4e
-    jump-to: LABEL 4f
-LABEL 4f
-    if (temp1c = 0) is false then
-        jump-to: LABEL 51
-LABEL 50
+        jump-to: LABEL 41
+LABEL 40
     update-SP: 53
-    jump-to: LABEL 54
-LABEL 51
+    jump-to: LABEL 44
+LABEL 41
     if (temp1c < 10) is false then
-        jump-to: LABEL 53
-LABEL 52
+        jump-to: LABEL 43
+LABEL 42
     L(temp1c - 1) <- 53
-    jump-to: LABEL 54
-LABEL 53
+    jump-to: LABEL 44
+LABEL 43
     write-word(((temp1c - 10) * 2) + 4f0) <- 53
-LABEL 54
+LABEL 44
     L09 <- 53
     L0a <- 2d
     L0b <- 2c
     L08 <- 0ba9
-    jump-to: LABEL 187
-LABEL 55
+    jump-to: LABEL 15b
+LABEL 45
     temp1d <- read-word(6ce)
     if (temp1d = 0f) is false then
-        jump-to: LABEL 57
-LABEL 56
+        jump-to: LABEL 47
+LABEL 46
     temp1e <- pop-SP
     L01 <- temp1e
     L09 <- 2d
     L0a <- 2c
     L0b <- 2b
     L08 <- 0baf
-    jump-to: LABEL 187
-LABEL 57
+    jump-to: LABEL 15b
+LABEL 47
     temp1f <- read-word(6ce)
     if (temp1f = 10) is false then
-        jump-to: LABEL 59
-LABEL 58
+        jump-to: LABEL 49
+LABEL 48
     temp20 <- pop-SP
     update-SP: temp20
     L0a <- 2d
     L0b <- 2b
     L08 <- 0bb2
-    jump-to: LABEL 187
-LABEL 59
+    jump-to: LABEL 15b
+LABEL 49
     temp21 <- read-word(6ce)
     if (temp21 = 11) is false then
-        jump-to: LABEL 64
-LABEL 5a
+        jump-to: LABEL 50
+LABEL 4a
     temp22 <- L03
     temp23 <- pop-SP
     if (temp22 = 0) is false then
-        jump-to: LABEL 5c
-LABEL 5b
-    jump-to: LABEL 5e
-LABEL 5c
-    if (temp22 < 10) is false then
-        jump-to: LABEL 5e
-LABEL 5d
-    jump-to: LABEL 5e
-LABEL 5e
-    if (temp22 = 0) is false then
-        jump-to: LABEL 60
-LABEL 5f
+        jump-to: LABEL 4c
+LABEL 4b
     update-SP: temp23
-    jump-to: LABEL 63
-LABEL 60
+    jump-to: LABEL 4f
+LABEL 4c
     if (temp22 < 10) is false then
-        jump-to: LABEL 62
-LABEL 61
+        jump-to: LABEL 4e
+LABEL 4d
     L(temp22 - 1) <- temp23
-    jump-to: LABEL 63
-LABEL 62
+    jump-to: LABEL 4f
+LABEL 4e
     write-word(((temp22 - 10) * 2) + 4f0) <- temp23
-LABEL 63
+LABEL 4f
     L0a <- 2d
     L0b <- 2b
     L08 <- 0bb4
-    jump-to: LABEL 187
-LABEL 64
+    jump-to: LABEL 15b
+LABEL 50
     temp24 <- read-word(6ce)
     if (temp24 = 12) is false then
-        jump-to: LABEL 6f
-LABEL 65
+        jump-to: LABEL 57
+LABEL 51
     temp25 <- L06
     temp26 <- pop-SP
     if (temp25 = 0) is false then
-        jump-to: LABEL 67
-LABEL 66
-    jump-to: LABEL 69
-LABEL 67
-    if (temp25 < 10) is false then
-        jump-to: LABEL 69
-LABEL 68
-    jump-to: LABEL 69
-LABEL 69
-    if (temp25 = 0) is false then
-        jump-to: LABEL 6b
-LABEL 6a
+        jump-to: LABEL 53
+LABEL 52
     update-SP: temp26
-    jump-to: LABEL 6e
-LABEL 6b
+    jump-to: LABEL 56
+LABEL 53
     if (temp25 < 10) is false then
-        jump-to: LABEL 6d
-LABEL 6c
+        jump-to: LABEL 55
+LABEL 54
     L(temp25 - 1) <- temp26
-    jump-to: LABEL 6e
-LABEL 6d
+    jump-to: LABEL 56
+LABEL 55
     write-word(((temp25 - 10) * 2) + 4f0) <- temp26
-LABEL 6e
+LABEL 56
     L09 <- 2d
     L0a <- 2c
     L0b <- 2b
     L08 <- 0bba
-    jump-to: LABEL 187
-LABEL 6f
+    jump-to: LABEL 15b
+LABEL 57
     temp27 <- read-word(6ce)
     if (temp27 = 13) is false then
-        jump-to: LABEL 7a
-LABEL 70
+        jump-to: LABEL 5e
+LABEL 58
     temp28 <- L06
     temp29 <- pop-SP
     if (temp28 = 0) is false then
-        jump-to: LABEL 72
-LABEL 71
-    jump-to: LABEL 74
-LABEL 72
-    if (temp28 < 10) is false then
-        jump-to: LABEL 74
-LABEL 73
-    jump-to: LABEL 74
-LABEL 74
-    if (temp28 = 0) is false then
-        jump-to: LABEL 76
-LABEL 75
+        jump-to: LABEL 5a
+LABEL 59
     update-SP: temp29
-    jump-to: LABEL 79
-LABEL 76
+    jump-to: LABEL 5d
+LABEL 5a
     if (temp28 < 10) is false then
-        jump-to: LABEL 78
-LABEL 77
+        jump-to: LABEL 5c
+LABEL 5b
     L(temp28 - 1) <- temp29
-    jump-to: LABEL 79
-LABEL 78
+    jump-to: LABEL 5d
+LABEL 5c
     write-word(((temp28 - 10) * 2) + 4f0) <- temp29
-LABEL 79
+LABEL 5d
     L09 <- 2d
     L0a <- 2c
     L0b <- 2b
     L08 <- 0bbf
-    jump-to: LABEL 187
-LABEL 7a
+    jump-to: LABEL 15b
+LABEL 5e
     temp2a <- read-word(6ce)
     if (temp2a = 14) is false then
-        jump-to: LABEL 7c
-LABEL 7b
+        jump-to: LABEL 60
+LABEL 5f
     print: "\n    pull"
     temp2b <- pop-SP
     L01 <- temp2b
@@ -1765,949 +1693,905 @@ LABEL 7b
     L0a <- 2c
     L0b <- 2b
     L08 <- 0bc5
-    jump-to: LABEL 187
-LABEL 7c
+    jump-to: LABEL 15b
+LABEL 60
     temp2c <- read-word(6ce)
     if (temp2c = 15) is false then
-        jump-to: LABEL 87
-LABEL 7d
+        jump-to: LABEL 67
+LABEL 61
     temp2d <- L06
     temp2e <- pop-SP
     if (temp2d = 0) is false then
-        jump-to: LABEL 7f
-LABEL 7e
-    jump-to: LABEL 81
-LABEL 7f
-    if (temp2d < 10) is false then
-        jump-to: LABEL 81
-LABEL 80
-    jump-to: LABEL 81
-LABEL 81
-    if (temp2d = 0) is false then
-        jump-to: LABEL 83
-LABEL 82
+        jump-to: LABEL 63
+LABEL 62
     update-SP: temp2e
-    jump-to: LABEL 86
-LABEL 83
+    jump-to: LABEL 66
+LABEL 63
     if (temp2d < 10) is false then
-        jump-to: LABEL 85
-LABEL 84
+        jump-to: LABEL 65
+LABEL 64
     L(temp2d - 1) <- temp2e
-    jump-to: LABEL 86
-LABEL 85
+    jump-to: LABEL 66
+LABEL 65
     write-word(((temp2d - 10) * 2) + 4f0) <- temp2e
-LABEL 86
+LABEL 66
     L09 <- 2d
     L0a <- 2c
     L0b <- 2b
     L08 <- 0bc7
-    jump-to: LABEL 187
-LABEL 87
+    jump-to: LABEL 15b
+LABEL 67
     temp2f <- read-word(6ce)
     if (temp2f = 16) is false then
-        jump-to: LABEL 92
-LABEL 88
+        jump-to: LABEL 6e
+LABEL 68
     temp30 <- L06
     temp31 <- pop-SP
     if (temp30 = 0) is false then
-        jump-to: LABEL 8a
-LABEL 89
-    jump-to: LABEL 8c
-LABEL 8a
-    if (temp30 < 10) is false then
-        jump-to: LABEL 8c
-LABEL 8b
-    jump-to: LABEL 8c
-LABEL 8c
-    if (temp30 = 0) is false then
-        jump-to: LABEL 8e
-LABEL 8d
+        jump-to: LABEL 6a
+LABEL 69
     update-SP: temp31
-    jump-to: LABEL 91
-LABEL 8e
+    jump-to: LABEL 6d
+LABEL 6a
     if (temp30 < 10) is false then
-        jump-to: LABEL 90
-LABEL 8f
+        jump-to: LABEL 6c
+LABEL 6b
     L(temp30 - 1) <- temp31
-    jump-to: LABEL 91
-LABEL 90
+    jump-to: LABEL 6d
+LABEL 6c
     write-word(((temp30 - 10) * 2) + 4f0) <- temp31
-LABEL 91
+LABEL 6d
     L09 <- 2d
     L0a <- 2c
     L0b <- 2b
     L08 <- 0bcb
-    jump-to: LABEL 187
-LABEL 92
+    jump-to: LABEL 15b
+LABEL 6e
     temp32 <- read-word(6ce)
     if (temp32 = 17) is false then
-        jump-to: LABEL 94
-LABEL 93
+        jump-to: LABEL 70
+LABEL 6f
     temp33 <- pop-SP
     update-SP: temp33
     L0a <- 2d
     L0b <- 2b
     L08 <- 0bd0
-    jump-to: LABEL 187
-LABEL 94
+    jump-to: LABEL 15b
+LABEL 70
     temp34 <- read-word(6ce)
     if (temp34 = 18) is false then
-        jump-to: LABEL 9f
-LABEL 95
+        jump-to: LABEL 77
+LABEL 71
     temp35 <- L03
     temp36 <- pop-SP
     if (temp35 = 0) is false then
-        jump-to: LABEL 97
-LABEL 96
-    jump-to: LABEL 99
-LABEL 97
-    if (temp35 < 10) is false then
-        jump-to: LABEL 99
-LABEL 98
-    jump-to: LABEL 99
-LABEL 99
-    if (temp35 = 0) is false then
-        jump-to: LABEL 9b
-LABEL 9a
+        jump-to: LABEL 73
+LABEL 72
     update-SP: temp36
-    jump-to: LABEL 9e
-LABEL 9b
+    jump-to: LABEL 76
+LABEL 73
     if (temp35 < 10) is false then
-        jump-to: LABEL 9d
-LABEL 9c
+        jump-to: LABEL 75
+LABEL 74
     L(temp35 - 1) <- temp36
-    jump-to: LABEL 9e
-LABEL 9d
+    jump-to: LABEL 76
+LABEL 75
     write-word(((temp35 - 10) * 2) + 4f0) <- temp36
-LABEL 9e
+LABEL 76
     L0a <- 2d
     L0b <- 2b
     L08 <- 0bd2
-    jump-to: LABEL 187
-LABEL 9f
+    jump-to: LABEL 15b
+LABEL 77
     temp37 <- read-word(6ce)
     if (temp37 = 19) is false then
-        jump-to: LABEL aa
-LABEL a0
+        jump-to: LABEL 7e
+LABEL 78
     temp38 <- L03
     temp39 <- pop-SP
     if (temp38 = 0) is false then
-        jump-to: LABEL a2
-LABEL a1
-    jump-to: LABEL a4
-LABEL a2
-    if (temp38 < 10) is false then
-        jump-to: LABEL a4
-LABEL a3
-    jump-to: LABEL a4
-LABEL a4
-    if (temp38 = 0) is false then
-        jump-to: LABEL a6
-LABEL a5
+        jump-to: LABEL 7a
+LABEL 79
     update-SP: temp39
-    jump-to: LABEL a9
-LABEL a6
+    jump-to: LABEL 7d
+LABEL 7a
     if (temp38 < 10) is false then
-        jump-to: LABEL a8
-LABEL a7
+        jump-to: LABEL 7c
+LABEL 7b
     L(temp38 - 1) <- temp39
-    jump-to: LABEL a9
-LABEL a8
+    jump-to: LABEL 7d
+LABEL 7c
     write-word(((temp38 - 10) * 2) + 4f0) <- temp39
-LABEL a9
+LABEL 7d
     L0a <- 2d
     L0b <- 2b
     L08 <- 0bd7
-    jump-to: LABEL 187
-LABEL aa
+    jump-to: LABEL 15b
+LABEL 7e
     temp3a <- read-word(6ce)
     if (temp3a = 1e) is false then
-        jump-to: LABEL ac
-LABEL ab
+        jump-to: LABEL 80
+LABEL 7f
     print: "inc"
-    temp3b <- L01
-    L01 <- (int16(temp3b) + int16(1))
+    L01 <- (int16(L01) + int16(1))
     L09 <- 48
     L0a <- 2d
     L0b <- 2c
     L08 <- 0bdb
-    jump-to: LABEL 187
-LABEL ac
-    temp3c <- read-word(6ce)
-    if (temp3c = 1f) is false then
-        jump-to: LABEL b8
-LABEL ad
-    temp3d <- L06
-    if (temp3d = 0) is false then
-        jump-to: LABEL af
-LABEL ae
-    temp3e <- peek-SP
-    jump-to: LABEL b2
-LABEL af
-    if (temp3d < 10) is false then
-        jump-to: LABEL b1
-LABEL b0
-    temp3e <- L(temp3d - 1)
-    jump-to: LABEL b2
-LABEL b1
-    temp3e <- read-word(((temp3d - 10) * 2) + 4f0)
-LABEL b2
-    if (temp3d = 0) is false then
-        jump-to: LABEL b4
-LABEL b3
-    update-SP: (int16(temp3e) + int16(1))
-    jump-to: LABEL b7
-LABEL b4
-    if (temp3d < 10) is false then
-        jump-to: LABEL b6
-LABEL b5
-    L(temp3d - 1) <- (int16(temp3e) + int16(1))
-    jump-to: LABEL b7
-LABEL b6
-    write-word(((temp3d - 10) * 2) + 4f0) <- (int16(temp3e) + int16(1))
-LABEL b7
+    jump-to: LABEL 15b
+LABEL 80
+    temp3b <- read-word(6ce)
+    if (temp3b = 1f) is false then
+        jump-to: LABEL 8c
+LABEL 81
+    temp3c <- L06
+    if (temp3c = 0) is false then
+        jump-to: LABEL 83
+LABEL 82
+    temp3d <- peek-SP
+    jump-to: LABEL 86
+LABEL 83
+    if (temp3c < 10) is false then
+        jump-to: LABEL 85
+LABEL 84
+    temp3d <- L(temp3c - 1)
+    jump-to: LABEL 86
+LABEL 85
+    temp3d <- read-word(((temp3c - 10) * 2) + 4f0)
+LABEL 86
+    if (temp3c = 0) is false then
+        jump-to: LABEL 88
+LABEL 87
+    update-SP: (int16(temp3d) + int16(1))
+    jump-to: LABEL 8b
+LABEL 88
+    if (temp3c < 10) is false then
+        jump-to: LABEL 8a
+LABEL 89
+    L(temp3c - 1) <- (int16(temp3d) + int16(1))
+    jump-to: LABEL 8b
+LABEL 8a
+    write-word(((temp3c - 10) * 2) + 4f0) <- (int16(temp3d) + int16(1))
+LABEL 8b
     L09 <- 48
     L0a <- 2d
     L0b <- 2c
     L08 <- 0bdf
-    jump-to: LABEL 187
-LABEL b8
-    temp3f <- read-word(6ce)
-    if (temp3f = 20) is false then
-        jump-to: LABEL c4
-LABEL b9
-    temp40 <- L06
-    if (temp40 = 0) is false then
-        jump-to: LABEL bb
-LABEL ba
-    temp41 <- peek-SP
-    jump-to: LABEL be
-LABEL bb
-    if (temp40 < 10) is false then
-        jump-to: LABEL bd
-LABEL bc
-    temp41 <- L(temp40 - 1)
-    jump-to: LABEL be
-LABEL bd
-    temp41 <- read-word(((temp40 - 10) * 2) + 4f0)
-LABEL be
-    if (temp40 = 0) is false then
-        jump-to: LABEL c0
-LABEL bf
-    update-SP: (int16(temp41) + int16(1))
-    jump-to: LABEL c3
-LABEL c0
-    if (temp40 < 10) is false then
-        jump-to: LABEL c2
-LABEL c1
-    L(temp40 - 1) <- (int16(temp41) + int16(1))
-    jump-to: LABEL c3
-LABEL c2
-    write-word(((temp40 - 10) * 2) + 4f0) <- (int16(temp41) + int16(1))
-LABEL c3
+    jump-to: LABEL 15b
+LABEL 8c
+    temp3e <- read-word(6ce)
+    if (temp3e = 20) is false then
+        jump-to: LABEL 98
+LABEL 8d
+    temp3f <- L06
+    if (temp3f = 0) is false then
+        jump-to: LABEL 8f
+LABEL 8e
+    temp40 <- peek-SP
+    jump-to: LABEL 92
+LABEL 8f
+    if (temp3f < 10) is false then
+        jump-to: LABEL 91
+LABEL 90
+    temp40 <- L(temp3f - 1)
+    jump-to: LABEL 92
+LABEL 91
+    temp40 <- read-word(((temp3f - 10) * 2) + 4f0)
+LABEL 92
+    if (temp3f = 0) is false then
+        jump-to: LABEL 94
+LABEL 93
+    update-SP: (int16(temp40) + int16(1))
+    jump-to: LABEL 97
+LABEL 94
+    if (temp3f < 10) is false then
+        jump-to: LABEL 96
+LABEL 95
+    L(temp3f - 1) <- (int16(temp40) + int16(1))
+    jump-to: LABEL 97
+LABEL 96
+    write-word(((temp3f - 10) * 2) + 4f0) <- (int16(temp40) + int16(1))
+LABEL 97
     L09 <- 48
     L0a <- 2d
     L0b <- 2c
     L08 <- 0be3
-    jump-to: LABEL 187
-LABEL c4
-    temp42 <- read-word(6ce)
-    if (temp42 = 21) is false then
-        jump-to: LABEL c6
-LABEL c5
-    temp43 <- peek-SP
-    update-SP: (int16(temp43) + int16(1))
+    jump-to: LABEL 15b
+LABEL 98
+    temp41 <- read-word(6ce)
+    if (temp41 = 21) is false then
+        jump-to: LABEL 9a
+LABEL 99
+    temp42 <- peek-SP
+    update-SP: (int16(temp42) + int16(1))
     L0a <- 2e
     L0b <- 2c
     L08 <- 0be8
-    jump-to: LABEL 187
-LABEL c6
-    temp44 <- read-word(6ce)
-    if (temp44 = 22) is false then
-        jump-to: LABEL d2
-LABEL c7
-    temp45 <- L03
-    if (temp45 = 0) is false then
-        jump-to: LABEL c9
-LABEL c8
-    temp46 <- peek-SP
-    jump-to: LABEL cc
-LABEL c9
-    if (temp45 < 10) is false then
-        jump-to: LABEL cb
-LABEL ca
-    temp46 <- L(temp45 - 1)
-    jump-to: LABEL cc
-LABEL cb
-    temp46 <- read-word(((temp45 - 10) * 2) + 4f0)
-LABEL cc
-    if (temp45 = 0) is false then
-        jump-to: LABEL ce
-LABEL cd
-    update-SP: (int16(temp46) + int16(1))
-    jump-to: LABEL d1
-LABEL ce
-    if (temp45 < 10) is false then
-        jump-to: LABEL d0
-LABEL cf
-    L(temp45 - 1) <- (int16(temp46) + int16(1))
-    jump-to: LABEL d1
-LABEL d0
-    write-word(((temp45 - 10) * 2) + 4f0) <- (int16(temp46) + int16(1))
-LABEL d1
+    jump-to: LABEL 15b
+LABEL 9a
+    temp43 <- read-word(6ce)
+    if (temp43 = 22) is false then
+        jump-to: LABEL a6
+LABEL 9b
+    temp44 <- L03
+    if (temp44 = 0) is false then
+        jump-to: LABEL 9d
+LABEL 9c
+    temp45 <- peek-SP
+    jump-to: LABEL a0
+LABEL 9d
+    if (temp44 < 10) is false then
+        jump-to: LABEL 9f
+LABEL 9e
+    temp45 <- L(temp44 - 1)
+    jump-to: LABEL a0
+LABEL 9f
+    temp45 <- read-word(((temp44 - 10) * 2) + 4f0)
+LABEL a0
+    if (temp44 = 0) is false then
+        jump-to: LABEL a2
+LABEL a1
+    update-SP: (int16(temp45) + int16(1))
+    jump-to: LABEL a5
+LABEL a2
+    if (temp44 < 10) is false then
+        jump-to: LABEL a4
+LABEL a3
+    L(temp44 - 1) <- (int16(temp45) + int16(1))
+    jump-to: LABEL a5
+LABEL a4
+    write-word(((temp44 - 10) * 2) + 4f0) <- (int16(temp45) + int16(1))
+LABEL a5
     L0a <- 2e
     L0b <- 2c
     L08 <- 0be9
-    jump-to: LABEL 187
-LABEL d2
-    temp47 <- read-word(6ce)
-    if (temp47 = 23) is false then
-        jump-to: LABEL de
-LABEL d3
-    temp48 <- L03
-    if (temp48 = 0) is false then
-        jump-to: LABEL d5
-LABEL d4
-    temp49 <- peek-SP
-    jump-to: LABEL d8
-LABEL d5
-    if (temp48 < 10) is false then
-        jump-to: LABEL d7
-LABEL d6
-    temp49 <- L(temp48 - 1)
-    jump-to: LABEL d8
-LABEL d7
-    temp49 <- read-word(((temp48 - 10) * 2) + 4f0)
-LABEL d8
-    if (temp48 = 0) is false then
-        jump-to: LABEL da
-LABEL d9
-    update-SP: (int16(temp49) + int16(1))
-    jump-to: LABEL dd
-LABEL da
-    if (temp48 < 10) is false then
-        jump-to: LABEL dc
-LABEL db
-    L(temp48 - 1) <- (int16(temp49) + int16(1))
-    jump-to: LABEL dd
-LABEL dc
-    write-word(((temp48 - 10) * 2) + 4f0) <- (int16(temp49) + int16(1))
-LABEL dd
+    jump-to: LABEL 15b
+LABEL a6
+    temp46 <- read-word(6ce)
+    if (temp46 = 23) is false then
+        jump-to: LABEL b2
+LABEL a7
+    temp47 <- L03
+    if (temp47 = 0) is false then
+        jump-to: LABEL a9
+LABEL a8
+    temp48 <- peek-SP
+    jump-to: LABEL ac
+LABEL a9
+    if (temp47 < 10) is false then
+        jump-to: LABEL ab
+LABEL aa
+    temp48 <- L(temp47 - 1)
+    jump-to: LABEL ac
+LABEL ab
+    temp48 <- read-word(((temp47 - 10) * 2) + 4f0)
+LABEL ac
+    if (temp47 = 0) is false then
+        jump-to: LABEL ae
+LABEL ad
+    update-SP: (int16(temp48) + int16(1))
+    jump-to: LABEL b1
+LABEL ae
+    if (temp47 < 10) is false then
+        jump-to: LABEL b0
+LABEL af
+    L(temp47 - 1) <- (int16(temp48) + int16(1))
+    jump-to: LABEL b1
+LABEL b0
+    write-word(((temp47 - 10) * 2) + 4f0) <- (int16(temp48) + int16(1))
+LABEL b1
     L0a <- 2e
     L0b <- 2c
     L08 <- 0bed
-    jump-to: LABEL 187
-LABEL de
-    temp4a <- read-word(6ce)
-    if (temp4a = 28) is false then
-        jump-to: LABEL e0
-LABEL df
+    jump-to: LABEL 15b
+LABEL b2
+    temp49 <- read-word(6ce)
+    if (temp49 = 28) is false then
+        jump-to: LABEL b4
+LABEL b3
     print: "dec"
-    temp4b <- L01
-    L01 <- (int16(temp4b) - int16(1))
+    L01 <- (int16(L01) - int16(1))
     L09 <- 46
     L0a <- 2d
     L0b <- 2c
     L08 <- 0bf2
-    jump-to: LABEL 187
-LABEL e0
-    temp4c <- read-word(6ce)
-    if (temp4c = 29) is false then
-        jump-to: LABEL ec
-LABEL e1
-    temp4d <- L06
-    if (temp4d = 0) is false then
-        jump-to: LABEL e3
-LABEL e2
-    temp4e <- peek-SP
-    jump-to: LABEL e6
-LABEL e3
-    if (temp4d < 10) is false then
-        jump-to: LABEL e5
-LABEL e4
-    temp4e <- L(temp4d - 1)
-    jump-to: LABEL e6
-LABEL e5
-    temp4e <- read-word(((temp4d - 10) * 2) + 4f0)
-LABEL e6
-    if (temp4d = 0) is false then
-        jump-to: LABEL e8
-LABEL e7
-    update-SP: (int16(temp4e) - int16(1))
-    jump-to: LABEL eb
-LABEL e8
-    if (temp4d < 10) is false then
-        jump-to: LABEL ea
-LABEL e9
-    L(temp4d - 1) <- (int16(temp4e) - int16(1))
-    jump-to: LABEL eb
-LABEL ea
-    write-word(((temp4d - 10) * 2) + 4f0) <- (int16(temp4e) - int16(1))
-LABEL eb
+    jump-to: LABEL 15b
+LABEL b4
+    temp4a <- read-word(6ce)
+    if (temp4a = 29) is false then
+        jump-to: LABEL c0
+LABEL b5
+    temp4b <- L06
+    if (temp4b = 0) is false then
+        jump-to: LABEL b7
+LABEL b6
+    temp4c <- peek-SP
+    jump-to: LABEL ba
+LABEL b7
+    if (temp4b < 10) is false then
+        jump-to: LABEL b9
+LABEL b8
+    temp4c <- L(temp4b - 1)
+    jump-to: LABEL ba
+LABEL b9
+    temp4c <- read-word(((temp4b - 10) * 2) + 4f0)
+LABEL ba
+    if (temp4b = 0) is false then
+        jump-to: LABEL bc
+LABEL bb
+    update-SP: (int16(temp4c) - int16(1))
+    jump-to: LABEL bf
+LABEL bc
+    if (temp4b < 10) is false then
+        jump-to: LABEL be
+LABEL bd
+    L(temp4b - 1) <- (int16(temp4c) - int16(1))
+    jump-to: LABEL bf
+LABEL be
+    write-word(((temp4b - 10) * 2) + 4f0) <- (int16(temp4c) - int16(1))
+LABEL bf
     L09 <- 46
     L0a <- 2d
     L0b <- 2c
     L08 <- 0bf6
-    jump-to: LABEL 187
-LABEL ec
-    temp4f <- read-word(6ce)
-    if (temp4f = 2a) is false then
-        jump-to: LABEL f8
-LABEL ed
-    temp50 <- L06
-    if (temp50 = 0) is false then
-        jump-to: LABEL ef
-LABEL ee
-    temp51 <- peek-SP
-    jump-to: LABEL f2
-LABEL ef
-    if (temp50 < 10) is false then
-        jump-to: LABEL f1
-LABEL f0
-    temp51 <- L(temp50 - 1)
-    jump-to: LABEL f2
-LABEL f1
-    temp51 <- read-word(((temp50 - 10) * 2) + 4f0)
-LABEL f2
-    if (temp50 = 0) is false then
-        jump-to: LABEL f4
-LABEL f3
-    update-SP: (int16(temp51) - int16(1))
-    jump-to: LABEL f7
-LABEL f4
-    if (temp50 < 10) is false then
-        jump-to: LABEL f6
-LABEL f5
-    L(temp50 - 1) <- (int16(temp51) - int16(1))
-    jump-to: LABEL f7
-LABEL f6
-    write-word(((temp50 - 10) * 2) + 4f0) <- (int16(temp51) - int16(1))
-LABEL f7
+    jump-to: LABEL 15b
+LABEL c0
+    temp4d <- read-word(6ce)
+    if (temp4d = 2a) is false then
+        jump-to: LABEL cc
+LABEL c1
+    temp4e <- L06
+    if (temp4e = 0) is false then
+        jump-to: LABEL c3
+LABEL c2
+    temp4f <- peek-SP
+    jump-to: LABEL c6
+LABEL c3
+    if (temp4e < 10) is false then
+        jump-to: LABEL c5
+LABEL c4
+    temp4f <- L(temp4e - 1)
+    jump-to: LABEL c6
+LABEL c5
+    temp4f <- read-word(((temp4e - 10) * 2) + 4f0)
+LABEL c6
+    if (temp4e = 0) is false then
+        jump-to: LABEL c8
+LABEL c7
+    update-SP: (int16(temp4f) - int16(1))
+    jump-to: LABEL cb
+LABEL c8
+    if (temp4e < 10) is false then
+        jump-to: LABEL ca
+LABEL c9
+    L(temp4e - 1) <- (int16(temp4f) - int16(1))
+    jump-to: LABEL cb
+LABEL ca
+    write-word(((temp4e - 10) * 2) + 4f0) <- (int16(temp4f) - int16(1))
+LABEL cb
     L09 <- 46
     L0a <- 2d
     L0b <- 2c
     L08 <- 0bfa
-    jump-to: LABEL 187
-LABEL f8
-    temp52 <- read-word(6ce)
-    if (temp52 = 2b) is false then
-        jump-to: LABEL fa
-LABEL f9
-    temp53 <- peek-SP
-    update-SP: (int16(temp53) - int16(1))
+    jump-to: LABEL 15b
+LABEL cc
+    temp50 <- read-word(6ce)
+    if (temp50 = 2b) is false then
+        jump-to: LABEL ce
+LABEL cd
+    temp51 <- peek-SP
+    update-SP: (int16(temp51) - int16(1))
     L0a <- 2c
     L0b <- 2c
     L08 <- 0bff
-    jump-to: LABEL 187
-LABEL fa
-    temp54 <- read-word(6ce)
-    if (temp54 = 2c) is false then
-        jump-to: LABEL 106
-LABEL fb
-    temp55 <- L03
-    if (temp55 = 0) is false then
-        jump-to: LABEL fd
-LABEL fc
-    temp56 <- peek-SP
-    jump-to: LABEL 100
-LABEL fd
-    if (temp55 < 10) is false then
-        jump-to: LABEL ff
-LABEL fe
-    temp56 <- L(temp55 - 1)
-    jump-to: LABEL 100
-LABEL ff
-    temp56 <- read-word(((temp55 - 10) * 2) + 4f0)
-LABEL 100
-    if (temp55 = 0) is false then
-        jump-to: LABEL 102
-LABEL 101
-    update-SP: (int16(temp56) - int16(1))
-    jump-to: LABEL 105
-LABEL 102
-    if (temp55 < 10) is false then
-        jump-to: LABEL 104
-LABEL 103
-    L(temp55 - 1) <- (int16(temp56) - int16(1))
-    jump-to: LABEL 105
-LABEL 104
-    write-word(((temp55 - 10) * 2) + 4f0) <- (int16(temp56) - int16(1))
-LABEL 105
+    jump-to: LABEL 15b
+LABEL ce
+    temp52 <- read-word(6ce)
+    if (temp52 = 2c) is false then
+        jump-to: LABEL da
+LABEL cf
+    temp53 <- L03
+    if (temp53 = 0) is false then
+        jump-to: LABEL d1
+LABEL d0
+    temp54 <- peek-SP
+    jump-to: LABEL d4
+LABEL d1
+    if (temp53 < 10) is false then
+        jump-to: LABEL d3
+LABEL d2
+    temp54 <- L(temp53 - 1)
+    jump-to: LABEL d4
+LABEL d3
+    temp54 <- read-word(((temp53 - 10) * 2) + 4f0)
+LABEL d4
+    if (temp53 = 0) is false then
+        jump-to: LABEL d6
+LABEL d5
+    update-SP: (int16(temp54) - int16(1))
+    jump-to: LABEL d9
+LABEL d6
+    if (temp53 < 10) is false then
+        jump-to: LABEL d8
+LABEL d7
+    L(temp53 - 1) <- (int16(temp54) - int16(1))
+    jump-to: LABEL d9
+LABEL d8
+    write-word(((temp53 - 10) * 2) + 4f0) <- (int16(temp54) - int16(1))
+LABEL d9
     L0a <- 2c
     L0b <- 2c
     L08 <- 0c00
-    jump-to: LABEL 187
-LABEL 106
-    temp57 <- read-word(6ce)
-    if (temp57 = 2d) is false then
-        jump-to: LABEL 112
-LABEL 107
-    temp58 <- L03
-    if (temp58 = 0) is false then
-        jump-to: LABEL 109
-LABEL 108
-    temp59 <- peek-SP
-    jump-to: LABEL 10c
-LABEL 109
-    if (temp58 < 10) is false then
-        jump-to: LABEL 10b
-LABEL 10a
-    temp59 <- L(temp58 - 1)
-    jump-to: LABEL 10c
-LABEL 10b
-    temp59 <- read-word(((temp58 - 10) * 2) + 4f0)
-LABEL 10c
-    if (temp58 = 0) is false then
-        jump-to: LABEL 10e
-LABEL 10d
-    update-SP: (int16(temp59) - int16(1))
-    jump-to: LABEL 111
-LABEL 10e
-    if (temp58 < 10) is false then
-        jump-to: LABEL 110
-LABEL 10f
-    L(temp58 - 1) <- (int16(temp59) - int16(1))
-    jump-to: LABEL 111
-LABEL 110
-    write-word(((temp58 - 10) * 2) + 4f0) <- (int16(temp59) - int16(1))
-LABEL 111
+    jump-to: LABEL 15b
+LABEL da
+    temp55 <- read-word(6ce)
+    if (temp55 = 2d) is false then
+        jump-to: LABEL e6
+LABEL db
+    temp56 <- L03
+    if (temp56 = 0) is false then
+        jump-to: LABEL dd
+LABEL dc
+    temp57 <- peek-SP
+    jump-to: LABEL e0
+LABEL dd
+    if (temp56 < 10) is false then
+        jump-to: LABEL df
+LABEL de
+    temp57 <- L(temp56 - 1)
+    jump-to: LABEL e0
+LABEL df
+    temp57 <- read-word(((temp56 - 10) * 2) + 4f0)
+LABEL e0
+    if (temp56 = 0) is false then
+        jump-to: LABEL e2
+LABEL e1
+    update-SP: (int16(temp57) - int16(1))
+    jump-to: LABEL e5
+LABEL e2
+    if (temp56 < 10) is false then
+        jump-to: LABEL e4
+LABEL e3
+    L(temp56 - 1) <- (int16(temp57) - int16(1))
+    jump-to: LABEL e5
+LABEL e4
+    write-word(((temp56 - 10) * 2) + 4f0) <- (int16(temp57) - int16(1))
+LABEL e5
     L0a <- 2c
     L0b <- 2c
     L08 <- 0c04
-    jump-to: LABEL 187
-LABEL 112
-    temp5a <- read-word(6ce)
-    if (temp5a = 32) is false then
-        jump-to: LABEL 115
-LABEL 113
+    jump-to: LABEL 15b
+LABEL e6
+    temp58 <- read-word(6ce)
+    if (temp58 = 32) is false then
+        jump-to: LABEL e9
+LABEL e7
     print: "\n    inc_chk"
     L08 <- 0c09
-    temp5b <- L01
-    temp5c <- (int16(temp5b) + int16(1))
-    L01 <- temp5c
-    if (int16(temp5c) > int16(48)) is true then
-        jump-to: LABEL 18a
-LABEL 114
+    temp59 <- (int16(L01) + int16(1))
+    L01 <- temp59
+    if (int16(temp59) > int16(48)) is true then
+        jump-to: LABEL 15e
+LABEL e8
     L09 <- 48
     L0a <- 2d
     L0b <- 2c
-    jump-to: LABEL 187
-LABEL 115
-    temp5d <- read-word(6ce)
-    if (temp5d = 33) is false then
-        jump-to: LABEL 122
-LABEL 116
+    jump-to: LABEL 15b
+LABEL e9
+    temp5a <- read-word(6ce)
+    if (temp5a = 33) is false then
+        jump-to: LABEL f6
+LABEL ea
     L08 <- 0c0e
-    temp5e <- L06
-    if (temp5e = 0) is false then
+    temp5b <- L06
+    if (temp5b = 0) is false then
+        jump-to: LABEL ec
+LABEL eb
+    temp5c <- peek-SP
+    jump-to: LABEL ef
+LABEL ec
+    if (temp5b < 10) is false then
+        jump-to: LABEL ee
+LABEL ed
+    temp5c <- L(temp5b - 1)
+    jump-to: LABEL ef
+LABEL ee
+    temp5c <- read-word(((temp5b - 10) * 2) + 4f0)
+LABEL ef
+    temp5d <- (int16(temp5c) + int16(1))
+    if (temp5b = 0) is false then
+        jump-to: LABEL f1
+LABEL f0
+    update-SP: temp5d
+    jump-to: LABEL f4
+LABEL f1
+    if (temp5b < 10) is false then
+        jump-to: LABEL f3
+LABEL f2
+    L(temp5b - 1) <- temp5d
+    jump-to: LABEL f4
+LABEL f3
+    write-word(((temp5b - 10) * 2) + 4f0) <- temp5d
+LABEL f4
+    if (int16(temp5d) > int16(48)) is true then
+        jump-to: LABEL 15e
+LABEL f5
+    L09 <- 48
+    L0a <- 2d
+    L0b <- 2c
+    jump-to: LABEL 15b
+LABEL f6
+    temp5e <- read-word(6ce)
+    if (temp5e = 34) is false then
+        jump-to: LABEL 103
+LABEL f7
+    L08 <- 0c13
+    temp5f <- L06
+    if (temp5f = 0) is false then
+        jump-to: LABEL f9
+LABEL f8
+    temp60 <- peek-SP
+    jump-to: LABEL fc
+LABEL f9
+    if (temp5f < 10) is false then
+        jump-to: LABEL fb
+LABEL fa
+    temp60 <- L(temp5f - 1)
+    jump-to: LABEL fc
+LABEL fb
+    temp60 <- read-word(((temp5f - 10) * 2) + 4f0)
+LABEL fc
+    temp61 <- (int16(temp60) + int16(1))
+    if (temp5f = 0) is false then
+        jump-to: LABEL fe
+LABEL fd
+    update-SP: temp61
+    jump-to: LABEL 101
+LABEL fe
+    if (temp5f < 10) is false then
+        jump-to: LABEL 100
+LABEL ff
+    L(temp5f - 1) <- temp61
+    jump-to: LABEL 101
+LABEL 100
+    write-word(((temp5f - 10) * 2) + 4f0) <- temp61
+LABEL 101
+    if (int16(temp61) > int16(48)) is true then
+        jump-to: LABEL 15e
+LABEL 102
+    L09 <- 48
+    L0a <- 2d
+    L0b <- 2c
+    jump-to: LABEL 15b
+LABEL 103
+    temp62 <- read-word(6ce)
+    if (temp62 = 35) is false then
+        jump-to: LABEL 106
+LABEL 104
+    L08 <- 0c19
+    temp63 <- peek-SP
+    temp64 <- (int16(temp63) + int16(1))
+    update-SP: temp64
+    if (int16(temp64) > int16(2e)) is true then
+        jump-to: LABEL 15e
+LABEL 105
+    L0a <- 2e
+    L0b <- 2c
+    jump-to: LABEL 15b
+LABEL 106
+    temp65 <- read-word(6ce)
+    if (temp65 = 36) is false then
+        jump-to: LABEL 113
+LABEL 107
+    L08 <- 0c1b
+    temp66 <- L03
+    if (temp66 = 0) is false then
+        jump-to: LABEL 109
+LABEL 108
+    temp67 <- peek-SP
+    jump-to: LABEL 10c
+LABEL 109
+    if (temp66 < 10) is false then
+        jump-to: LABEL 10b
+LABEL 10a
+    temp67 <- L(temp66 - 1)
+    jump-to: LABEL 10c
+LABEL 10b
+    temp67 <- read-word(((temp66 - 10) * 2) + 4f0)
+LABEL 10c
+    temp68 <- (int16(temp67) + int16(1))
+    if (temp66 = 0) is false then
+        jump-to: LABEL 10e
+LABEL 10d
+    update-SP: temp68
+    jump-to: LABEL 111
+LABEL 10e
+    if (temp66 < 10) is false then
+        jump-to: LABEL 110
+LABEL 10f
+    L(temp66 - 1) <- temp68
+    jump-to: LABEL 111
+LABEL 110
+    write-word(((temp66 - 10) * 2) + 4f0) <- temp68
+LABEL 111
+    if (int16(temp68) > int16(2e)) is true then
+        jump-to: LABEL 15e
+LABEL 112
+    L0a <- 2e
+    L0b <- 2c
+    jump-to: LABEL 15b
+LABEL 113
+    temp69 <- read-word(6ce)
+    if (temp69 = 37) is false then
+        jump-to: LABEL 120
+LABEL 114
+    L08 <- 0c20
+    temp6a <- L03
+    if (temp6a = 0) is false then
+        jump-to: LABEL 116
+LABEL 115
+    temp6b <- peek-SP
+    jump-to: LABEL 119
+LABEL 116
+    if (temp6a < 10) is false then
         jump-to: LABEL 118
 LABEL 117
-    temp5f <- peek-SP
-    jump-to: LABEL 11b
+    temp6b <- L(temp6a - 1)
+    jump-to: LABEL 119
 LABEL 118
-    if (temp5e < 10) is false then
-        jump-to: LABEL 11a
+    temp6b <- read-word(((temp6a - 10) * 2) + 4f0)
 LABEL 119
-    temp5f <- L(temp5e - 1)
-    jump-to: LABEL 11b
+    temp6c <- (int16(temp6b) + int16(1))
+    if (temp6a = 0) is false then
+        jump-to: LABEL 11b
 LABEL 11a
-    temp5f <- read-word(((temp5e - 10) * 2) + 4f0)
+    update-SP: temp6c
+    jump-to: LABEL 11e
 LABEL 11b
-    temp60 <- (int16(temp5f) + int16(1))
-    if (temp5e = 0) is false then
+    if (temp6a < 10) is false then
         jump-to: LABEL 11d
 LABEL 11c
-    update-SP: temp60
-    jump-to: LABEL 120
+    L(temp6a - 1) <- temp6c
+    jump-to: LABEL 11e
 LABEL 11d
-    if (temp5e < 10) is false then
-        jump-to: LABEL 11f
+    write-word(((temp6a - 10) * 2) + 4f0) <- temp6c
 LABEL 11e
-    L(temp5e - 1) <- temp60
-    jump-to: LABEL 120
+    if (int16(temp6c) > int16(2e)) is true then
+        jump-to: LABEL 15e
 LABEL 11f
-    write-word(((temp5e - 10) * 2) + 4f0) <- temp60
+    L0a <- 2e
+    L0b <- 2c
+    jump-to: LABEL 15b
 LABEL 120
-    if (int16(temp60) > int16(48)) is true then
-        jump-to: LABEL 18a
+    temp6d <- read-word(6ce)
+    if (temp6d = 3c) is false then
+        jump-to: LABEL 123
 LABEL 121
-    L09 <- 48
-    L0a <- 2d
-    L0b <- 2c
-    jump-to: LABEL 187
-LABEL 122
-    temp61 <- read-word(6ce)
-    if (temp61 = 34) is false then
-        jump-to: LABEL 12f
-LABEL 123
-    L08 <- 0c13
-    temp62 <- L06
-    if (temp62 = 0) is false then
-        jump-to: LABEL 125
-LABEL 124
-    temp63 <- peek-SP
-    jump-to: LABEL 128
-LABEL 125
-    if (temp62 < 10) is false then
-        jump-to: LABEL 127
-LABEL 126
-    temp63 <- L(temp62 - 1)
-    jump-to: LABEL 128
-LABEL 127
-    temp63 <- read-word(((temp62 - 10) * 2) + 4f0)
-LABEL 128
-    temp64 <- (int16(temp63) + int16(1))
-    if (temp62 = 0) is false then
-        jump-to: LABEL 12a
-LABEL 129
-    update-SP: temp64
-    jump-to: LABEL 12d
-LABEL 12a
-    if (temp62 < 10) is false then
-        jump-to: LABEL 12c
-LABEL 12b
-    L(temp62 - 1) <- temp64
-    jump-to: LABEL 12d
-LABEL 12c
-    write-word(((temp62 - 10) * 2) + 4f0) <- temp64
-LABEL 12d
-    if (int16(temp64) > int16(48)) is true then
-        jump-to: LABEL 18a
-LABEL 12e
-    L09 <- 48
-    L0a <- 2d
-    L0b <- 2c
-    jump-to: LABEL 187
-LABEL 12f
-    temp65 <- read-word(6ce)
-    if (temp65 = 35) is false then
-        jump-to: LABEL 132
-LABEL 130
-    L08 <- 0c19
-    temp66 <- peek-SP
-    temp67 <- (int16(temp66) + int16(1))
-    update-SP: temp67
-    if (int16(temp67) > int16(2e)) is true then
-        jump-to: LABEL 18a
-LABEL 131
-    L0a <- 2e
-    L0b <- 2c
-    jump-to: LABEL 187
-LABEL 132
-    temp68 <- read-word(6ce)
-    if (temp68 = 36) is false then
-        jump-to: LABEL 13f
-LABEL 133
-    L08 <- 0c1b
-    temp69 <- L03
-    if (temp69 = 0) is false then
-        jump-to: LABEL 135
-LABEL 134
-    temp6a <- peek-SP
-    jump-to: LABEL 138
-LABEL 135
-    if (temp69 < 10) is false then
-        jump-to: LABEL 137
-LABEL 136
-    temp6a <- L(temp69 - 1)
-    jump-to: LABEL 138
-LABEL 137
-    temp6a <- read-word(((temp69 - 10) * 2) + 4f0)
-LABEL 138
-    temp6b <- (int16(temp6a) + int16(1))
-    if (temp69 = 0) is false then
-        jump-to: LABEL 13a
-LABEL 139
-    update-SP: temp6b
-    jump-to: LABEL 13d
-LABEL 13a
-    if (temp69 < 10) is false then
-        jump-to: LABEL 13c
-LABEL 13b
-    L(temp69 - 1) <- temp6b
-    jump-to: LABEL 13d
-LABEL 13c
-    write-word(((temp69 - 10) * 2) + 4f0) <- temp6b
-LABEL 13d
-    if (int16(temp6b) > int16(2e)) is true then
-        jump-to: LABEL 18a
-LABEL 13e
-    L0a <- 2e
-    L0b <- 2c
-    jump-to: LABEL 187
-LABEL 13f
-    temp6c <- read-word(6ce)
-    if (temp6c = 37) is false then
-        jump-to: LABEL 14c
-LABEL 140
-    L08 <- 0c20
-    temp6d <- L03
-    if (temp6d = 0) is false then
-        jump-to: LABEL 142
-LABEL 141
-    temp6e <- peek-SP
-    jump-to: LABEL 145
-LABEL 142
-    if (temp6d < 10) is false then
-        jump-to: LABEL 144
-LABEL 143
-    temp6e <- L(temp6d - 1)
-    jump-to: LABEL 145
-LABEL 144
-    temp6e <- read-word(((temp6d - 10) * 2) + 4f0)
-LABEL 145
-    temp6f <- (int16(temp6e) + int16(1))
-    if (temp6d = 0) is false then
-        jump-to: LABEL 147
-LABEL 146
-    update-SP: temp6f
-    jump-to: LABEL 14a
-LABEL 147
-    if (temp6d < 10) is false then
-        jump-to: LABEL 149
-LABEL 148
-    L(temp6d - 1) <- temp6f
-    jump-to: LABEL 14a
-LABEL 149
-    write-word(((temp6d - 10) * 2) + 4f0) <- temp6f
-LABEL 14a
-    if (int16(temp6f) > int16(2e)) is true then
-        jump-to: LABEL 18a
-LABEL 14b
-    L0a <- 2e
-    L0b <- 2c
-    jump-to: LABEL 187
-LABEL 14c
-    temp70 <- read-word(6ce)
-    if (temp70 = 3c) is false then
-        jump-to: LABEL 14f
-LABEL 14d
     print: "dec_chk"
     L08 <- 0c26
-    temp71 <- L01
-    temp72 <- (int16(temp71) - int16(1))
-    L01 <- temp72
-    if (int16(temp72) < int16(46)) is true then
-        jump-to: LABEL 18a
-LABEL 14e
+    temp6e <- (int16(L01) - int16(1))
+    L01 <- temp6e
+    if (int16(temp6e) < int16(46)) is true then
+        jump-to: LABEL 15e
+LABEL 122
     L09 <- 46
     L0a <- 2d
     L0b <- 2c
-    jump-to: LABEL 187
-LABEL 14f
-    temp73 <- read-word(6ce)
-    if (temp73 = 3d) is false then
-        jump-to: LABEL 15c
-LABEL 150
+    jump-to: LABEL 15b
+LABEL 123
+    temp6f <- read-word(6ce)
+    if (temp6f = 3d) is false then
+        jump-to: LABEL 130
+LABEL 124
     L08 <- 0c2b
+    temp70 <- L06
+    if (temp70 = 0) is false then
+        jump-to: LABEL 126
+LABEL 125
+    temp71 <- peek-SP
+    jump-to: LABEL 129
+LABEL 126
+    if (temp70 < 10) is false then
+        jump-to: LABEL 128
+LABEL 127
+    temp71 <- L(temp70 - 1)
+    jump-to: LABEL 129
+LABEL 128
+    temp71 <- read-word(((temp70 - 10) * 2) + 4f0)
+LABEL 129
+    temp72 <- (int16(temp71) - int16(1))
+    if (temp70 = 0) is false then
+        jump-to: LABEL 12b
+LABEL 12a
+    update-SP: temp72
+    jump-to: LABEL 12e
+LABEL 12b
+    if (temp70 < 10) is false then
+        jump-to: LABEL 12d
+LABEL 12c
+    L(temp70 - 1) <- temp72
+    jump-to: LABEL 12e
+LABEL 12d
+    write-word(((temp70 - 10) * 2) + 4f0) <- temp72
+LABEL 12e
+    if (int16(temp72) < int16(46)) is true then
+        jump-to: LABEL 15e
+LABEL 12f
+    L09 <- 46
+    L0a <- 2d
+    L0b <- 2c
+    jump-to: LABEL 15b
+LABEL 130
+    temp73 <- read-word(6ce)
+    if (temp73 = 3e) is false then
+        jump-to: LABEL 13d
+LABEL 131
+    L08 <- 0c30
     temp74 <- L06
     if (temp74 = 0) is false then
-        jump-to: LABEL 152
-LABEL 151
+        jump-to: LABEL 133
+LABEL 132
     temp75 <- peek-SP
-    jump-to: LABEL 155
-LABEL 152
+    jump-to: LABEL 136
+LABEL 133
     if (temp74 < 10) is false then
-        jump-to: LABEL 154
-LABEL 153
+        jump-to: LABEL 135
+LABEL 134
     temp75 <- L(temp74 - 1)
-    jump-to: LABEL 155
-LABEL 154
+    jump-to: LABEL 136
+LABEL 135
     temp75 <- read-word(((temp74 - 10) * 2) + 4f0)
-LABEL 155
+LABEL 136
     temp76 <- (int16(temp75) - int16(1))
     if (temp74 = 0) is false then
-        jump-to: LABEL 157
-LABEL 156
+        jump-to: LABEL 138
+LABEL 137
     update-SP: temp76
-    jump-to: LABEL 15a
-LABEL 157
+    jump-to: LABEL 13b
+LABEL 138
     if (temp74 < 10) is false then
-        jump-to: LABEL 159
-LABEL 158
+        jump-to: LABEL 13a
+LABEL 139
     L(temp74 - 1) <- temp76
-    jump-to: LABEL 15a
-LABEL 159
+    jump-to: LABEL 13b
+LABEL 13a
     write-word(((temp74 - 10) * 2) + 4f0) <- temp76
-LABEL 15a
+LABEL 13b
     if (int16(temp76) < int16(46)) is true then
-        jump-to: LABEL 18a
-LABEL 15b
+        jump-to: LABEL 15e
+LABEL 13c
     L09 <- 46
     L0a <- 2d
     L0b <- 2c
-    jump-to: LABEL 187
-LABEL 15c
+    jump-to: LABEL 15b
+LABEL 13d
     temp77 <- read-word(6ce)
-    if (temp77 = 3e) is false then
-        jump-to: LABEL 169
-LABEL 15d
-    L08 <- 0c30
-    temp78 <- L06
-    if (temp78 = 0) is false then
-        jump-to: LABEL 15f
-LABEL 15e
-    temp79 <- peek-SP
-    jump-to: LABEL 162
-LABEL 15f
-    if (temp78 < 10) is false then
-        jump-to: LABEL 161
-LABEL 160
-    temp79 <- L(temp78 - 1)
-    jump-to: LABEL 162
-LABEL 161
-    temp79 <- read-word(((temp78 - 10) * 2) + 4f0)
-LABEL 162
-    temp7a <- (int16(temp79) - int16(1))
-    if (temp78 = 0) is false then
-        jump-to: LABEL 164
-LABEL 163
-    update-SP: temp7a
-    jump-to: LABEL 167
-LABEL 164
-    if (temp78 < 10) is false then
-        jump-to: LABEL 166
-LABEL 165
-    L(temp78 - 1) <- temp7a
-    jump-to: LABEL 167
-LABEL 166
-    write-word(((temp78 - 10) * 2) + 4f0) <- temp7a
-LABEL 167
-    if (int16(temp7a) < int16(46)) is true then
-        jump-to: LABEL 18a
-LABEL 168
-    L09 <- 46
-    L0a <- 2d
-    L0b <- 2c
-    jump-to: LABEL 187
-LABEL 169
-    temp7b <- read-word(6ce)
-    if (temp7b = 3f) is false then
-        jump-to: LABEL 16c
-LABEL 16a
+    if (temp77 = 3f) is false then
+        jump-to: LABEL 140
+LABEL 13e
     L08 <- 0c36
-    temp7c <- peek-SP
-    temp7d <- (int16(temp7c) - int16(1))
-    update-SP: temp7d
-    if (int16(temp7d) < int16(2c)) is true then
-        jump-to: LABEL 18a
-LABEL 16b
+    temp78 <- peek-SP
+    temp79 <- (int16(temp78) - int16(1))
+    update-SP: temp79
+    if (int16(temp79) < int16(2c)) is true then
+        jump-to: LABEL 15e
+LABEL 13f
     L0a <- 2c
     L0b <- 2c
-    jump-to: LABEL 187
-LABEL 16c
-    temp7e <- read-word(6ce)
-    if (temp7e = 40) is false then
-        jump-to: LABEL 179
-LABEL 16d
+    jump-to: LABEL 15b
+LABEL 140
+    temp7a <- read-word(6ce)
+    if (temp7a = 40) is false then
+        jump-to: LABEL 14d
+LABEL 141
     L08 <- 0c38
+    temp7b <- L03
+    if (temp7b = 0) is false then
+        jump-to: LABEL 143
+LABEL 142
+    temp7c <- peek-SP
+    jump-to: LABEL 146
+LABEL 143
+    if (temp7b < 10) is false then
+        jump-to: LABEL 145
+LABEL 144
+    temp7c <- L(temp7b - 1)
+    jump-to: LABEL 146
+LABEL 145
+    temp7c <- read-word(((temp7b - 10) * 2) + 4f0)
+LABEL 146
+    temp7d <- (int16(temp7c) - int16(1))
+    if (temp7b = 0) is false then
+        jump-to: LABEL 148
+LABEL 147
+    update-SP: temp7d
+    jump-to: LABEL 14b
+LABEL 148
+    if (temp7b < 10) is false then
+        jump-to: LABEL 14a
+LABEL 149
+    L(temp7b - 1) <- temp7d
+    jump-to: LABEL 14b
+LABEL 14a
+    write-word(((temp7b - 10) * 2) + 4f0) <- temp7d
+LABEL 14b
+    if (int16(temp7d) < int16(2c)) is true then
+        jump-to: LABEL 15e
+LABEL 14c
+    L0a <- 2c
+    L0b <- 2c
+    jump-to: LABEL 15b
+LABEL 14d
+    temp7e <- read-word(6ce)
+    if (temp7e = 41) is false then
+        jump-to: LABEL 15a
+LABEL 14e
+    L08 <- 0c3d
     temp7f <- L03
     if (temp7f = 0) is false then
-        jump-to: LABEL 16f
-LABEL 16e
+        jump-to: LABEL 150
+LABEL 14f
     temp80 <- peek-SP
-    jump-to: LABEL 172
-LABEL 16f
+    jump-to: LABEL 153
+LABEL 150
     if (temp7f < 10) is false then
-        jump-to: LABEL 171
-LABEL 170
+        jump-to: LABEL 152
+LABEL 151
     temp80 <- L(temp7f - 1)
-    jump-to: LABEL 172
-LABEL 171
+    jump-to: LABEL 153
+LABEL 152
     temp80 <- read-word(((temp7f - 10) * 2) + 4f0)
-LABEL 172
+LABEL 153
     temp81 <- (int16(temp80) - int16(1))
     if (temp7f = 0) is false then
-        jump-to: LABEL 174
-LABEL 173
+        jump-to: LABEL 155
+LABEL 154
     update-SP: temp81
-    jump-to: LABEL 177
-LABEL 174
+    jump-to: LABEL 158
+LABEL 155
     if (temp7f < 10) is false then
-        jump-to: LABEL 176
-LABEL 175
+        jump-to: LABEL 157
+LABEL 156
     L(temp7f - 1) <- temp81
-    jump-to: LABEL 177
-LABEL 176
+    jump-to: LABEL 158
+LABEL 157
     write-word(((temp7f - 10) * 2) + 4f0) <- temp81
-LABEL 177
+LABEL 158
     if (int16(temp81) < int16(2c)) is true then
-        jump-to: LABEL 18a
-LABEL 178
+        jump-to: LABEL 15e
+LABEL 159
     L0a <- 2c
     L0b <- 2c
-    jump-to: LABEL 187
-LABEL 179
-    temp82 <- read-word(6ce)
-    if (temp82 = 41) is false then
-        jump-to: LABEL 186
-LABEL 17a
-    L08 <- 0c3d
-    temp83 <- L03
-    if (temp83 = 0) is false then
-        jump-to: LABEL 17c
-LABEL 17b
-    temp84 <- peek-SP
-    jump-to: LABEL 17f
-LABEL 17c
-    if (temp83 < 10) is false then
-        jump-to: LABEL 17e
-LABEL 17d
-    temp84 <- L(temp83 - 1)
-    jump-to: LABEL 17f
-LABEL 17e
-    temp84 <- read-word(((temp83 - 10) * 2) + 4f0)
-LABEL 17f
-    temp85 <- (int16(temp84) - int16(1))
-    if (temp83 = 0) is false then
-        jump-to: LABEL 181
-LABEL 180
-    update-SP: temp85
-    jump-to: LABEL 184
-LABEL 181
-    if (temp83 < 10) is false then
-        jump-to: LABEL 183
-LABEL 182
-    L(temp83 - 1) <- temp85
-    jump-to: LABEL 184
-LABEL 183
-    write-word(((temp83 - 10) * 2) + 4f0) <- temp85
-LABEL 184
-    if (int16(temp85) < int16(2c)) is true then
-        jump-to: LABEL 18a
-LABEL 185
-    L0a <- 2c
-    L0b <- 2c
-    jump-to: LABEL 187
-LABEL 186
+    jump-to: LABEL 15b
+LABEL 15a
     return: 0
-LABEL 187
-    temp86 <- L09
-    if (temp86 = 03e7) is true then
-        jump-to: LABEL 189
-LABEL 188
-    temp87 <- L01
-    temp88 <- L09
+LABEL 15b
+    temp82 <- L09
+    if (temp82 = 03e7) is true then
+        jump-to: LABEL 15d
+LABEL 15c
+    temp83 <- L01
+    temp84 <- L09
+    temp85 <- L08
+    discard: call 7e4 (temp83, temp84, temp85)
+LABEL 15d
+    temp86 <- pop-SP
+    L07 <- temp86
+    temp87 <- L07
+    temp88 <- L0a
     temp89 <- L08
     discard: call 7e4 (temp87, temp88, temp89)
-LABEL 189
     temp8a <- pop-SP
     L07 <- temp8a
     temp8b <- L07
-    temp8c <- L0a
+    temp8c <- L0b
     temp8d <- L08
     discard: call 7e4 (temp8b, temp8c, temp8d)
-    temp8e <- pop-SP
-    L07 <- temp8e
-    temp8f <- L07
-    temp90 <- L0b
-    temp91 <- L08
-    discard: call 7e4 (temp8f, temp90, temp91)
     return: 1
-LABEL 18a
-    temp92 <- L01
-    temp93 <- L08
-    discard: call 7e4 (temp92, 7b, temp93)
+LABEL 15e
+    temp8e <- L01
+    temp8f <- L08
+    discard: call 7e4 (temp8e, 7b, temp8f)
     return: 0
 ]]>
 

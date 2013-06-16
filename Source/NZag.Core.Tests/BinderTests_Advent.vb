@@ -784,7 +784,7 @@
     Sub Advent_9524()
         Dim expected =
 <![CDATA[
-# temps: 326
+# temps: 313
 
 LABEL 00
     temp00 <- L00
@@ -989,13 +989,12 @@ LABEL 35
         jump-to: LABEL 37
 LABEL 36
     discard: call 169c8 (14)
-    temp20 <- read-word(3dc5)
-    write-word(3dc5) <- (int16(temp20) + int16(1))
+    write-word(3dc5) <- (int16(read-word(3dc5)) + int16(1))
 LABEL 37
-    temp21 <- read-word(3dc7)
-    temp22 <- read-word(3dc5)
-    temp23 <- (int16(temp21) % int16(temp22))
-    if (temp23 = 0) is true then
+    temp20 <- read-word(3dc7)
+    temp21 <- read-word(3dc5)
+    temp22 <- (int16(temp20) % int16(temp21))
+    if (temp22 = 0) is true then
         jump-to: LABEL 39
 LABEL 38
     write-word(3cf1) <- temp15
@@ -1004,70 +1003,68 @@ LABEL 39
     if (temp03 = 01) is false then
         jump-to: LABEL 3b
 LABEL 3a
-    temp24 <- read-word(3c4d)
-    discard: call 17340 (temp00, 00, temp24)
-    temp25 <- read-word(3c53)
-    discard: call 17340 (temp00, 01, temp25)
-    temp26 <- read-word(3c55)
-    discard: call 17340 (temp00, 02, temp26)
+    temp23 <- read-word(3c4d)
+    discard: call 17340 (temp00, 00, temp23)
+    temp24 <- read-word(3c53)
+    discard: call 17340 (temp00, 01, temp24)
+    temp25 <- read-word(3c55)
+    discard: call 17340 (temp00, 02, temp25)
     return: 1
 LABEL 3b
     if (temp03 = 0) is true then
         jump-to: LABEL 3d
 LABEL 3c
     write-word(3ced) <- temp03
-    temp27 <- read-word(3ce9)
-    write-word(3ce9) <- (int16(temp27) - int16(1))
-    temp28 <- read-word(3cef)
-    write-word(3cef) <- (int16(temp28) - int16(1))
+    write-word(3ce9) <- (int16(read-word(3ce9)) - int16(1))
+    write-word(3cef) <- (int16(read-word(3cef)) - int16(1))
     jump-to: LABEL 3e
 LABEL 3d
-    temp29 <- read-word(3cef)
-    write-word(3ce9) <- temp29
+    temp26 <- read-word(3cef)
+    write-word(3ce9) <- temp26
     write-word(3ced) <- call ce34 ()
 LABEL 3e
     jump-to: LABEL 40
 LABEL 3f
     write-word(3cf1) <- 00
 LABEL 40
-    temp2a <- read-word(3ced)
-    if (temp2a = 0) is true then
+    temp27 <- read-word(3ced)
+    if (temp27 = 0) is true then
         jump-to: LABEL 42
 LABEL 41
-    temp2b <- read-word(3ced)
-    temp2c <- call 17284 (temp2b, 06)
-    temp2d <- (temp2c & 01)
-    if (temp2d = 0) is false then
+    temp28 <- read-word(3ced)
+    temp29 <- call 17284 (temp28, 06)
+    temp2a <- (temp29 & 01)
+    if (temp2a = 0) is false then
         jump-to: LABEL 64
 LABEL 42
-    temp2e <- read-word(3cef)
-    write-word(3ce9) <- temp2e
+    temp2b <- read-word(3cef)
+    write-word(3ce9) <- temp2b
     write-word(3cb3) <- 00
     write-word(3ca5) <- 00
-    temp2f <- call aba4 (06, 00, 00)
-    if (temp2f = 2710) is false then
+    temp2c <- call aba4 (06, 00, 00)
+    if (temp2c = 2710) is false then
         jump-to: LABEL 44
 LABEL 43
     jump-to: LABEL 0c
 LABEL 44
-    if (temp2f = 0) is true then
+    if (temp2c = 0) is true then
         jump-to: LABEL 46
 LABEL 45
     discard: call 17340 (temp00, 00, 1b)
     write-word(3c9b) <- 1b
     discard: call 17340 (temp00, 01, 01)
-    discard: call 17340 (temp00, 02, temp2f)
+    discard: call 17340 (temp00, 02, temp2c)
     jump-to: LABEL 191
 LABEL 46
-    temp30 <- read-word(3c67)
-    temp31 <- read-word(3c15)
-    if (temp30 = temp31) is false then
+    temp2d <- read-word(3c67)
+    temp2e <- read-word(3c15)
+    if (temp2d = temp2e) is false then
         jump-to: LABEL 4e
 LABEL 47
-    temp32 <- 02
+    temp2f <- 02
 LABEL 48
-    temp33 <- read-word(3ceb)
-    if (int16(temp32) > int16(temp33)) is true then
+    temp30 <- read-word(3ceb)
+    if (int16(temp2f) > int16(temp30)) is true then
         jump-to: LABEL 4c
 LABEL 49
     temp03 <- call ce34 ()
@@ -1076,13 +1073,13 @@ LABEL 49
 LABEL 4a
     jump-to: LABEL 4f
 LABEL 4b
-    temp32 <- (int16(temp32) + int16(1))
+    temp2f <- (int16(temp2f) + int16(1))
     jump-to: LABEL 48
 LABEL 4c
-    temp34 <- read-word(3ced)
-    write-word(3ced) <- call 15c2c (temp34)
-    temp35 <- read-word(3ced)
-    if (temp35 = 0) is true then
+    temp31 <- read-word(3ced)
+    write-word(3ced) <- call 15c2c (temp31)
+    temp32 <- read-word(3ced)
+    if (temp32 = 0) is true then
         jump-to: LABEL 4e
 LABEL 4d
     jump-to: LABEL 64
@@ -1090,9 +1087,9 @@ LABEL 4e
     write-word(3c83) <- 0c
     jump-to: LABEL 12c
 LABEL 4f
-    temp36 <- read-word(3ce9)
-    temp32 <- (int16(temp36) - int16(01))
-    if (temp32 = 01) is false then
+    temp33 <- read-word(3ce9)
+    temp2f <- (int16(temp33) - int16(01))
+    if (temp2f = 01) is false then
         jump-to: LABEL 51
 LABEL 50
     discard: call 13a88 (1007, 16)
@@ -1101,107 +1098,107 @@ LABEL 51
     write-word(3ce9) <- 01
     write-word(3ca9) <- 01
     write-word(3cd1) <- 01
-    temp37 <- read-word(3c15)
-    temp38 <- read-word(3c69)
-    temp2f <- call aba4 (temp37, temp38, 06)
+    temp34 <- read-word(3c15)
+    temp35 <- read-word(3c69)
+    temp2c <- call aba4 (temp34, temp35, 06)
     write-word(3cd1) <- 00
-    if (temp2f = 2710) is false then
+    if (temp2c = 2710) is false then
         jump-to: LABEL 53
 LABEL 52
     jump-to: LABEL 0c
 LABEL 53
-    if (temp2f = 0) is false then
+    if (temp2c = 0) is false then
         jump-to: LABEL 55
 LABEL 54
     discard: call 13a88 (1007, 17)
     jump-to: LABEL 0b
 LABEL 55
-    if (int16(01) > int16(temp2f)) is true then
+    if (int16(01) > int16(temp2c)) is true then
         jump-to: LABEL 57
 LABEL 56
-    if (int16(temp2f) > int16(0114)) is false then
+    if (int16(temp2c) > int16(0114)) is false then
         jump-to: LABEL 58
 LABEL 57
-    discard: call 169c8 (03, temp2f)
+    discard: call 169c8 (03, temp2c)
     jump-to: LABEL 59
 LABEL 58
-    if (((read-byte(((temp2f - 1) * e) + 188) & 0080) <> 0) = 1) is true then
+    if (((read-byte(((temp2c - 1) * e) + 188) & 0080) <> 0) = 1) is true then
         jump-to: LABEL 5e
 LABEL 59
-    if (int16(01) > int16(temp2f)) is true then
+    if (int16(01) > int16(temp2c)) is true then
         jump-to: LABEL 5b
 LABEL 5a
-    if (int16(temp2f) > int16(0114)) is false then
+    if (int16(temp2c) > int16(0114)) is false then
         jump-to: LABEL 5c
 LABEL 5b
-    discard: call 169c8 (03, temp2f)
+    discard: call 169c8 (03, temp2c)
     jump-to: LABEL 5d
 LABEL 5c
-    if (((read-byte((((temp2f - 1) * e) + 188) + 2) & 0002) <> 0) = 1) is true then
+    if (((read-byte((((temp2c - 1) * e) + 188) + 2) & 0002) <> 0) = 1) is true then
         jump-to: LABEL 5e
 LABEL 5d
-    discard: call 13a88 (1007, 18, temp2f)
+    discard: call 13a88 (1007, 18, temp2c)
     jump-to: LABEL 0b
 LABEL 5e
-    temp39 <- read-word(3ce9)
-    if (temp39 = temp32) is true then
+    temp36 <- read-word(3ce9)
+    if (temp36 = temp2f) is true then
         jump-to: LABEL 60
 LABEL 5f
     discard: call 13a88 (1007, 19)
     jump-to: LABEL 0b
 LABEL 60
-    discard: call d444 (temp2f)
-    write-word(3cef) <- (int16(temp32) + int16(01))
-    temp3a <- read-word(3c15)
-    if (temp2f = temp3a) is false then
+    discard: call d444 (temp2c)
+    write-word(3cef) <- (int16(temp2f) + int16(01))
+    temp37 <- read-word(3c15)
+    if (temp2c = temp37) is false then
         jump-to: LABEL 63
 LABEL 61
-    temp3b <- read-word(3cef)
-    write-word(3ce9) <- temp3b
-    temp3c <- call ce98 ()
-    if (((temp3c = 4f03) | (temp3c = 5830)) | (temp3c = 4f03)) is false then
+    temp38 <- read-word(3cef)
+    write-word(3ce9) <- temp38
+    temp39 <- call ce98 ()
+    if (((temp39 = 4f03) | (temp39 = 5830)) | (temp39 = 4f03)) is false then
         jump-to: LABEL 63
 LABEL 62
     discard: call 13a88 (1007, 14)
     jump-to: LABEL 0b
 LABEL 63
-    write-word(3c67) <- temp2f
-    write-word(3c69) <- call a218 (temp2f)
+    write-word(3c67) <- temp2c
+    write-word(3c69) <- call a218 (temp2c)
     jump-to: LABEL 0e
 LABEL 64
-    temp3d <- read-word(3ced)
-    temp3e <- call 17284 (temp3d, 06)
-    temp3f <- (temp3e & 02)
-    write-word(3c6b) <- (int16(temp3f) / int16(02))
-    temp40 <- read-word(3c6b)
-    if (temp40 = 01) is false then
+    temp3a <- read-word(3ced)
+    temp3b <- call 17284 (temp3a, 06)
+    temp3c <- (temp3b & 02)
+    write-word(3c6b) <- (int16(temp3c) / int16(02))
+    temp3d <- read-word(3c6b)
+    if (temp3d = 01) is false then
         jump-to: LABEL 67
 LABEL 65
-    temp41 <- read-word(3c67)
-    temp42 <- read-word(3c15)
-    if (temp41 = temp42) is true then
+    temp3e <- read-word(3c67)
+    temp3f <- read-word(3c15)
+    if (temp3e = temp3f) is true then
         jump-to: LABEL 67
 LABEL 66
     write-word(3c83) <- 0c
     write-word(3c6b) <- 00
     jump-to: LABEL 12c
 LABEL 67
-    temp43 <- read-word(3ced)
-    temp44 <- call 17284 (temp43, 07)
-    temp03 <- (int16(ff) - int16(temp44))
-    temp45 <- call 172a4 (0e, 00)
-    temp46 <- call 172a4 (temp45, temp03)
-    temp47 <- call 17284 (temp46, 00)
-    temp48 <- (int16(temp47) - int16(01))
+    temp40 <- read-word(3ced)
+    temp41 <- call 17284 (temp40, 07)
+    temp03 <- (int16(ff) - int16(temp41))
+    temp42 <- call 172a4 (0e, 00)
+    temp43 <- call 172a4 (temp42, temp03)
+    temp44 <- call 17284 (temp43, 00)
+    temp45 <- (int16(temp44) - int16(01))
     write-word(3cc9) <- ffff
     write-word(3ccb) <- ffff
     write-word(3c83) <- 01
     write-word(3c85) <- 01
     write-word(3c6d) <- 00
-    temp49 <- (int16(temp46) + int16(01))
-    temp4a <- 00
+    temp46 <- (int16(temp43) + int16(01))
+    temp47 <- 00
 LABEL 68
-    if (int16(temp4a) > int16(temp48)) is true then
+    if (int16(temp47) > int16(temp45)) is true then
         jump-to: LABEL 12c
 LABEL 69
     temp03 <- 00
@@ -1245,7 +1242,7 @@ LABEL 77
     temp03 <- (int16(temp03) + int16(1))
     jump-to: LABEL 6a
 LABEL 78
-    temp49 <- call 9134 (temp49)
+    temp46 <- call 9134 (temp46)
     write-word(3c7f) <- 00
     write-word(3c95) <- 00
     write-word(3c8b) <- 00
@@ -1255,259 +1252,256 @@ LABEL 78
     write-word(3e57) <- 00
     write-word(3cb1) <- 00
     write-word(3c81) <- 01
-    temp4b <- read-word(3cef)
-    write-word(3ce9) <- (int16(temp4b) + int16(01))
+    temp48 <- read-word(3cef)
+    write-word(3ce9) <- (int16(temp48) + int16(01))
     write-word(3c9f) <- ffff
     write-word(3cb3) <- 00
     temp03 <- 00
-    temp4c <- 00
+    temp49 <- 00
     write-word(3c87) <- 00
 LABEL 79
-    temp4d <- read-word(3c87)
-    if (int16(temp4d) < int16(00)) is true then
+    temp4a <- read-word(3c87)
+    if (int16(temp4a) < int16(00)) is true then
         jump-to: LABEL 7b
 LABEL 7a
-    temp4e <- read-word(3c87)
-    if (int16(temp4e) < int16(20)) is true then
+    temp4b <- read-word(3c87)
+    if (int16(temp4b) < int16(20)) is true then
         jump-to: LABEL 7c
 LABEL 7b
-    temp4f <- read-word(3c87)
-    discard: call 169c8 (1d, temp4f, 1f, 01, 09)
+    temp4c <- read-word(3c87)
+    discard: call 169c8 (1d, temp4c, 1f, 01, 09)
     push-SP: 00
     jump-to: LABEL 7d
 LABEL 7c
-    temp50 <- read-word(3c87)
-    push-SP: read-word(3ff7 + (temp50 * 2))
+    temp4d <- read-word(3c87)
+    push-SP: read-word(3ff7 + (temp4d * 2))
 LABEL 7d
-    temp51 <- pop-SP
-    if (temp51 = 0f) is true then
+    temp4e <- pop-SP
+    if (temp4e = 0f) is true then
         jump-to: LABEL b6
 LABEL 7e
     write-word(3cd3) <- 00
-    temp52 <- read-word(3c87)
-    if (int16(temp52) < int16(00)) is true then
+    temp4f <- read-word(3c87)
+    if (int16(temp4f) < int16(00)) is true then
         jump-to: LABEL 80
 LABEL 7f
-    temp53 <- read-word(3c87)
-    if (int16(temp53) < int16(20)) is true then
+    temp50 <- read-word(3c87)
+    if (int16(temp50) < int16(20)) is true then
         jump-to: LABEL 81
 LABEL 80
-    temp54 <- read-word(3c87)
-    discard: call 169c8 (1d, temp54, 1f, 01, 07)
+    temp51 <- read-word(3c87)
+    discard: call 169c8 (1d, temp51, 1f, 01, 07)
     push-SP: 00
     jump-to: LABEL 82
 LABEL 81
-    temp55 <- read-word(3c87)
-    push-SP: read-word(3f77 + (temp55 * 2))
+    temp52 <- read-word(3c87)
+    push-SP: read-word(3f77 + (temp52 * 2))
 LABEL 82
-    temp56 <- pop-SP
-    if (temp56 = 02) is true then
+    temp53 <- pop-SP
+    if (temp53 = 02) is true then
         jump-to: LABEL 84
 LABEL 83
     temp03 <- (int16(temp03) + int16(1))
 LABEL 84
-    temp57 <- read-word(3c87)
-    if (int16(temp57) < int16(00)) is true then
+    temp54 <- read-word(3c87)
+    if (int16(temp54) < int16(00)) is true then
         jump-to: LABEL 86
 LABEL 85
-    temp58 <- read-word(3c87)
-    if (int16(temp58) < int16(20)) is true then
+    temp55 <- read-word(3c87)
+    if (int16(temp55) < int16(20)) is true then
         jump-to: LABEL 87
 LABEL 86
-    temp59 <- read-word(3c87)
-    discard: call 169c8 (1d, temp59, 1f, 01, 07)
+    temp56 <- read-word(3c87)
+    discard: call 169c8 (1d, temp56, 1f, 01, 07)
     push-SP: 00
     jump-to: LABEL 88
 LABEL 87
-    temp5a <- read-word(3c87)
-    push-SP: read-word(3f77 + (temp5a * 2))
+    temp57 <- read-word(3c87)
+    push-SP: read-word(3f77 + (temp57 * 2))
 LABEL 88
-    temp5b <- pop-SP
-    if (temp5b = 01) is false then
+    temp58 <- pop-SP
+    if (temp58 = 01) is false then
         jump-to: LABEL b5
 LABEL 89
-    temp5c <- read-word(3c87)
-    if (int16(temp5c) < int16(00)) is true then
+    temp59 <- read-word(3c87)
+    if (int16(temp59) < int16(00)) is true then
         jump-to: LABEL 8b
 LABEL 8a
-    temp5d <- read-word(3c87)
-    if (int16(temp5d) < int16(20)) is true then
+    temp5a <- read-word(3c87)
+    if (int16(temp5a) < int16(20)) is true then
         jump-to: LABEL 8c
 LABEL 8b
-    temp5e <- read-word(3c87)
-    discard: call 169c8 (1d, temp5e, 1f, 01, 08)
+    temp5b <- read-word(3c87)
+    discard: call 169c8 (1d, temp5b, 1f, 01, 08)
     push-SP: 00
     jump-to: LABEL 8d
 LABEL 8c
-    temp5f <- read-word(3c87)
-    push-SP: read-word(3fb7 + (temp5f * 2))
+    temp5c <- read-word(3c87)
+    push-SP: read-word(3fb7 + (temp5c * 2))
 LABEL 8d
-    temp60 <- pop-SP
-    if (temp60 = 02) is false then
+    temp5d <- pop-SP
+    if (temp5d = 02) is false then
         jump-to: LABEL 8f
 LABEL 8e
-    temp4c <- 01
+    temp49 <- 01
 LABEL 8f
-    temp61 <- read-word(3c87)
-    if (int16(temp61) < int16(00)) is true then
+    temp5e <- read-word(3c87)
+    if (int16(temp5e) < int16(00)) is true then
         jump-to: LABEL 91
 LABEL 90
-    temp62 <- read-word(3c87)
-    if (int16(temp62) < int16(20)) is true then
+    temp5f <- read-word(3c87)
+    if (int16(temp5f) < int16(20)) is true then
         jump-to: LABEL 92
 LABEL 91
-    temp63 <- read-word(3c87)
-    discard: call 169c8 (1d, temp63, 1f, 01, 08)
+    temp60 <- read-word(3c87)
+    discard: call 169c8 (1d, temp60, 1f, 01, 08)
     push-SP: 00
     jump-to: LABEL 93
 LABEL 92
-    temp64 <- read-word(3c87)
-    push-SP: read-word(3fb7 + (temp64 * 2))
+    temp61 <- read-word(3c87)
+    push-SP: read-word(3fb7 + (temp61 * 2))
 LABEL 93
-    temp65 <- pop-SP
-    if ((temp65 = 04) | (temp65 = 05)) is false then
+    temp62 <- pop-SP
+    if ((temp62 = 04) | (temp62 = 05)) is false then
         jump-to: LABEL b5
 LABEL 94
     if (temp03 = 01) is false then
         jump-to: LABEL b5
 LABEL 95
-    temp66 <- read-word(3c87)
-    write-word(3c87) <- (int16(temp66) + int16(1))
-    temp67 <- read-word(3c87)
-    if (int16(temp67) < int16(00)) is true then
+    write-word(3c87) <- (int16(read-word(3c87)) + int16(1))
+    temp63 <- read-word(3c87)
+    if (int16(temp63) < int16(00)) is true then
         jump-to: LABEL 97
 LABEL 96
-    temp68 <- read-word(3c87)
-    if (int16(temp68) < int16(20)) is true then
+    temp64 <- read-word(3c87)
+    if (int16(temp64) < int16(20)) is true then
         jump-to: LABEL 98
 LABEL 97
-    temp69 <- read-word(3c87)
-    discard: call 169c8 (1d, temp69, 1f, 01, 07)
+    temp65 <- read-word(3c87)
+    discard: call 169c8 (1d, temp65, 1f, 01, 07)
     push-SP: 00
     jump-to: LABEL 99
 LABEL 98
-    temp6a <- read-word(3c87)
-    push-SP: read-word(3f77 + (temp6a * 2))
+    temp66 <- read-word(3c87)
+    push-SP: read-word(3f77 + (temp66 * 2))
 LABEL 99
-    temp6b <- pop-SP
-    if (temp6b = 02) is false then
+    temp67 <- pop-SP
+    if (temp67 = 02) is false then
         jump-to: LABEL b4
 LABEL 9a
-    temp6c <- read-word(3c87)
-    if (int16(temp6c) < int16(00)) is true then
+    temp68 <- read-word(3c87)
+    if (int16(temp68) < int16(00)) is true then
         jump-to: LABEL 9c
 LABEL 9b
-    temp6d <- read-word(3c87)
-    if (int16(temp6d) < int16(20)) is true then
+    temp69 <- read-word(3c87)
+    if (int16(temp69) < int16(20)) is true then
         jump-to: LABEL 9d
 LABEL 9c
-    temp6e <- read-word(3c87)
-    discard: call 169c8 (1d, temp6e, 1f, 01, 07)
+    temp6a <- read-word(3c87)
+    discard: call 169c8 (1d, temp6a, 1f, 01, 07)
     push-SP: 00
     jump-to: LABEL 9e
 LABEL 9d
-    temp6f <- read-word(3c87)
-    push-SP: read-word(3f77 + (temp6f * 2))
+    temp6b <- read-word(3c87)
+    push-SP: read-word(3f77 + (temp6b * 2))
 LABEL 9e
-    temp70 <- pop-SP
-    if (temp70 = 02) is false then
+    temp6c <- pop-SP
+    if (temp6c = 02) is false then
         jump-to: LABEL a0
 LABEL 9f
-    temp71 <- read-word(3c87)
-    write-word(3c87) <- (int16(temp71) + int16(1))
+    write-word(3c87) <- (int16(read-word(3c87)) + int16(1))
     jump-to: LABEL 9a
 LABEL a0
-    temp72 <- read-word(3c87)
-    if (int16(temp72) < int16(00)) is true then
+    temp6d <- read-word(3c87)
+    if (int16(temp6d) < int16(00)) is true then
         jump-to: LABEL a2
 LABEL a1
-    temp73 <- read-word(3c87)
-    if (int16(temp73) < int16(20)) is true then
+    temp6e <- read-word(3c87)
+    if (int16(temp6e) < int16(20)) is true then
         jump-to: LABEL a3
 LABEL a2
-    temp74 <- read-word(3c87)
-    discard: call 169c8 (1d, temp74, 1f, 01, 07)
+    temp6f <- read-word(3c87)
+    discard: call 169c8 (1d, temp6f, 1f, 01, 07)
     push-SP: 00
     jump-to: LABEL a4
 LABEL a3
-    temp75 <- read-word(3c87)
-    push-SP: read-word(3f77 + (temp75 * 2))
+    temp70 <- read-word(3c87)
+    push-SP: read-word(3f77 + (temp70 * 2))
 LABEL a4
-    temp76 <- pop-SP
-    if (temp76 = 01) is false then
+    temp71 <- pop-SP
+    if (temp71 = 01) is false then
         jump-to: LABEL b4
 LABEL a5
-    temp77 <- read-word(3c87)
-    if (int16(temp77) < int16(00)) is true then
+    temp72 <- read-word(3c87)
+    if (int16(temp72) < int16(00)) is true then
         jump-to: LABEL a7
 LABEL a6
-    temp78 <- read-word(3c87)
-    if (int16(temp78) < int16(20)) is true then
+    temp73 <- read-word(3c87)
+    if (int16(temp73) < int16(20)) is true then
         jump-to: LABEL a8
 LABEL a7
-    temp79 <- read-word(3c87)
-    discard: call 169c8 (1d, temp79, 1f, 01, 08)
+    temp74 <- read-word(3c87)
+    discard: call 169c8 (1d, temp74, 1f, 01, 08)
     push-SP: 00
     jump-to: LABEL a9
 LABEL a8
-    temp7a <- read-word(3c87)
-    push-SP: read-word(3fb7 + (temp7a * 2))
+    temp75 <- read-word(3c87)
+    push-SP: read-word(3fb7 + (temp75 * 2))
 LABEL a9
-    temp7b <- pop-SP
-    if (temp7b = 0) is false then
+    temp76 <- pop-SP
+    if (temp76 = 0) is false then
         jump-to: LABEL b4
 LABEL aa
-    temp7c <- read-word(3ce9)
-    temp7d <- read-word(3ceb)
-    if (int16(temp7c) < int16(temp7d)) is false then
+    temp77 <- read-word(3ce9)
+    temp78 <- read-word(3ceb)
+    if (int16(temp77) < int16(temp78)) is false then
         jump-to: LABEL b4
 LABEL ab
-    temp2f <- call ce34 ()
-    if (temp2f = 0) is true then
+    temp2c <- call ce34 ()
+    if (temp2c = 0) is true then
         jump-to: LABEL b3
 LABEL ac
-    temp7e <- call 17284 (temp2f, 06)
-    temp7f <- (temp7e & 08)
-    if (temp7f = 0) is true then
+    temp79 <- call 17284 (temp2c, 06)
+    temp7a <- (temp79 & 08)
+    if (temp7a = 0) is true then
         jump-to: LABEL b3
 LABEL ad
-    temp2f <- call a30c ()
-    if (temp2f = 0) is true then
+    temp2c <- call a30c ()
+    if (temp2c = 0) is true then
         jump-to: LABEL af
 LABEL ae
-    write-word(3c81) <- temp2f
+    write-word(3c81) <- temp2c
 LABEL af
-    temp80 <- read-word(3c69)
-    temp81 <- read-word(3c67)
-    temp2f <- call aba4 (temp80, temp81, 00)
-    if (temp2f = 2710) is false then
+    temp7b <- read-word(3c69)
+    temp7c <- read-word(3c67)
+    temp2c <- call aba4 (temp7b, temp7c, 00)
+    if (temp2c = 2710) is false then
         jump-to: LABEL b1
 LABEL b0
     jump-to: LABEL 0c
 LABEL b1
-    if (int16(temp2f) < int16(02)) is true then
+    if (int16(temp2c) < int16(02)) is true then
         jump-to: LABEL b3
 LABEL b2
-    write-word(3c9f) <- temp2f
+    write-word(3c9f) <- temp2c
 LABEL b3
     jump-to: LABEL aa
 LABEL b4
     jump-to: LABEL b6
 LABEL b5
-    temp82 <- read-word(3c87)
-    write-word(3c87) <- (int16(temp82) + int16(1))
+    write-word(3c87) <- (int16(read-word(3c87)) + int16(1))
     jump-to: LABEL 79
 LABEL b6
     write-word(3cc5) <- 00
-    if (temp4c = 0) is true then
+    if (temp49 = 0) is true then
         jump-to: LABEL ba
 LABEL b7
-    temp83 <- read-word(3c93)
-    if (temp83 = 01) is false then
+    temp7d <- read-word(3c93)
+    if (temp7d = 01) is false then
         jump-to: LABEL ba
 LABEL b8
-    temp84 <- read-word(3c9b)
-    if (temp84 = 4e) is false then
+    temp7e <- read-word(3c9b)
+    if (temp7e = 4e) is false then
         jump-to: LABEL ba
 LABEL b9
     write-word(3cc5) <- 01
@@ -1520,64 +1514,64 @@ LABEL ba
     write-word(3c73) <- 00
     write-word(3e57) <- 00
     write-word(3c81) <- 01
-    temp85 <- read-word(3cef)
-    write-word(3ce9) <- (int16(temp85) + int16(01))
+    temp7f <- read-word(3cef)
+    write-word(3ce9) <- (int16(temp7f) + int16(01))
     write-word(3c87) <- 01
 LABEL bb
-    temp86 <- read-word(3c87)
-    if (int16(temp86) < int16(00)) is true then
+    temp80 <- read-word(3c87)
+    if (int16(temp80) < int16(00)) is true then
         jump-to: LABEL bd
 LABEL bc
-    temp87 <- read-word(3c87)
-    if (int16(temp87) < int16(20)) is true then
+    temp81 <- read-word(3c87)
+    if (int16(temp81) < int16(20)) is true then
         jump-to: LABEL be
 LABEL bd
-    temp88 <- read-word(3c87)
-    discard: call 169c8 (1f, temp88, 1f, 01, 05)
+    temp82 <- read-word(3c87)
+    discard: call 169c8 (1f, temp82, 1f, 01, 05)
     jump-to: LABEL bf
 LABEL be
-    temp89 <- read-word(3c87)
-    write-word(3ef7 + (temp89 * 2)) <- ffff
+    temp83 <- read-word(3c87)
+    write-word(3ef7 + (temp83 * 2)) <- ffff
 LABEL bf
     write-word(3cd3) <- 00
-    temp8a <- read-word(3c87)
-    temp8b <- (int16(temp8a) - int16(01))
-    write-word(3dc5) <- temp8b
-    temp8c <- read-word(3dc5)
-    push-SP: temp8c
-    temp8d <- read-word(3dc5)
-    if (int16(temp8d) < int16(00)) is true then
+    temp84 <- read-word(3c87)
+    temp85 <- (int16(temp84) - int16(01))
+    write-word(3dc5) <- temp85
+    temp86 <- read-word(3dc5)
+    push-SP: temp86
+    temp87 <- read-word(3dc5)
+    if (int16(temp87) < int16(00)) is true then
         jump-to: LABEL c1
 LABEL c0
-    temp8e <- read-word(3dc5)
-    if (int16(temp8e) < int16(20)) is true then
+    temp88 <- read-word(3dc5)
+    if (int16(temp88) < int16(20)) is true then
         jump-to: LABEL c3
 LABEL c1
-    temp8f <- read-word(3dc5)
-    discard: call 169c8 (1d, temp8f, 1f, 01, 09)
-    temp90 <- pop-SP
-    if (temp90 = 0) is false then
+    temp89 <- read-word(3dc5)
+    discard: call 169c8 (1d, temp89, 1f, 01, 09)
+    temp8a <- pop-SP
+    if (temp8a = 0) is false then
         jump-to: LABEL c2
 LABEL c2
     jump-to: LABEL c4
 LABEL c3
-    temp91 <- pop-SP
-    temp01 <- read-word(3ff7 + (temp91 * 2))
+    temp8b <- pop-SP
+    temp01 <- read-word(3ff7 + (temp8b * 2))
 LABEL c4
-    temp92 <- read-word(3c87)
-    if (int16(temp92) < int16(00)) is true then
+    temp8c <- read-word(3c87)
+    if (int16(temp8c) < int16(00)) is true then
         jump-to: LABEL c6
 LABEL c5
-    temp93 <- read-word(3c87)
-    if (int16(temp93) < int16(20)) is true then
+    temp8d <- read-word(3c87)
+    if (int16(temp8d) < int16(20)) is true then
         jump-to: LABEL c7
 LABEL c6
-    temp94 <- read-word(3c87)
-    discard: call 169c8 (1d, temp94, 1f, 01, 09)
+    temp8e <- read-word(3c87)
+    discard: call 169c8 (1d, temp8e, 1f, 01, 09)
     jump-to: LABEL c8
 LABEL c7
-    temp95 <- read-word(3c87)
-    write-word(3ca9) <- read-word(3ff7 + (temp95 * 2))
+    temp8f <- read-word(3c87)
+    write-word(3ca9) <- read-word(3ff7 + (temp8f * 2))
 LABEL c8
     if (temp01 = 0f) is true then
         jump-to: LABEL ea
@@ -1585,290 +1579,286 @@ LABEL c9
     write-word(3cd1) <- 00
     write-word(3c65) <- 01
     discard: call 9110 (temp01)
-    temp96 <- read-word(3c9b)
-    if (temp96 = 5d) is false then
+    temp90 <- read-word(3c9b)
+    if (temp90 = 5d) is false then
         jump-to: LABEL cd
 LABEL ca
-    temp97 <- read-word(3ca1)
-    if (temp97 = 01) is false then
+    temp91 <- read-word(3ca1)
+    if (temp91 = 01) is false then
         jump-to: LABEL cd
 LABEL cb
-    temp98 <- read-word(3ca3)
-    if (temp98 = 09) is false then
+    temp92 <- read-word(3ca3)
+    if (temp92 = 09) is false then
         jump-to: LABEL cd
 LABEL cc
-    temp2f <- read-word(3e3b)
-    temp99 <- read-word(3ce9)
-    write-word(3ce9) <- (int16(temp99) - int16(1))
-    temp9a <- read-word(3ce9)
-    temp32 <- temp9a
+    temp2c <- read-word(3e3b)
+    write-word(3ce9) <- (int16(read-word(3ce9)) - int16(1))
+    temp93 <- read-word(3ce9)
+    temp2f <- temp93
     jump-to: LABEL 55
 LABEL cd
-    temp9b <- read-word(3c87)
-    push-SP: (int16(temp9b) - int16(01))
-    temp9c <- read-word(3ca1)
-    temp9d <- read-word(3ca3)
-    temp9e <- pop-SP
-    temp2f <- call a600 (temp9c, temp9d, temp9e, temp01)
+    temp94 <- read-word(3c87)
+    push-SP: (int16(temp94) - int16(01))
+    temp95 <- read-word(3ca1)
+    temp96 <- read-word(3ca3)
+    temp97 <- pop-SP
+    temp2c <- call a600 (temp95, temp96, temp97, temp01)
 LABEL ce
-    if (int16(temp2f) < int16(ff38)) is false then
+    if (int16(temp2c) < int16(ff38)) is false then
         jump-to: LABEL d0
 LABEL cf
-    temp9f <- (int16(temp2f) + int16(0100))
-    temp2f <- call a600 (01, temp9f)
+    temp98 <- (int16(temp2c) + int16(0100))
+    temp2c <- call a600 (01, temp98)
     jump-to: LABEL ce
 LABEL d0
     write-word(3cd1) <- 00
-    if (temp2f = 0) is false then
+    if (temp2c = 0) is false then
         jump-to: LABEL d6
 LABEL d1
-    tempa0 <- read-word(3ca1)
-    if (tempa0 = 02) is true then
+    temp99 <- read-word(3ca1)
+    if (temp99 = 02) is true then
         jump-to: LABEL d5
 LABEL d2
-    tempa1 <- read-word(3ca1)
-    if (tempa1 = 01) is false then
+    temp9a <- read-word(3ca1)
+    if (temp9a = 01) is false then
         jump-to: LABEL d4
 LABEL d3
-    tempa2 <- read-word(3ca3)
-    if (tempa2 = 09) is true then
+    temp9b <- read-word(3ca3)
+    if (temp9b = 09) is true then
         jump-to: LABEL d5
 LABEL d4
-    tempa3 <- read-word(3c93)
-    write-word(3c93) <- (int16(tempa3) - int16(1))
+    write-word(3c93) <- (int16(read-word(3c93)) - int16(1))
 LABEL d5
-    temp2f <- 01
+    temp2c <- 01
     jump-to: LABEL e5
 LABEL d6
-    if (int16(temp2f) < int16(00)) is false then
+    if (int16(temp2c) < int16(00)) is false then
         jump-to: LABEL d8
 LABEL d7
-    temp2f <- 00
+    temp2c <- 00
     jump-to: LABEL e5
 LABEL d8
-    if (temp2f = 2710) is true then
+    if (temp2c = 2710) is true then
         jump-to: LABEL e5
 LABEL d9
-    if (temp2f = 01) is false then
+    if (temp2c = 01) is false then
         jump-to: LABEL de
 LABEL da
-    tempa4 <- read-word(3c8d)
-    if (tempa4 = 0) is false then
+    temp9c <- read-word(3c8d)
+    if (temp9c = 0) is false then
         jump-to: LABEL dc
 LABEL db
-    tempa5 <- read-word(3c75)
-    write-word(3c8f) <- tempa5
+    temp9d <- read-word(3c75)
+    write-word(3c8f) <- temp9d
     jump-to: LABEL dd
 LABEL dc
-    tempa6 <- read-word(3c75)
-    write-word(3c91) <- tempa6
+    temp9e <- read-word(3c75)
+    write-word(3c91) <- temp9e
 LABEL dd
-    tempa7 <- read-word(3c8d)
-    write-word(3c8d) <- (int16(tempa7) + int16(1))
-    temp2f <- 01
+    write-word(3c8d) <- (int16(read-word(3c8d)) + int16(1))
+    temp2c <- 01
 LABEL de
-    if (temp2f = 02) is false then
+    if (temp2c = 02) is false then
         jump-to: LABEL e0
 LABEL df
-    temp2f <- 00
+    temp2c <- 00
 LABEL e0
-    tempa8 <- read-word(3c8b)
-    tempa9 <- (int16(tempa8) + int16(02))
-    discard: call 17340 (temp00, tempa9, temp2f)
-    tempaa <- read-word(3c8b)
-    write-word(3c8b) <- (int16(tempaa) + int16(1))
-    tempab <- read-word(3c87)
-    if (int16(tempab) < int16(00)) is true then
+    temp9f <- read-word(3c8b)
+    tempa0 <- (int16(temp9f) + int16(02))
+    discard: call 17340 (temp00, tempa0, temp2c)
+    write-word(3c8b) <- (int16(read-word(3c8b)) + int16(1))
+    tempa1 <- read-word(3c87)
+    if (int16(tempa1) < int16(00)) is true then
         jump-to: LABEL e2
 LABEL e1
-    tempac <- read-word(3c87)
-    if (int16(tempac) < int16(20)) is true then
+    tempa2 <- read-word(3c87)
+    if (int16(tempa2) < int16(20)) is true then
         jump-to: LABEL e3
 LABEL e2
-    tempad <- read-word(3c87)
-    discard: call 169c8 (1f, tempad, 1f, 01, 05)
+    tempa3 <- read-word(3c87)
+    discard: call 169c8 (1f, tempa3, 1f, 01, 05)
     jump-to: LABEL e4
 LABEL e3
-    tempae <- read-word(3c87)
-    write-word(3ef7 + (tempae * 2)) <- temp2f
+    tempa4 <- read-word(3c87)
+    write-word(3ef7 + (tempa4 * 2)) <- temp2c
 LABEL e4
-    temp2f <- 01
+    temp2c <- 01
 LABEL e5
-    if (temp2f = 2710) is false then
+    if (temp2c = 2710) is false then
         jump-to: LABEL e7
 LABEL e6
     jump-to: LABEL 0c
 LABEL e7
-    if (temp2f = 0) is false then
+    if (temp2c = 0) is false then
         jump-to: LABEL e9
 LABEL e8
     jump-to: LABEL 123
 LABEL e9
     jump-to: LABEL 122
 LABEL ea
-    tempaf <- read-word(3ce9)
-    tempb0 <- read-word(3ceb)
-    if (int16(tempaf) > int16(tempb0)) is true then
+    tempa5 <- read-word(3ce9)
+    tempa6 <- read-word(3ceb)
+    if (int16(tempa5) > int16(tempa6)) is true then
         jump-to: LABEL fb
 LABEL eb
-    temp2f <- call ce34 ()
-    tempb1 <- temp2f
-    if (((tempb1 = 6664) | (tempb1 = 6664)) | (tempb1 = 6664)) is true then
+    temp2c <- call ce34 ()
+    tempa7 <- temp2c
+    if (((tempa7 = 6664) | (tempa7 = 6664)) | (tempa7 = 6664)) is true then
         jump-to: LABEL ed
 LABEL ec
-    if (temp2f = 5332) is false then
+    if (temp2c = 5332) is false then
         jump-to: LABEL ee
 LABEL ed
     write-word(3cf7) <- 01
-    tempb2 <- read-word(3ce9)
-    write-word(3cf9) <- (int16(tempb2) - int16(01))
+    tempa8 <- read-word(3ce9)
+    write-word(3cf9) <- (int16(tempa8) - int16(01))
     jump-to: LABEL fb
 LABEL ee
-    temp4c <- 00
+    temp49 <- 00
 LABEL ef
-    if (int16(temp4c) < int16(20)) is false then
+    if (int16(temp49) < int16(20)) is false then
         jump-to: LABEL fa
 LABEL f0
-    if (int16(temp4c) < int16(00)) is true then
+    if (int16(temp49) < int16(00)) is true then
         jump-to: LABEL f2
 LABEL f1
-    if (int16(temp4c) < int16(20)) is true then
+    if (int16(temp49) < int16(20)) is true then
         jump-to: LABEL f3
 LABEL f2
-    discard: call 169c8 (1d, temp4c, 1f, 01, 05)
+    discard: call 169c8 (1d, temp49, 1f, 01, 05)
     push-SP: 00
     jump-to: LABEL f4
 LABEL f3
-    push-SP: read-word(3ef7 + (temp4c * 2))
+    push-SP: read-word(3ef7 + (temp49 * 2))
 LABEL f4
-    if (int16(temp4c) < int16(00)) is true then
+    if (int16(temp49) < int16(00)) is true then
         jump-to: LABEL f6
 LABEL f5
-    if (int16(temp4c) < int16(20)) is true then
+    if (int16(temp49) < int16(20)) is true then
         jump-to: LABEL f8
 LABEL f6
-    discard: call 169c8 (1f, temp4c, 1f, 01, 06)
-    tempb3 <- pop-SP
-    if (tempb3 = 0) is false then
+    discard: call 169c8 (1f, temp49, 1f, 01, 06)
+    tempa9 <- pop-SP
+    if (tempa9 = 0) is false then
         jump-to: LABEL f7
 LABEL f7
     jump-to: LABEL f9
 LABEL f8
-    tempb4 <- pop-SP
-    write-word(3f37 + (temp4c * 2)) <- tempb4
+    tempaa <- pop-SP
+    write-word(3f37 + (temp49 * 2)) <- tempaa
 LABEL f9
-    temp4c <- (int16(temp4c) + int16(1))
+    temp49 <- (int16(temp49) + int16(1))
     jump-to: LABEL ef
 LABEL fa
-    tempb5 <- read-word(3c87)
-    write-word(3c89) <- tempb5
+    tempab <- read-word(3c87)
+    write-word(3c89) <- tempab
     write-word(3c81) <- 02
     jump-to: LABEL 123
 LABEL fb
-    tempb6 <- read-word(3c8b)
-    if (int16(tempb6) < int16(01)) is true then
+    tempac <- read-word(3c8b)
+    if (int16(tempac) < int16(01)) is true then
         jump-to: LABEL ff
 LABEL fc
-    tempb7 <- call 172a4 (temp00, 02)
-    if (tempb7 = 0) is false then
+    tempad <- call 172a4 (temp00, 02)
+    if (tempad = 0) is false then
         jump-to: LABEL ff
 LABEL fd
-    tempb8 <- call 172a4 (temp00, 03)
-    temp2f <- call baa4 (tempb8)
-    if (temp2f = 0) is true then
+    tempae <- call 172a4 (temp00, 03)
+    temp2c <- call baa4 (tempae)
+    if (temp2c = 0) is true then
         jump-to: LABEL ff
 LABEL fe
-    write-word(3c81) <- temp2f
-    tempb9 <- read-word(3c9b)
-    discard: call 17340 (temp00, 00, tempb9)
+    write-word(3c81) <- temp2c
+    tempaf <- read-word(3c9b)
+    discard: call 17340 (temp00, 00, tempaf)
     jump-to: LABEL 123
 LABEL ff
-    tempba <- read-word(3c8b)
-    if (int16(tempba) < int16(02)) is true then
+    tempb0 <- read-word(3c8b)
+    if (int16(tempb0) < int16(02)) is true then
         jump-to: LABEL 103
 LABEL 100
-    tempbb <- call 172a4 (temp00, 03)
-    if (tempbb = 0) is false then
+    tempb1 <- call 172a4 (temp00, 03)
+    if (tempb1 = 0) is false then
         jump-to: LABEL 103
 LABEL 101
-    tempbc <- call 172a4 (temp00, 02)
-    temp2f <- call baa4 (tempbc)
-    if (temp2f = 0) is true then
+    tempb2 <- call 172a4 (temp00, 02)
+    temp2c <- call baa4 (tempb2)
+    if (temp2c = 0) is true then
         jump-to: LABEL 103
 LABEL 102
-    write-word(3c81) <- temp2f
+    write-word(3c81) <- temp2c
     jump-to: LABEL 123
 LABEL 103
-    tempbd <- read-word(3cc5)
-    if (tempbd = 02) is false then
+    tempb3 <- read-word(3cc5)
+    if (tempb3 = 02) is false then
         jump-to: LABEL 106
 LABEL 104
-    tempbe <- call 172a4 (temp00, 02)
-    tempbf <- read-word(3c67)
-    if (tempbe = tempbf) is false then
+    tempb4 <- call 172a4 (temp00, 02)
+    tempb5 <- read-word(3c67)
+    if (tempb4 = tempb5) is false then
         jump-to: LABEL 106
 LABEL 105
     write-word(3c83) <- 11
     jump-to: LABEL 12c
 LABEL 106
     write-word(3cf3) <- 00
-    tempc0 <- read-word(3c95)
-    if (tempc0 = 0) is true then
+    tempb6 <- read-word(3c95)
+    if (tempb6 = 0) is true then
         jump-to: LABEL 108
 LABEL 107
     print: "("
-    tempc1 <- read-word(3c95)
-    discard: call c268 (tempc1)
+    tempb7 <- read-word(3c95)
+    discard: call c268 (tempb7)
     print: ")\n"
 LABEL 108
-    tempc2 <- read-word(3c9b)
-    discard: call 17340 (temp00, 00, tempc2)
-    tempc3 <- read-word(3c8b)
-    discard: call 17340 (temp00, 01, tempc3)
-    tempc4 <- read-word(3c9d)
-    if (tempc4 = 0) is true then
+    tempb8 <- read-word(3c9b)
+    discard: call 17340 (temp00, 00, tempb8)
+    tempb9 <- read-word(3c8b)
+    discard: call 17340 (temp00, 01, tempb9)
+    tempba <- read-word(3c9d)
+    if (tempba = 0) is true then
         jump-to: LABEL 10c
 LABEL 109
-    tempc5 <- read-word(3c8b)
-    if (tempc5 = 02) is false then
+    tempbb <- read-word(3c8b)
+    if (tempbb = 02) is false then
         jump-to: LABEL 10c
 LABEL 10a
     temp03 <- call 172a4 (temp00, 02)
-    tempc6 <- call 172a4 (temp00, 03)
-    discard: call 17340 (temp00, 02, tempc6)
+    tempbc <- call 172a4 (temp00, 03)
+    discard: call 17340 (temp00, 02, tempbc)
     discard: call 17340 (temp00, 03, temp03)
-    tempc7 <- read-word(3c8d)
-    if (tempc7 = 02) is false then
+    tempbd <- read-word(3c8d)
+    if (tempbd = 02) is false then
         jump-to: LABEL 10c
 LABEL 10b
-    tempc8 <- read-word(3c8f)
-    tempc9 <- read-word(3c91)
-    write-word(3c8f) <- tempc9
-    write-word(3c91) <- tempc8
+    tempbe <- read-word(3c8f)
+    tempbf <- read-word(3c91)
+    write-word(3c8f) <- tempbf
+    write-word(3c91) <- tempbe
 LABEL 10c
-    tempca <- read-word(3c8b)
-    if (int16(tempca) > int16(00)) is false then
+    tempc0 <- read-word(3c8b)
+    if (int16(tempc0) > int16(00)) is false then
         jump-to: LABEL 10f
 LABEL 10d
-    tempcb <- call 172a4 (temp00, 02)
-    if (int16(tempcb) < int16(02)) is true then
+    tempc1 <- call 172a4 (temp00, 02)
+    if (int16(tempc1) < int16(02)) is true then
         jump-to: LABEL 10f
 LABEL 10e
-    tempcc <- call 172a4 (temp00, 02)
-    discard: call d444 (tempcc)
+    tempc2 <- call 172a4 (temp00, 02)
+    discard: call d444 (tempc2)
 LABEL 10f
-    tempcd <- read-word(3c7f)
-    if (tempcd = 0) is true then
+    tempc3 <- read-word(3c7f)
+    if (tempc3 = 0) is true then
         jump-to: LABEL 11f
 LABEL 110
-    tempce <- read-word(3c67)
-    tempcf <- read-word(3c15)
-    if (tempce = tempcf) is false then
+    tempc4 <- read-word(3c67)
+    tempc5 <- read-word(3c15)
+    if (tempc4 = tempc5) is false then
         jump-to: LABEL 11f
 LABEL 111
     write-word(3c4d) <- 4e
-    tempd0 <- read-word(3c7f)
-    temp03 <- call e044 (tempd0, 49)
+    tempc6 <- read-word(3c7f)
+    temp03 <- call e044 (tempc6, 49)
     if (int16(temp03) > int16(02)) is false then
         jump-to: LABEL 113
 LABEL 112
@@ -1881,8 +1871,8 @@ LABEL 114
     if (temp03 = 01) is true then
         jump-to: LABEL 116
 LABEL 115
-    tempd1 <- read-word(3c7f)
-    discard: call 13a88 (1007, 1a, tempd1)
+    tempc7 <- read-word(3c7f)
+    discard: call 13a88 (1007, 1a, tempc7)
 LABEL 116
     write-word(3c7b) <- 01
     temp03 <- 00
@@ -1898,253 +1888,251 @@ LABEL 119
         jump-to: LABEL 11c
 LABEL 11a
     discard: call 169c8 (1f, temp03, 0f, 01, 04)
-    tempd2 <- pop-SP
-    if (tempd2 = 0) is false then
+    tempc8 <- pop-SP
+    if (tempc8 = 0) is false then
         jump-to: LABEL 11b
 LABEL 11b
     jump-to: LABEL 11d
 LABEL 11c
-    tempd3 <- pop-SP
-    write-word(3ed7 + (temp03 * 2)) <- tempd3
+    tempc9 <- pop-SP
+    write-word(3ed7 + (temp03 * 2)) <- tempc9
 LABEL 11d
     temp03 <- (int16(temp03) + int16(1))
     jump-to: LABEL 117
 LABEL 11e
     discard: call 17340 (temp00, 00, 4e)
     discard: call 17340 (temp00, 01, 01)
-    tempd4 <- read-word(3c7f)
-    discard: call 17340 (temp00, 02, tempd4)
+    tempca <- read-word(3c7f)
+    discard: call 17340 (temp00, 02, tempca)
 LABEL 11f
-    tempd5 <- read-word(3cf7)
-    if (tempd5 = 01) is false then
+    tempcb <- read-word(3cf7)
+    if (tempcb = 01) is false then
         jump-to: LABEL 121
 LABEL 120
-    tempd6 <- read-word(3cf9)
-    write-word(3ce9) <- tempd6
+    tempcc <- read-word(3cf9)
+    write-word(3ce9) <- tempcc
     jump-to: LABEL 191
 LABEL 121
     return: 1
 LABEL 122
-    tempd7 <- read-word(3c87)
-    write-word(3c87) <- (int16(tempd7) + int16(1))
+    write-word(3c87) <- (int16(read-word(3c87)) + int16(1))
     jump-to: LABEL bb
 LABEL 123
-    tempd8 <- read-word(3c81)
-    tempd9 <- read-word(3c83)
-    if (int16(tempd8) > int16(tempd9)) is false then
+    tempcd <- read-word(3c81)
+    tempce <- read-word(3c83)
+    if (int16(tempcd) > int16(tempce)) is false then
         jump-to: LABEL 125
 LABEL 124
-    tempda <- read-word(3c81)
-    write-word(3c83) <- tempda
+    tempcf <- read-word(3c81)
+    write-word(3c83) <- tempcf
 LABEL 125
-    tempdb <- read-word(3c81)
-    if (tempdb = 12) is true then
+    tempd0 <- read-word(3c81)
+    if (tempd0 = 12) is true then
         jump-to: LABEL 128
 LABEL 126
-    tempdc <- read-word(3c81)
-    tempdd <- read-word(3c85)
-    if (int16(tempdc) > int16(tempdd)) is false then
+    tempd1 <- read-word(3c81)
+    tempd2 <- read-word(3c85)
+    if (int16(tempd1) > int16(tempd2)) is false then
         jump-to: LABEL 128
 LABEL 127
-    tempde <- read-word(3c81)
-    write-word(3c85) <- tempde
+    tempd3 <- read-word(3c81)
+    write-word(3c85) <- tempd3
 LABEL 128
-    tempdf <- read-word(3cc5)
-    if (tempdf = 02) is false then
+    tempd4 <- read-word(3cc5)
+    if (tempd4 = 02) is false then
         jump-to: LABEL 12b
 LABEL 129
-    tempe0 <- read-word(3c81)
-    if (tempe0 = 11) is false then
+    tempd5 <- read-word(3c81)
+    if (tempd5 = 11) is false then
         jump-to: LABEL 12b
 LABEL 12a
     jump-to: LABEL 12c
 LABEL 12b
-    temp4a <- (int16(temp4a) + int16(1))
+    temp47 <- (int16(temp47) + int16(1))
     jump-to: LABEL 68
 LABEL 12c
-    tempe1 <- read-word(3c83)
-    write-word(3c81) <- tempe1
-    tempe2 <- read-word(3c67)
-    tempe3 <- read-word(3c15)
-    if (tempe2 = tempe3) is true then
+    tempd6 <- read-word(3c83)
+    write-word(3c81) <- tempd6
+    tempd7 <- read-word(3c67)
+    tempd8 <- read-word(3c15)
+    if (tempd7 = tempd8) is true then
         jump-to: LABEL 132
 LABEL 12d
-    tempe4 <- read-word(3cf1)
-    if (tempe4 = 0) is true then
+    tempd9 <- read-word(3cf1)
+    if (tempd9 = 0) is true then
         jump-to: LABEL 12f
 LABEL 12e
-    tempe5 <- read-word(3cf1)
-    write-word(3cef) <- tempe5
+    tempda <- read-word(3cf1)
+    write-word(3cef) <- tempda
     jump-to: LABEL 0d
 LABEL 12f
-    tempe6 <- read-word(3cef)
-    write-word(3ce9) <- tempe6
+    tempdb <- read-word(3cef)
+    write-word(3ce9) <- tempdb
     write-word(3c71) <- call ce34 ()
-    tempe7 <- read-word(3c71)
-    if (tempe7 = 5332) is false then
+    tempdc <- read-word(3c71)
+    if (tempdc = 5332) is false then
         jump-to: LABEL 131
 LABEL 130
     write-word(3c71) <- call ce34 ()
-    tempe8 <- read-word(3cef)
-    write-word(3cef) <- (int16(tempe8) + int16(1))
+    write-word(3cef) <- (int16(read-word(3cef)) + int16(1))
 LABEL 131
-    tempe9 <- read-word(3cef)
-    write-word(3c73) <- call cf30 (tempe9)
+    tempdd <- read-word(3cef)
+    write-word(3c73) <- call cf30 (tempdd)
     discard: call 17340 (temp00, 00, 1009)
     discard: call 17340 (temp00, 01, 02)
     discard: call 17340 (temp00, 02, 01)
-    tempea <- read-word(3c71)
-    write-word(3c8f) <- tempea
-    tempeb <- read-word(3c67)
-    discard: call 17340 (temp00, 03, tempeb)
-    tempec <- read-word(3cef)
-    write-word(3c77) <- tempec
-    temped <- read-word(3ceb)
-    tempee <- read-word(3c77)
-    tempef <- (int16(temped) - int16(tempee))
-    write-word(3c79) <- (int16(tempef) + int16(01))
+    tempde <- read-word(3c71)
+    write-word(3c8f) <- tempde
+    tempdf <- read-word(3c67)
+    discard: call 17340 (temp00, 03, tempdf)
+    tempe0 <- read-word(3cef)
+    write-word(3c77) <- tempe0
+    tempe1 <- read-word(3ceb)
+    tempe2 <- read-word(3c77)
+    tempe3 <- (int16(tempe1) - int16(tempe2))
+    write-word(3c79) <- (int16(tempe3) + int16(01))
     return: 1
 LABEL 132
-    tempf0 <- read-word(3c81)
-    tempf1 <- call 15f94 (tempf0)
-    if (tempf1 = 0) is true then
+    tempe4 <- read-word(3c81)
+    tempe5 <- call 15f94 (tempe4)
+    if (tempe5 = 0) is true then
         jump-to: LABEL 134
 LABEL 133
     jump-to: LABEL 0b
 LABEL 134
-    tempf2 <- read-word(3ccd)
-    write-word(3cc9) <- tempf2
-    tempf3 <- read-word(3ccf)
-    write-word(3ccb) <- tempf3
-    tempf4 <- read-word(3c81)
-    if (tempf4 = 01) is false then
+    tempe6 <- read-word(3ccd)
+    write-word(3cc9) <- tempe6
+    tempe7 <- read-word(3ccf)
+    write-word(3ccb) <- tempe7
+    tempe8 <- read-word(3c81)
+    if (tempe8 = 01) is false then
         jump-to: LABEL 136
 LABEL 135
     discard: call 13a88 (1007, 1b)
     write-word(3cf3) <- 01
 LABEL 136
-    tempf5 <- read-word(3c81)
-    if (tempf5 = 02) is false then
+    tempe9 <- read-word(3c81)
+    if (tempe9 = 02) is false then
         jump-to: LABEL 144
 LABEL 137
     discard: call 13a88 (1007, 1c)
-    temp4c <- 00
+    temp49 <- 00
 LABEL 138
-    if (int16(temp4c) < int16(20)) is false then
+    if (int16(temp49) < int16(20)) is false then
         jump-to: LABEL 143
 LABEL 139
-    if (int16(temp4c) < int16(00)) is true then
+    if (int16(temp49) < int16(00)) is true then
         jump-to: LABEL 13b
 LABEL 13a
-    if (int16(temp4c) < int16(20)) is true then
+    if (int16(temp49) < int16(20)) is true then
         jump-to: LABEL 13c
 LABEL 13b
-    discard: call 169c8 (1d, temp4c, 1f, 01, 06)
+    discard: call 169c8 (1d, temp49, 1f, 01, 06)
     push-SP: 00
     jump-to: LABEL 13d
 LABEL 13c
-    push-SP: read-word(3f37 + (temp4c * 2))
+    push-SP: read-word(3f37 + (temp49 * 2))
 LABEL 13d
-    if (int16(temp4c) < int16(00)) is true then
+    if (int16(temp49) < int16(00)) is true then
         jump-to: LABEL 13f
 LABEL 13e
-    if (int16(temp4c) < int16(20)) is true then
+    if (int16(temp49) < int16(20)) is true then
         jump-to: LABEL 141
 LABEL 13f
-    discard: call 169c8 (1f, temp4c, 1f, 01, 05)
-    tempf6 <- pop-SP
-    if (tempf6 = 0) is false then
+    discard: call 169c8 (1f, temp49, 1f, 01, 05)
+    tempea <- pop-SP
+    if (tempea = 0) is false then
         jump-to: LABEL 140
 LABEL 140
     jump-to: LABEL 142
 LABEL 141
-    tempf7 <- pop-SP
-    write-word(3ef7 + (temp4c * 2)) <- tempf7
+    tempeb <- pop-SP
+    write-word(3ef7 + (temp49 * 2)) <- tempeb
 LABEL 142
-    temp4c <- (int16(temp4c) + int16(1))
+    temp49 <- (int16(temp49) + int16(1))
     jump-to: LABEL 138
 LABEL 143
-    tempf8 <- read-word(3c89)
-    write-word(3c87) <- tempf8
+    tempec <- read-word(3c89)
+    write-word(3c87) <- tempec
     discard: call c268 (00)
     discard: call 13a88 (1007, 38)
 LABEL 144
-    tempf9 <- read-word(3c81)
-    if (tempf9 = 03) is false then
+    temped <- read-word(3c81)
+    if (temped = 03) is false then
         jump-to: LABEL 146
 LABEL 145
     discard: call 13a88 (1007, 1d)
 LABEL 146
-    tempfa <- read-word(3c81)
-    if (tempfa = 04) is false then
+    tempee <- read-word(3c81)
+    if (tempee = 04) is false then
         jump-to: LABEL 148
 LABEL 147
     discard: call 13a88 (1007, 1e)
-    tempfb <- read-word(3cf5)
-    write-word(3cf3) <- tempfb
+    tempef <- read-word(3cf5)
+    write-word(3cf3) <- tempef
 LABEL 148
-    tempfc <- read-word(3c81)
-    if (tempfc = 05) is false then
+    tempf0 <- read-word(3c81)
+    if (tempf0 = 05) is false then
         jump-to: LABEL 14a
 LABEL 149
     discard: call 13a88 (1007, 1f)
 LABEL 14a
-    tempfd <- read-word(3c81)
-    if (tempfd = 06) is false then
+    tempf1 <- read-word(3c81)
+    if (tempf1 = 06) is false then
         jump-to: LABEL 14c
 LABEL 14b
     discard: call 13a88 (1007, 20)
-    tempfe <- read-word(3cf5)
-    write-word(3cf3) <- tempfe
+    tempf2 <- read-word(3cf5)
+    write-word(3cf3) <- tempf2
 LABEL 14c
-    tempff <- read-word(3c81)
-    if (tempff = 07) is false then
+    tempf3 <- read-word(3c81)
+    if (tempf3 = 07) is false then
         jump-to: LABEL 14e
 LABEL 14d
     discard: call 13a88 (1007, 21)
 LABEL 14e
-    temp100 <- read-word(3c81)
-    if (temp100 = 08) is false then
+    tempf4 <- read-word(3c81)
+    if (tempf4 = 08) is false then
         jump-to: LABEL 150
 LABEL 14f
     discard: call 13a88 (1007, 22)
 LABEL 150
-    temp101 <- read-word(3c81)
-    if (temp101 = 09) is false then
+    tempf5 <- read-word(3c81)
+    if (tempf5 = 09) is false then
         jump-to: LABEL 152
 LABEL 151
     discard: call 13a88 (1007, 23)
 LABEL 152
-    temp102 <- read-word(3c81)
-    if (temp102 = 0a) is false then
+    tempf6 <- read-word(3c81)
+    if (tempf6 = 0a) is false then
         jump-to: LABEL 154
 LABEL 153
     discard: call 13a88 (1007, 24)
 LABEL 154
-    temp103 <- read-word(3c81)
-    if (temp103 = 0b) is false then
+    tempf7 <- read-word(3c81)
+    if (tempf7 = 0b) is false then
         jump-to: LABEL 156
 LABEL 155
     discard: call 13a88 (1007, 25)
 LABEL 156
-    temp104 <- read-word(3c81)
-    if (temp104 = 0c) is false then
+    tempf8 <- read-word(3c81)
+    if (tempf8 = 0c) is false then
         jump-to: LABEL 158
 LABEL 157
     discard: call 13a88 (1007, 26)
 LABEL 158
-    temp105 <- read-word(3c81)
-    if (temp105 = 0d) is false then
+    tempf9 <- read-word(3c81)
+    if (tempf9 = 0d) is false then
         jump-to: LABEL 15a
 LABEL 159
     discard: call 13a88 (1007, 27)
 LABEL 15a
-    temp106 <- read-word(3c81)
-    if (temp106 = 0e) is false then
+    tempfa <- read-word(3c81)
+    if (tempfa = 0e) is false then
         jump-to: LABEL 15e
 LABEL 15b
-    temp107 <- read-word(3ccb)
-    if (temp107 = ffff) is false then
+    tempfb <- read-word(3ccb)
+    if (tempfb = ffff) is false then
         jump-to: LABEL 15d
 LABEL 15c
     discard: call 13a88 (1007, 23)
@@ -2152,176 +2140,175 @@ LABEL 15c
 LABEL 15d
     discard: call 13a88 (1007, 28)
 LABEL 15e
-    temp108 <- read-word(3c81)
-    if (temp108 = 0f) is false then
+    tempfc <- read-word(3c81)
+    if (tempfc = 0f) is false then
         jump-to: LABEL 160
 LABEL 15f
     discard: call 13a88 (1007, 29)
 LABEL 160
-    temp109 <- read-word(3c81)
-    if (temp109 = 10) is false then
+    tempfd <- read-word(3c81)
+    if (tempfd = 10) is false then
         jump-to: LABEL 162
 LABEL 161
-    temp10a <- read-word(3caf)
-    discard: call 13a88 (1007, 2a, temp10a)
+    tempfe <- read-word(3caf)
+    discard: call 13a88 (1007, 2a, tempfe)
 LABEL 162
-    temp10b <- read-word(3c81)
-    if (temp10b = 11) is false then
+    tempff <- read-word(3c81)
+    if (tempff = 11) is false then
         jump-to: LABEL 18a
 LABEL 163
-    temp10c <- call 172a4 (temp00, 00)
-    if (temp10c = 38) is false then
+    temp100 <- call 172a4 (temp00, 00)
+    if (temp100 = 38) is false then
         jump-to: LABEL 186
 LABEL 164
-    temp10d <- call 172a4 (temp00, 03)
-    temp10e <- call 1682c (temp10d, 02)
-    if (temp10e = 0) is true then
+    temp101 <- call 172a4 (temp00, 03)
+    temp102 <- call 1682c (temp101, 02)
+    if (temp102 = 0) is true then
         jump-to: LABEL 186
 LABEL 165
     write-word(3c53) <- call 172a4 (temp00, 03)
-    temp10f <- read-word(3c53)
-    if (int16(01) > int16(temp10f)) is true then
+    temp103 <- read-word(3c53)
+    if (int16(01) > int16(temp103)) is true then
         jump-to: LABEL 167
 LABEL 166
-    temp110 <- read-word(3c53)
-    if (int16(temp110) > int16(0114)) is false then
+    temp104 <- read-word(3c53)
+    if (int16(temp104) > int16(0114)) is false then
         jump-to: LABEL 168
 LABEL 167
-    temp111 <- read-word(3c53)
-    discard: call 169c8 (03, temp111)
+    temp105 <- read-word(3c53)
+    discard: call 169c8 (03, temp105)
     jump-to: LABEL 16a
 LABEL 168
-    temp112 <- read-word(3c53)
-    if (((read-byte(((temp112 - 1) * e) + 188) & 0080) <> 0) = 1) is false then
+    temp106 <- read-word(3c53)
+    if (((read-byte(((temp106 - 1) * e) + 188) & 0080) <> 0) = 1) is false then
         jump-to: LABEL 16a
 LABEL 169
-    temp113 <- read-word(3c53)
-    discard: call 13a88 (4e, 06, temp113)
+    temp107 <- read-word(3c53)
+    discard: call 13a88 (4e, 06, temp107)
     jump-to: LABEL 186
 LABEL 16a
-    temp114 <- read-word(3c53)
-    if (int16(01) > int16(temp114)) is true then
+    temp108 <- read-word(3c53)
+    if (int16(01) > int16(temp108)) is true then
         jump-to: LABEL 16c
 LABEL 16b
-    temp115 <- read-word(3c53)
-    if (int16(temp115) > int16(0114)) is false then
+    temp109 <- read-word(3c53)
+    if (int16(temp109) > int16(0114)) is false then
         jump-to: LABEL 16d
 LABEL 16c
-    temp116 <- read-word(3c53)
-    discard: call 169c8 (03, temp116)
+    temp10a <- read-word(3c53)
+    discard: call 169c8 (03, temp10a)
     jump-to: LABEL 16e
 LABEL 16d
-    temp117 <- read-word(3c53)
-    if (((read-byte(((temp117 - 1) * e) + 188) & 0008) <> 0) = 1) is true then
+    temp10b <- read-word(3c53)
+    if (((read-byte(((temp10b - 1) * e) + 188) & 0008) <> 0) = 1) is true then
         jump-to: LABEL 173
 LABEL 16e
-    temp118 <- read-word(3c53)
-    if (int16(01) > int16(temp118)) is true then
+    temp10c <- read-word(3c53)
+    if (int16(01) > int16(temp10c)) is true then
         jump-to: LABEL 170
 LABEL 16f
-    temp119 <- read-word(3c53)
-    if (int16(temp119) > int16(0114)) is false then
+    temp10d <- read-word(3c53)
+    if (int16(temp10d) > int16(0114)) is false then
         jump-to: LABEL 171
 LABEL 170
-    temp11a <- read-word(3c53)
-    discard: call 169c8 (03, temp11a)
+    temp10e <- read-word(3c53)
+    discard: call 169c8 (03, temp10e)
     jump-to: LABEL 172
 LABEL 171
-    temp11b <- read-word(3c53)
-    if (((read-byte((((temp11b - 1) * e) + 188) + 2) & 0008) <> 0) = 1) is true then
+    temp10f <- read-word(3c53)
+    if (((read-byte((((temp10f - 1) * e) + 188) + 2) & 0008) <> 0) = 1) is true then
         jump-to: LABEL 173
 LABEL 172
-    temp11c <- read-word(3c53)
-    discard: call 13a88 (1c, 02, temp11c)
+    temp110 <- read-word(3c53)
+    discard: call 13a88 (1c, 02, temp110)
     jump-to: LABEL 186
 LABEL 173
-    temp11d <- read-word(3c53)
-    if (int16(01) > int16(temp11d)) is true then
+    temp111 <- read-word(3c53)
+    if (int16(01) > int16(temp111)) is true then
         jump-to: LABEL 175
 LABEL 174
-    temp11e <- read-word(3c53)
-    if (int16(temp11e) > int16(0114)) is false then
+    temp112 <- read-word(3c53)
+    if (int16(temp112) > int16(0114)) is false then
         jump-to: LABEL 176
 LABEL 175
-    temp11f <- read-word(3c53)
-    discard: call 169c8 (03, temp11f)
+    temp113 <- read-word(3c53)
+    discard: call 169c8 (03, temp113)
     jump-to: LABEL 17c
 LABEL 176
-    temp120 <- read-word(3c53)
-    if (((read-byte(((temp120 - 1) * e) + 188) & 0008) <> 0) = 1) is false then
+    temp114 <- read-word(3c53)
+    if (((read-byte(((temp114 - 1) * e) + 188) & 0008) <> 0) = 1) is false then
         jump-to: LABEL 17c
 LABEL 177
-    temp121 <- read-word(3c53)
-    if (int16(01) > int16(temp121)) is true then
+    temp115 <- read-word(3c53)
+    if (int16(01) > int16(temp115)) is true then
         jump-to: LABEL 179
 LABEL 178
-    temp122 <- read-word(3c53)
-    if (int16(temp122) > int16(0114)) is false then
+    temp116 <- read-word(3c53)
+    if (int16(temp116) > int16(0114)) is false then
         jump-to: LABEL 17a
 LABEL 179
-    temp123 <- read-word(3c53)
-    discard: call 169c8 (03, temp123)
+    temp117 <- read-word(3c53)
+    discard: call 169c8 (03, temp117)
     jump-to: LABEL 17b
 LABEL 17a
-    temp124 <- read-word(3c53)
-    if (((read-byte((((temp124 - 1) * e) + 188) + 1) & 0002) <> 0) = 1) is true then
+    temp118 <- read-word(3c53)
+    if (((read-byte((((temp118 - 1) * e) + 188) + 1) & 0002) <> 0) = 1) is true then
         jump-to: LABEL 17c
 LABEL 17b
-    temp125 <- read-word(3c53)
-    discard: call 13a88 (4e, 09, temp125)
+    temp119 <- read-word(3c53)
+    discard: call 13a88 (4e, 09, temp119)
     jump-to: LABEL 186
 LABEL 17c
-    temp126 <- read-word(3c53)
-    if (int16(05) > int16(temp126)) is true then
+    temp11a <- read-word(3c53)
+    if (int16(05) > int16(temp11a)) is true then
         jump-to: LABEL 17f
 LABEL 17d
-    temp127 <- read-word(3c53)
-    if (int16(temp127) > int16(0114)) is true then
+    temp11b <- read-word(3c53)
+    if (int16(temp11b) > int16(0114)) is true then
         jump-to: LABEL 17f
 LABEL 17e
-    temp128 <- read-word(3c53)
-    if (read-word((((temp128 - 1) * e) + 188) + 6) = 01) is false then
+    temp11c <- read-word(3c53)
+    if (read-word((((temp11c - 1) * e) + 188) + 6) = 01) is false then
         jump-to: LABEL 180
 LABEL 17f
-    temp129 <- read-word(3c53)
-    discard: call 169c8 (09, temp129)
+    temp11d <- read-word(3c53)
+    discard: call 169c8 (09, temp11d)
     write-word(3dc5) <- 02
     jump-to: LABEL 181
 LABEL 180
-    temp12a <- read-word(3c53)
-    write-word(3dc5) <- temp12a
+    temp11e <- read-word(3c53)
+    write-word(3dc5) <- temp11e
 LABEL 181
     write-word(3dc7) <- 00
-    temp12b <- read-word(3dc5)
-    push-SP: read-word((((temp12b - 1) * e) + 188) + a)
-    if (read-word((((temp12b - 1) * e) + 188) + a) <> 0) is false then
+    temp11f <- read-word(3dc5)
+    push-SP: read-word((((temp11f - 1) * e) + 188) + a)
+    if (read-word((((temp11f - 1) * e) + 188) + a) <> 0) is false then
         jump-to: LABEL 183
 LABEL 182
-    temp12c <- read-word(3dc7)
-    write-word(3dc7) <- (int16(temp12c) + int16(1))
-    temp12d <- pop-SP
-    push-SP: read-word((((temp12d - 1) * e) + 188) + 8)
-    if (read-word((((temp12d - 1) * e) + 188) + 8) <> 0) is true then
+    write-word(3dc7) <- (int16(read-word(3dc7)) + int16(1))
+    temp120 <- pop-SP
+    push-SP: read-word((((temp120 - 1) * e) + 188) + 8)
+    if (read-word((((temp120 - 1) * e) + 188) + 8) <> 0) is true then
         jump-to: LABEL 182
 LABEL 183
-    temp12e <- pop-SP
-    write-word(3dc5) <- temp12e
-    temp12f <- read-word(3dc7)
-    if (temp12f = 0) is false then
+    temp121 <- pop-SP
+    write-word(3dc5) <- temp121
+    temp122 <- read-word(3dc7)
+    if (temp122 = 0) is false then
         jump-to: LABEL 185
 LABEL 184
-    temp130 <- read-word(3c53)
-    discard: call 13a88 (40, 06, temp130)
+    temp123 <- read-word(3c53)
+    discard: call 13a88 (40, 06, temp123)
     jump-to: LABEL 186
 LABEL 185
     discard: call 17340 (temp00, 00, 00)
 LABEL 186
-    temp131 <- call 172a4 (temp00, 00)
-    if (temp131 = 38) is true then
+    temp124 <- call 172a4 (temp00, 00)
+    if (temp124 = 38) is true then
         jump-to: LABEL 18a
 LABEL 187
-    temp132 <- read-word(3cad)
-    if (temp132 = 64) is false then
+    temp125 <- read-word(3cad)
+    if (temp125 = 64) is false then
         jump-to: LABEL 189
 LABEL 188
     discard: call 13a88 (1007, 2b)
@@ -2329,57 +2316,57 @@ LABEL 188
 LABEL 189
     discard: call 13a88 (1007, 2c)
 LABEL 18a
-    temp133 <- read-word(3c81)
-    if (temp133 = 12) is false then
+    temp126 <- read-word(3c81)
+    if (temp126 = 12) is false then
         jump-to: LABEL 190
 LABEL 18b
     write-word(3cd7) <- 03
-    temp134 <- read-word(3cd5)
-    if (temp134 = 0) is false then
+    temp127 <- read-word(3cd5)
+    if (temp127 = 0) is false then
         jump-to: LABEL 18d
 LABEL 18c
     push-SP: 0
     jump-to: LABEL 18e
 LABEL 18d
-    push-SP: call (temp134 * 4) ()
+    push-SP: call (temp127 * 4) ()
 LABEL 18e
-    temp135 <- pop-SP
-    if (temp135 = ffff) is false then
+    temp128 <- pop-SP
+    if (temp128 = ffff) is false then
         jump-to: LABEL 190
 LABEL 18f
-    temp136 <- read-word(3c85)
-    write-word(3c83) <- temp136
+    temp129 <- read-word(3c85)
+    write-word(3c83) <- temp129
     jump-to: LABEL 12c
 LABEL 190
     jump-to: LABEL 0b
 LABEL 191
-    temp137 <- read-word(3ce9)
-    temp138 <- read-word(3ceb)
-    if (int16(temp137) > int16(temp138)) is true then
+    temp12a <- read-word(3ce9)
+    temp12b <- read-word(3ceb)
+    if (int16(temp12a) > int16(temp12b)) is true then
         return: 1
 LABEL 192
     temp03 <- call ce34 ()
-    temp139 <- temp03
-    if (((temp139 = 6664) | (temp139 = 6664)) | (temp139 = 6664)) is true then
+    temp12c <- temp03
+    if (((temp12c = 6664) | (temp12c = 6664)) | (temp12c = 6664)) is true then
         jump-to: LABEL 194
 LABEL 193
     if (temp03 = 5332) is false then
         jump-to: LABEL 1a4
 LABEL 194
-    temp13a <- read-word(3ce9)
-    temp13b <- read-word(3ceb)
-    if (int16(temp13a) > int16(temp13b)) is false then
+    temp12d <- read-word(3ce9)
+    temp12e <- read-word(3ceb)
+    if (int16(temp12d) > int16(temp12e)) is false then
         jump-to: LABEL 196
 LABEL 195
     write-word(3cf7) <- 00
     return: 1
 LABEL 196
-    temp13c <- read-word(3cef)
-    temp03 <- call cec8 (temp13c)
-    temp13d <- read-word(3ce9)
-    temp32 <- call cec8 (temp13d)
+    temp12f <- read-word(3cef)
+    temp03 <- call cec8 (temp12f)
+    temp130 <- read-word(3ce9)
+    temp2f <- call cec8 (temp130)
 LABEL 197
-    if (int16(temp03) < int16(temp32)) is false then
+    if (int16(temp03) < int16(temp2f)) is false then
         jump-to: LABEL 199
 LABEL 198
     discard: call 172c8 (temp03, 00, 20)
@@ -2387,27 +2374,27 @@ LABEL 198
     jump-to: LABEL 197
 LABEL 199
     temp03 <- call ce34 ()
-    temp13e <- temp03
-    if (((temp13e = 4f03) | (temp13e = 5830)) | (temp13e = 4f03)) is false then
+    temp131 <- temp03
+    if (((temp131 = 4f03) | (temp131 = 5830)) | (temp131 = 4f03)) is false then
         jump-to: LABEL 1a3
 LABEL 19a
-    temp13f <- read-word(3ce9)
-    temp140 <- (int16(temp13f) - int16(02))
-    temp141 <- call cec8 (temp140)
-    temp03 <- (int16(temp141) - int16(41b7))
-    temp142 <- read-word(3ce9)
-    temp143 <- read-word(3ceb)
-    if (int16(temp142) > int16(temp143)) is false then
+    temp132 <- read-word(3ce9)
+    temp133 <- (int16(temp132) - int16(02))
+    temp134 <- call cec8 (temp133)
+    temp03 <- (int16(temp134) - int16(41b7))
+    temp135 <- read-word(3ce9)
+    temp136 <- read-word(3ceb)
+    if (int16(temp135) > int16(temp136)) is false then
         jump-to: LABEL 19c
 LABEL 19b
-    temp32 <- 77
+    temp2f <- 77
     jump-to: LABEL 19d
 LABEL 19c
-    temp144 <- read-word(3ce9)
-    temp145 <- call cec8 (temp144)
-    temp32 <- (int16(temp145) - int16(41b7))
+    temp137 <- read-word(3ce9)
+    temp138 <- call cec8 (temp137)
+    temp2f <- (int16(temp138) - int16(41b7))
 LABEL 19d
-    if (int16(temp03) < int16(temp32)) is false then
+    if (int16(temp03) < int16(temp2f)) is false then
         jump-to: LABEL 1a3
 LABEL 19e
     if (int16(temp03) < int16(00)) is true then
