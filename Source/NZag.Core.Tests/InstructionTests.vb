@@ -63,10 +63,9 @@
         Dim memory = GameMemory(gameName)
         Dim reader = New InstructionReader(memory)
 
-        Dim a = RawAddress(address)
-        Dim i = reader.ReadInstruction(a)
+        Dim i = reader.ReadInstruction(address)
 
-        ValidateInstruction(i, a, validators)
+        ValidateInstruction(i, address, validators)
     End Sub
 
 End Module

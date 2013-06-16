@@ -260,10 +260,9 @@ Public Module AnalysisTests
         Dim memory = GameMemory(gameName)
         Dim reader = New RoutineReader(memory)
 
-        Dim a = RawAddress(address)
-        Dim r = reader.ReadRoutine(a)
+        Dim r = reader.ReadRoutine(address)
 
-        Assert.Equal(a, r.Address)
+        Assert.Equal(address, r.Address)
 
         Dim binder = New RoutineBinder(memory, debugging:=False)
         Dim tree = binder.BindRoutine(r)
@@ -277,10 +276,9 @@ Public Module AnalysisTests
         Dim memory = GameMemory(gameName)
         Dim reader = New RoutineReader(memory)
 
-        Dim a = RawAddress(address)
-        Dim r = reader.ReadRoutine(a)
+        Dim r = reader.ReadRoutine(address)
 
-        Assert.Equal(a, r.Address)
+        Assert.Equal(address, r.Address)
 
         Dim binder = New RoutineBinder(memory, debugging:=False)
         Dim tree = binder.BindRoutine(r)

@@ -305,7 +305,7 @@ type Branch =
         | RFalseBranch(c)   -> sprintf "[%b] rfalse" c
         | OffsetBranch(c,o) -> sprintf "[%b] %x" c o
 
-type Instruction(address : Address, length : int, opcode : Opcode, operands: list<Operand>,
+type Instruction(address : int, length : int, opcode : Opcode, operands: list<Operand>,
                  storeVariable : option<Variable>, branch : option<Branch>, text : option<string>) =
 
     member x.Address = address
@@ -335,7 +335,7 @@ type Instruction(address : Address, length : int, opcode : Opcode, operands: lis
     override x.ToString() =
         let builder = StringBuilder.create()
 
-        (builder |> StringBuilder.appendFormat "%x: ") address.IntValue
+        (builder |> StringBuilder.appendFormat "%x: ") address
 
         builder |> StringBuilder.appendString opcode.Name
 
@@ -543,15 +543,15 @@ type InstructionReader (memory : Memory) =
             else
                 None
 
-        let length = reader.Address.IntValue - address.IntValue
+        let length = reader.Address - address
 
         new Instruction(address, length, opcode, operands, storeVariable, branch, text)
 
-    member x.ReadInstruction (address: Address) =
+    member x.ReadInstruction (address: int) =
         let reader = address |> memory.CreateMemoryReader
         x.ReadInstruction reader
 
-type Routine (address : Address, instructions : list<Instruction>, locals : list<uint16>) =
+type Routine (address: int, instructions: list<Instruction>, locals: list<uint16>) =
 
     let jumpTargets =
         let targets = SortedSet.create()
@@ -626,7 +626,7 @@ type RoutineReader (memory : Memory) =
 
         result |> List.ofSeq
 
-    member x.ReadRoutine (reader : IMemoryReader) =
+    member x.ReadRoutine (reader: IMemoryReader) =
         if reader.Memory <> memory then
             failcompile "Expected IMemoryReader from same memory"
 
@@ -636,6 +636,6 @@ type RoutineReader (memory : Memory) =
 
         new Routine(address, instructions, locals)
 
-    member x.ReadRoutine (address: Address) =
+    member x.ReadRoutine (address: int) =
         let reader = address |> memory.CreateMemoryReader
         x.ReadRoutine reader

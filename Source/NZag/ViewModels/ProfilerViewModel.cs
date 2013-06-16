@@ -33,7 +33,7 @@ namespace NZag.ViewModels
 
         public void RoutineCompiled(Routine routine, TimeSpan compileTime, int ilByteSize, bool optimized)
         {
-            var address = routine.Address.IntValue;
+            var address = routine.Address;
 
             RoutineViewModel routineData;
             if (!this.routineList.TryGetValue(address, out routineData))
@@ -51,7 +51,7 @@ namespace NZag.ViewModels
 
         public void EnterRoutine(Routine routine)
         {
-            var address = routine.Address.IntValue;
+            var address = routine.Address;
             var routineData = this.routineList[address];
             routineData.IncrementInvocationCount();
 

@@ -35,8 +35,8 @@ type AlphabetTable (memory : Memory) =
         | 1 -> [|A0; A1; A2_v1|]
         | 2 | 3 | 4 -> [|A0; A1; A2|]
         | 5 | 6 | 7 | 8 ->
-            let customTableAddress = memory |> Header.readAlphabetTableAddress
-            if customTableAddress.IsZero then [|A0; A1; A2|]
+            let customTableAddress = memory |> Header.readAlphabetTableAddress |> int
+            if customTableAddress = 0 then [|A0; A1; A2|]
             else readCustomTable customTableAddress
         | _ -> failcompilef "Unexpected version number: %d" memory.Version
 
@@ -284,13 +284,14 @@ type CharProcessor (memory: Memory, ?abbreviationReader: AbbreviationReader) =
 and AbbreviationReader (memory: Memory) =
 
     let charProcessor = new CharProcessor(memory)
-    let baseAddress = memory |> Header.readAbbreviationTableAddress
+    let baseAddress = memory |> Header.readAbbreviationTableAddress |> int
 
     let readAbbreviationAddress index = 
-        baseAddress + (index * 2) |> memory.ReadWord |> WordAddress
+        let wordAddress = memory.ReadWord(baseAddress + (index * 2)) |> int
+        wordAddress * 2
 
     member x.GetAbbreviation index =
-        let reader = readAbbreviationAddress index |> memory.CreateMemoryReader
+        let reader = readAbbreviationAddress index |> int |> memory.CreateMemoryReader
         reader |> ZText.readString charProcessor
 
 type ZTextReader (memory: Memory) =
@@ -309,10 +310,10 @@ type ZTextReader (memory: Memory) =
 
         reader |> ZText.readStringOfLength length charProcessor
 
-    member x.ReadString(address: Address) =
+    member x.ReadString(address: int) =
         let reader = address |> memory.CreateMemoryReader
         x.ReadString(reader)
 
-    member x.ReadString(address: Address, length) =
+    member x.ReadString(address: int, length) =
         let reader = address |> memory.CreateMemoryReader
         x.ReadString(reader, length)

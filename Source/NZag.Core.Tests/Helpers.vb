@@ -54,21 +54,13 @@ Module Helpers
         Return CreateMemory(version, New Byte(dataSize) {})
     End Function
 
-    Function RawAddress(value As Integer) As Address
-        Return Address.NewRawAddress(value)
-    End Function
-
-    Function Instruction(address As Address, ParamArray validators() As Action(Of Instruction)) As Action(Of Instruction)
+    Function Instruction(address As Integer, ParamArray validators() As Action(Of Instruction)) As Action(Of Instruction)
         Return Sub(i)
                    ValidateInstruction(i, address, validators)
                End Sub
     End Function
 
-    Function Instruction(address As Integer, ParamArray validators() As Action(Of Instruction)) As Action(Of Instruction)
-        Return Instruction(RawAddress(address), validators)
-    End Function
-
-    Sub ValidateInstruction(i As Instruction, address As Address, ParamArray validators() As Action(Of Instruction))
+    Sub ValidateInstruction(i As Instruction, address As Integer, ParamArray validators() As Action(Of Instruction))
         Assert.Equal(address, i.Address)
 
         For Each validator In validators
@@ -159,10 +151,9 @@ Module Helpers
         Dim memory = GameMemory(gameName)
         Dim reader = New RoutineReader(memory)
 
-        Dim a = RawAddress(address)
-        Dim r = reader.ReadRoutine(a)
+        Dim r = reader.ReadRoutine(address)
 
-        Assert.Equal(a, r.Address)
+        Assert.Equal(address, r.Address)
 
         Dim binder = New RoutineBinder(memory, debugging)
         Dim tree = binder.BindRoutine(r)

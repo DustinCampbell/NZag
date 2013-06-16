@@ -33,7 +33,7 @@ type IMachine =
     abstract member ReadTimedInputChar : time:uint16 * routine:uint16 -> char
 
     abstract member SelectOutputStream : number:int16 -> unit
-    abstract member SelectOutputStream : number:int16 * table:uint16 -> unit
+    abstract member SelectOutputStream : number:int16 * table:int -> unit
 
     abstract member WriteOutputChar : ch:char -> unit
     abstract member WriteOutputText : s:string -> unit

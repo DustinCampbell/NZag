@@ -75,7 +75,7 @@ module Dictionary =
             else
                 (true, w)
 
-        let entryAddressBase = reader.Address.IntValue
+        let entryAddressBase = reader.Address
 
         let mutable lower = 0
         let mutable upper = int entryCount - 1

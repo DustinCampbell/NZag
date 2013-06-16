@@ -12,7 +12,7 @@ type IProfiler =
 
 type Machine (memory: Memory, debugging: bool) as this =
 
-    let mainRoutineAddress = memory |> Header.readMainRoutineAddress
+    let mainRoutineAddress = memory |> Header.readMainRoutineAddress |> int
     let zfuncMap = Dictionary.create()
     let localArrayPool = Stack.create()
 
@@ -59,9 +59,9 @@ type Machine (memory: Memory, debugging: bool) as this =
 
         let methodName =
             if optimize then
-                sprintf "%4x_%d_locals_optimized" routine.Address.IntValue routine.Locals.Length
+                sprintf "%4x_%d_locals_optimized" routine.Address routine.Locals.Length
             else
-                sprintf "%4x_%d_locals" routine.Address.IntValue routine.Locals.Length
+                sprintf "%4x_%d_locals" routine.Address routine.Locals.Length
 
         let dynamicMethod =
             new System.Reflection.Emit.DynamicMethod(
@@ -108,7 +108,7 @@ type Machine (memory: Memory, debugging: bool) as this =
     let getRoutine =
         let reader = new RoutineReader(memory)
 
-        memoize (fun (address: Address) -> reader.ReadRoutine(address))
+        memoize (fun (address: int) -> reader.ReadRoutine(address))
 
     let invokerMap = Dictionary.create()
 
@@ -116,7 +116,7 @@ type Machine (memory: Memory, debugging: bool) as this =
         match invokerMap.TryGetValue(address) with
         | (true, res) -> res
         | (false, _) ->
-            let routine = RawAddress(address) |> getRoutine
+            let routine = address |> getRoutine
             let res = new ZFuncInvoker(this, routine)
             invokerMap.[address] <- res
             res
@@ -126,7 +126,7 @@ type Machine (memory: Memory, debugging: bool) as this =
     member x.RunAsync() =
         async {
             let reader = new RoutineReader(memory)
-            let invoker = getInvoker mainRoutineAddress.IntValue
+            let invoker = getInvoker mainRoutineAddress
             let stack = Array.zeroCreate 1024
             invoker.Invoke0(memory, stack, 0) |> ignore
         }
@@ -163,12 +163,12 @@ type Machine (memory: Memory, debugging: bool) as this =
             (memory.ReadByte(0x01) &&& 0x01uy) = 0x00uy
 
     member x.ReadGlobalVariable index =
-        let globalVariableTableAddress = memory |> Header.readGlobalVariableTableAddress |> (fun a -> a.IntValue)
+        let globalVariableTableAddress = memory |> Header.readGlobalVariableTableAddress |> int
         let globalVariableAddress = globalVariableTableAddress + (index * 2)
         memory.ReadWord(globalVariableAddress)
 
     member x.ReadObjectShortName objectNumber =
-        let objectTableAddress = memory |> Header.readObjectTableAddress |> (fun a -> a.IntValue)
+        let objectTableAddress = memory |> Header.readObjectTableAddress |> int
         let propertyCount = if memory.Version <= 3 then 31 else 63
         let propertyDefaultsTableSize = propertyCount * 2
         let objectEntriesAddress = objectTableAddress + propertyDefaultsTableSize
@@ -177,7 +177,7 @@ type Machine (memory: Memory, debugging: bool) as this =
         let propertyTableAddressOffset = if memory.Version <= 3 then 7 else 12
         let propertyTableAddress = int (memory.ReadWord(objectAddress + propertyTableAddressOffset))
         let length = int (memory.ReadByte(propertyTableAddress))
-        textReader.ReadString(RawAddress(propertyTableAddress + 1), length)
+        textReader.ReadString(propertyTableAddress + 1, length)
 
     interface IMachine with
 
@@ -224,9 +224,9 @@ type Machine (memory: Memory, debugging: bool) as this =
             uint16 (random.Next(int minValue, int maxValue))
 
         member y.ReadZText(address) =
-            textReader.ReadString(RawAddress(address))
+            textReader.ReadString(address)
         member y.ReadZTextOfLength(address, length) =
-            textReader.ReadString(RawAddress(address), length)
+            textReader.ReadString(address, length)
 
         member y.ReadInputChar() =
             let readCharTask = screen.ReadCharAsync()
@@ -238,7 +238,7 @@ type Machine (memory: Memory, debugging: bool) as this =
             if memory.Version <= 3 then
                 screen.ShowStatusAsync().Wait()
 
-            let dictionaryAddress = memory |> Header.readDictionaryAddress |> (fun a -> a.IntValue)
+            let dictionaryAddress = memory |> Header.readDictionaryAddress |> int
             let maxChars = int (memory.ReadByte(textBuffer))
 
             let readTextTask = screen.ReadTextAsync(maxChars)
@@ -311,7 +311,7 @@ type Machine (memory: Memory, debugging: bool) as this =
             | -1s -> outputStreams.DeselectScreenStream()
             |  2s -> outputStreams.SelectTranscriptStream()
             | -2s -> outputStreams.DeselectTranscriptStream()
-            |  3s -> outputStreams.SelectMemoryStream(ByteAddress(table))
+            |  3s -> outputStreams.SelectMemoryStream(table)
             | -3s -> outputStreams.DeselectMemoryStream()
             | -4s | 4s -> failruntime "Stream 4 is not supported"
             |  _ -> failruntimef "Invalid stream number %d" number

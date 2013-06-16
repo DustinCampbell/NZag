@@ -15,10 +15,10 @@ type InstructionBinder(memory: Memory, routine: Routine, builder: BoundTreeCreat
         | v -> failcompilef "Invalid version number: %d" v
 
     let routinesOffset =
-        int32Const (memory |> Header.readRoutinesOffset).IntValue
+        int32Const (memory |> Header.readRoutinesOffset |> int)
 
     let stringsOffset =
-        int32Const (memory |> Header.readStringOffset).IntValue
+        int32Const (memory |> Header.readStringOffset |> int)
 
     let unpackRoutineAddress address =
         let baseAddress = address .*. packedMultiplier
@@ -71,7 +71,7 @@ type InstructionBinder(memory: Memory, routine: Routine, builder: BoundTreeCreat
                 let unpackedAddress = unpackRoutineAddress address
                 processResult (CallExpr(unpackedAddress, args)))
 
-    let objectTableAddress = (memory |> Header.readObjectTableAddress |> (fun a -> a.IntValue)) |> int32Const
+    let objectTableAddress = memory |> Header.readObjectTableAddress |> int |> int32Const
     let propertyDefaultsSize = (if memory.Version <= 3 then 31 else 63) |> int32Const
     let objectEntriesAddress = objectTableAddress .+. (propertyDefaultsSize .*. two)
     let objectEntrySize = (if memory.Version <= 3 then 9 else 14) |> int32Const
@@ -282,8 +282,7 @@ type InstructionBinder(memory: Memory, routine: Routine, builder: BoundTreeCreat
 
     let readGlobal, writeGlobal =
         let globalVariableTableAddress =
-            let x = memory |> Header.readGlobalVariableTableAddress
-            int32Const x.IntValue
+            memory |> Header.readGlobalVariableTableAddress |> int |> int32Const
 
         let computeAddress i =
             (i .*. two) .+. globalVariableTableAddress
@@ -407,7 +406,7 @@ type InstructionBinder(memory: Memory, routine: Routine, builder: BoundTreeCreat
         // If debugging, write the instruction to the debug output
         if debugging then
             let builder = StringBuilder.create()
-            builder |> StringBuilder.appendString (sprintf "%04x: %s" (instruction.Address.IntValue) (instruction.Opcode.Name))
+            builder |> StringBuilder.appendString (sprintf "%04x: %s" instruction.Address instruction.Opcode.Name)
 
             let index = ref 0
 

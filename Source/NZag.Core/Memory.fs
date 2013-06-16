@@ -4,87 +4,6 @@ open System
 open System.IO
 open NZag.Utilities
 
-type Address =
-    /// A byte address specifies a byte in memory in the range 0 up to the last byte of static memory.
-    | ByteAddress of uint16
-
-    /// A word address specifies an even address in the bottom 128K of memory (by giving the address
-    /// divided by 2). (Word addresses are used only in the abbreviations table.)
-    | WordAddress of uint16
-
-    /// A routine address is a packed address that specifies where a routine begins in high memory.
-    | RoutineAddress of uint16
-
-    /// A string address is a packed address that specifies where a string begins in high memory.
-    | StringAddress of uint16
-
-    /// A raw, translated address anywhere in memory
-    | RawAddress of int
-
-    override x.ToString() =
-        match x with
-        | ByteAddress(a)    -> sprintf "byte: %04x" a
-        | WordAddress(a)    -> sprintf "word: %04x" a
-        | RoutineAddress(a) -> sprintf "routine: %04x" a
-        | StringAddress(a)  -> sprintf "string: %04x" a
-        | RawAddress(a)     -> sprintf "raw: %08x" a
-
-    member x.IsZero =
-        match x with
-        | ByteAddress(a)    -> a = 0us
-        | WordAddress(a)    -> a = 0us
-        | RoutineAddress(a) -> a = 0us
-        | StringAddress(a)  -> a = 0us
-        | RawAddress(a)     -> a = 0
-
-    member x.IntValue =
-        match x with
-        | ByteAddress(a)    -> int a
-        | WordAddress(a)    -> int a
-        | RoutineAddress(a) -> int a
-        | StringAddress(a)  -> int a
-        | RawAddress(a)     -> a
-
-    static member (+) (x, y) =
-        let add_uint16 x y =
-            let result = (int x) + y
-            if result < 0 || result > int UInt16.MaxValue then
-                failwith "Operation caused address overflow"
-            uint16 result
-
-        let add_int32 x y =
-            let result = int64 x + int64 y
-            if result < 0L || result > int64 Int32.MaxValue then
-                failwith "Operation caused address overflow"
-            int result
-
-        match x with
-        | ByteAddress(a)    -> ByteAddress(add_uint16 a y)
-        | WordAddress(a)    -> WordAddress(add_uint16 a y)
-        | RoutineAddress(a) -> RoutineAddress(add_uint16 a y)
-        | StringAddress(a)  -> StringAddress(add_uint16 a y)
-        | RawAddress(a)     -> RawAddress(add_int32 a y)
-
-    static member (-) (x, y) =
-        let subtract_uint16 x y =
-            let result = (int x) - y
-            if result < 0 || result > int UInt16.MaxValue then
-                failwith "Operation caused address overflow"
-            uint16 result
-
-        let subtract_int32 x y =
-            let result = int64 x - int64 y
-            if result < 0L || result > int64 Int32.MaxValue then
-                failwith "Operation caused address overflow"
-            int result
-
-        match x with
-        | ByteAddress(a)    -> ByteAddress(subtract_uint16 a y)
-        | WordAddress(a)    -> WordAddress(subtract_uint16 a y)
-        | RoutineAddress(a) -> RoutineAddress(subtract_uint16 a y)
-        | StringAddress(a)  -> StringAddress(subtract_uint16 a y)
-        | RawAddress(a)     -> RawAddress(subtract_int32 a y)
-
 type IMemoryReader =
     /// Read the next byte without incrementing the address
     abstract member PeekByte : unit -> byte
@@ -109,7 +28,7 @@ type IMemoryReader =
     abstract member SkipBytes : int -> unit
 
     /// The current address to read from
-    abstract member Address : Address
+    abstract member Address : int
     /// Determines whether the address of this reader is at or past the end of the memory.
     abstract member AtEndOfMemory : bool
 
@@ -165,14 +84,6 @@ and Memory private (stream : Stream) =
         match stream.NextWord() with
         | Some(w) -> int w * 8
         | None    -> failwith "Could not read static strings offset"
-
-    let translate address =
-        match address with
-        | ByteAddress(a)    -> int a
-        | WordAddress(a)    -> int a * 2
-        | RoutineAddress(a) -> (int a * packedMultiplier) + routinesOffset
-        | StringAddress(a)  -> (int a * packedMultiplier) + stringsOffset
-        | RawAddress(a)     -> a
 
     let chunks =
         do stream.Seek(0L, SeekOrigin.Begin) |> ignore
@@ -259,19 +170,17 @@ and Memory private (stream : Stream) =
             argOutOfRange "count" "count is larger than buffer size"
         if count > size then
             argOutOfRange "count" "count is larger than the Memory size"
-
-        let address' = translate address
-        if address' > size - count then
+        if address > size - count then
             argOutOfRange "address" "Expected address to be in range 0 to %d" (size - count)
 
         let mutable readSoFar = offset
 
         while readSoFar < count do
-            let chunkIndex = (address' + readSoFar) / ChunkSize
+            let chunkIndex = (address + readSoFar) / ChunkSize
             let chunk = chunks.[chunkIndex]
             let chunkStart = chunkIndex * ChunkSize
             let chunkEnd = chunkStart + ChunkSize
-            let chunkOffset = (address' + readSoFar) - chunkStart
+            let chunkOffset = (address + readSoFar) - chunkStart
             let amountToRead = min (count - readSoFar) (chunkEnd - (chunkStart + chunkOffset))
 
             Array.blit chunk chunkOffset buffer readSoFar amountToRead
@@ -283,26 +192,21 @@ and Memory private (stream : Stream) =
 
         readByte address
 
-    member x.ReadByte address =
-        x.ReadByte(translate address)
-
     member x.ReadBytes address count =
         if count > size then
             argOutOfRange "count" "count is larger than the Memory size"
-
-        let address' = translate address
-        if address' > size - count then
+        if address > size - count then
             argOutOfRange "address" "Expected address to be in range 0 to %d" (size - count)
 
         let buffer = Array.zeroCreate count
         let mutable readSoFar = 0
 
         while readSoFar < count do
-            let chunkIndex = (address' + readSoFar) / ChunkSize
+            let chunkIndex = (address + readSoFar) / ChunkSize
             let chunk = chunks.[chunkIndex]
             let chunkStart = chunkIndex * ChunkSize
             let chunkEnd = chunkStart + ChunkSize
-            let offset = (address' + readSoFar) - chunkStart
+            let offset = (address + readSoFar) - chunkStart
             let amountToRead = min (count - readSoFar) (chunkEnd - (chunkStart + offset))
 
             Array.blit chunk offset buffer readSoFar amountToRead
@@ -316,20 +220,15 @@ and Memory private (stream : Stream) =
 
         readWord address
 
-    member x.ReadWord address =
-        x.ReadWord(translate address)
-
     member x.ReadWords address count =
         if (count * 2) > size then
             argOutOfRange "count" "count is larger than the Memory size"
-
-        let address' = translate address
-        if address' > size - (count * 2) then
+        if address > size - (count * 2) then
             argOutOfRange "address" "Expected address to be in range 0 to % d" (size - count)
 
         let buffer = Array.zeroCreate count
         for i = 0 to count - 1 do
-            buffer.[i] <- readWord (address' + (i * 2))
+            buffer.[i] <- readWord (address + (i * 2))
 
         buffer
 
@@ -354,17 +253,11 @@ and Memory private (stream : Stream) =
 
             (uint32 b1 <<< 24) ||| (uint32 b1 <<< 16) ||| (uint32 b1 <<< 8) ||| uint32 b4
 
-    member x.ReadDWord address =
-        x.ReadDWord(translate address)
-
     member x.WriteByte(address, value) =
         if address > size - 1 then
             argOutOfRange "address" "Expected address to be in range 0 to %d" (size - 1)
 
         writeByte address value
-
-    member x.WriteByte(address, value) =
-        x.WriteByte(translate address, value)
 
     member x.WriteBytes(address, value) =
         let count = value |> Array.length
@@ -385,9 +278,6 @@ and Memory private (stream : Stream) =
             Array.blit value index chunk chunkOffset amountToWrite
             index <- index + amountToWrite
 
-    member x.WriteBytes(address, value) =
-        x.WriteBytes(translate address, value)
-
     member x.WriteWord(address, value: uint16) =
         if address > size - 2 then
             argOutOfRange "address" "Expected address to be in range 0 to %d" (size - 2)
@@ -402,9 +292,6 @@ and Memory private (stream : Stream) =
         else
             byte (value >>> 8)      |> writeByte  address
             byte (value &&& 0xffus) |> writeByte (address+1)
-
-    member x.WriteWord(address, value: uint16) =
-        x.WriteWord(translate address, value)
 
     member x.WriteDWord(address, value: uint32) =
         if address > size - 4 then
@@ -425,14 +312,8 @@ and Memory private (stream : Stream) =
             byte (value >>> 8)     |> writeByte (address+2)
             byte (value &&& 0xffu) |> writeByte (address+3)
 
-    member x.WriteDWord(address, value: uint32) =
-        x.WriteDWord(translate address, value)
-
     member x.Size = size
     member x.Version = version
-
-    member x.CreateMemoryReader address =
-        x.CreateMemoryReader(translate address)
 
     member x.CreateMemoryReader address =
         let readerAddress = ref address
@@ -574,7 +455,7 @@ and Memory private (stream : Stream) =
                 if count > 0 then
                     increment count
 
-            member y.Address = RawAddress(!readerAddress)
+            member y.Address = !readerAddress
             member y.AtEndOfMemory = !readerAddress >= size
 
             member y.Memory = x
@@ -589,54 +470,54 @@ and Memory private (stream : Stream) =
 
 module Header =
 
-    let private offset_InitialPC = ByteAddress(0x06us)
-    let private offset_DictionaryAddress = ByteAddress(0x08us)
-    let private offset_ObjectTableAddress = ByteAddress(0x0Aus)
-    let private offset_GlobalVariableTableAddress = ByteAddress(0x0Cus)
-    let private offset_AbbreviationTableAddress = ByteAddress(0x18us)
-    let private offset_FileSize = ByteAddress(0x1Aus)
-    let private offset_Checksum = ByteAddress(0x1Cus)
-    let private offset_RoutinesOffset = ByteAddress(0x28us)
-    let private offset_StringsOffset = ByteAddress(0x2Aus)
-    let private offset_AlphabetTableAddress = ByteAddress(0x34us)
+    let private offset_InitialPC = 0x06
+    let private offset_DictionaryAddress = 0x08
+    let private offset_ObjectTableAddress = 0x0A
+    let private offset_GlobalVariableTableAddress = 0x0C
+    let private offset_AbbreviationTableAddress = 0x18
+    let private offset_FileSize = 0x1A
+    let private offset_Checksum = 0x1C
+    let private offset_RoutinesOffset = 0x28
+    let private offset_StringsOffset = 0x2A
+    let private offset_AlphabetTableAddress = 0x34
 
     let readMainRoutineAddress (memory: Memory) =
-        let initialPC = offset_InitialPC |> memory.ReadWord
+        let initialPC = memory.ReadWord(offset_InitialPC)
         if memory.Version <> 6 then
-            ByteAddress(initialPC - 1us)
+            initialPC - 1us
         else
-            RoutineAddress(initialPC)
+            initialPC
 
     let readDictionaryAddress (memory: Memory) =
-        offset_DictionaryAddress |> memory.ReadWord |> ByteAddress
+        memory.ReadWord(offset_DictionaryAddress)
 
     let readObjectTableAddress (memory: Memory) =
-        offset_ObjectTableAddress |> memory.ReadWord |> ByteAddress
+        memory.ReadWord(offset_ObjectTableAddress)
 
     let readGlobalVariableTableAddress (memory: Memory) =
-        offset_GlobalVariableTableAddress |> memory.ReadWord |> ByteAddress
+        memory.ReadWord(offset_GlobalVariableTableAddress)
 
     let readAbbreviationTableAddress (memory: Memory) =
-        offset_AbbreviationTableAddress |> memory.ReadWord |> ByteAddress
+        memory.ReadWord(offset_AbbreviationTableAddress)
 
     let readFileSize (memory: Memory) =
-        let fileSize = offset_FileSize |> memory.ReadWord
+        let fileSize = memory.ReadWord(offset_FileSize)
 
         if memory.Version <= 3 then (int fileSize) * 2
         elif memory.Version <= 5 then (int fileSize) * 4
         else (int fileSize) * 8
 
     let readChecksum (memory: Memory) =
-        offset_Checksum |> memory.ReadWord
+        memory.ReadWord(offset_Checksum)
 
     let readRoutinesOffset (memory: Memory) =
-        offset_RoutinesOffset |> memory.ReadWord |> ByteAddress
+        memory.ReadWord(offset_RoutinesOffset)
 
     let readStringOffset (memory: Memory) =
-        offset_StringsOffset |> memory.ReadWord |> ByteAddress
+        memory.ReadWord(offset_StringsOffset)
 
     let readAlphabetTableAddress (memory: Memory) =
-        offset_AlphabetTableAddress |> memory.ReadWord |> ByteAddress
+        memory.ReadWord(offset_AlphabetTableAddress)
 
     let writeScreenHeightInLines value (memory: Memory) =
         memory.WriteByte(0x20, value)

@@ -36,10 +36,9 @@
         Dim memory = GameMemory(gameName)
         Dim reader = New RoutineReader(memory)
 
-        Dim a = RawAddress(address)
-        Dim r = reader.ReadRoutine(a)
+        Dim r = reader.ReadRoutine(address)
 
-        Assert.Equal(a, r.Address)
+        Assert.Equal(address, r.Address)
 
         Assert.Equal(locals.Length, r.Locals.Length)
         For i = 0 To locals.Length - 1

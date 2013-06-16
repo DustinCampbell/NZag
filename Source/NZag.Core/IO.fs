@@ -95,7 +95,7 @@ module NullInstances =
             member x.FontHeightInUnits = 0uy
             member x.FontWidthInUnits = 0uy }
 
-type MemoryOutputStream(memory: Memory, address: Address) =
+type MemoryOutputStream(memory: Memory, address: int) =
 
     let mutable count = 0us
 
@@ -160,7 +160,7 @@ type OutputStreamCollection(memory: Memory) =
         let flags2' = flags2 &&& ~~~0x01us
         memory.WriteWord(0x10, flags2')
 
-    member x.SelectMemoryStream(address: Address) =
+    member x.SelectMemoryStream(address: int) =
         if memoryStreams.Count = 16 then
             failruntime "Cannot create more than 16 memory output streams."
 
