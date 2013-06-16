@@ -279,6 +279,50 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
             discardValue expression |> addStatement
 
+        let scanTable x table len form =
+            let address, writeAddress = initMutableTemp table
+            let index, writeIndex = initMutableTemp zero
+            let stopLoop, writeStopLoop = initMutableTemp zero
+            let finished, writeFinished = initMutableTemp zero
+
+            loopWhile (stopLoop .=. zero)
+                (fun () ->
+                    ifThenElse ((form .&. (byteConst 0x80uy)) .<>. zero)
+                        (fun () ->
+                            ifThen ((readWord address) .=. x)
+                                (fun () ->
+                                    writeStopLoop one
+                                    writeFinished one
+                                    store address
+                                    branchIf one
+                                )
+                        )
+                        (fun () ->
+                            ifThen ((readByte address) .=. x)
+                                (fun () ->
+                                    writeStopLoop one
+                                    writeFinished one
+                                    store address
+                                    branchIf one
+                                )
+                        )
+
+                    writeAddress (address .+. (form .&. (byteConst 0x7fuy)))
+
+                    writeIndex (index .+. one)
+
+                    ifThen (index .=. len)
+                        (fun () ->
+                            writeStopLoop one
+                        )
+                )
+
+            ifThen (finished .=. zero)
+                (fun () ->
+                    store zero
+                    branchIf zero
+                )
+
         // If this instruction is a jump target, mark its label
         if builder.IsJumpTarget(instruction.Address) then
             let label = builder.GetJumpTargetLabel(instruction.Address)
@@ -767,6 +811,12 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
 
         | "rtrue", Any, NoOps ->
             ret one
+
+        | "scan_table", AtLeast 4, Op3(x, table, len) ->
+            scanTable x table len (byteConst 0x82uy)
+
+        | "scan_table", AtLeast 4, Op4(x, table, len, form) ->
+            scanTable x table len form
 
         | "set_attr", Any, Op2(objNum, attrNum) ->
             writeObjectAttribute objNum attrNum true

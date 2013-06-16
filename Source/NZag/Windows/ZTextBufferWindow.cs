@@ -151,8 +151,8 @@ namespace NZag.Windows
 
                 var scrollContext = this.scrollViewer.FindFirstVisualChild<ScrollContentPresenter>();
                 var lastCharacterRect = this.document.ContentEnd.GetCharacterRect(LogicalDirection.Forward);
-                inputTextBox.MinWidth = scrollContext.ActualHeight - this.document.PagePadding.Right -
-                                        lastCharacterRect.Right;
+                var minWidth = scrollContext.ActualHeight - this.document.PagePadding.Right - lastCharacterRect.Right;
+                inputTextBox.MinWidth = Math.Max(minWidth, 0);
 
                 var container = new InlineUIContainer(inputTextBox, this.document.ContentEnd)
                 {
