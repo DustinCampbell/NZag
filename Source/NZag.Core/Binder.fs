@@ -5,7 +5,7 @@ open BoundNodeConstruction
 open BoundNodeVisitors
 open OperandPatterns
 
-type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: bool) =
+type InstructionBinder(memory: Memory, routine: Routine, builder: BoundTreeCreator, debugging: bool) =
 
     let packedMultiplier =
         match memory.Version with
@@ -242,6 +242,49 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
                 writeObjectSibling objNum (readObjectChild destObjNum) |> addStatement
                 writeObjectChild destObjNum objNum |> addStatement)
 
+    let readLocal, writeLocal =
+        // Determine whether this routine contains any instructions that use computed
+        // variables. If not, we can optimize by using temps for locals.
+        let usesComputedVariables =
+            routine.Instructions
+            |> List.exists (fun i ->
+                if i.Opcode.IsFirstOpByRef then
+                    match i.Operands.Head with
+                    | VariableOperand(_) -> true
+                    | _ -> false
+                else
+                    false)
+
+        if usesComputedVariables then
+            let read i = ReadLocalExpr(byteConst i)
+            let write i e = WriteLocalStmt(byteConst i, e) |> addStatement
+            read, write
+        else
+            // Create a label for the block of local temps
+            let label = builder.NewLabel()
+            builder.MarkLabel(label)
+
+            let localTemps = Array.zeroCreate routine.Locals.Length
+            for i = 0 to localTemps.Length - 1 do
+                let value = ReadLocalExpr(byteConst (byte i))
+                localTemps.[i] <- initMutableTemp value
+
+            let read i = fst localTemps.[int i]
+            let write i = snd (localTemps.[int i])
+            read, write
+
+    let readVar v =
+        match v with
+        | StackVariable -> StackPopExpr
+        | LocalVariable(i) -> readLocal i
+        | GlobalVariable(i) -> ReadGlobalExpr(byteConst i)
+
+    let writeVar e v =
+        match v with
+        | StackVariable -> StackPushStmt(e) |> addStatement
+        | LocalVariable(i) -> writeLocal i e
+        | GlobalVariable(i) -> WriteGlobalStmt(byteConst i, e) |> addStatement
+
     let bindOperand = function
         | LargeConstantOperand(v) -> wordConst v
         | SmallConstantOperand(v) -> byteConst v
@@ -270,7 +313,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
                 | Some(v) -> v
                 | None -> failcompile "Expected instruction to have a valid store variable."
 
-            storeVar |> writeVar expression |> addStatement
+            storeVar |> writeVar expression
 
         let discard expression =
             match instruction.StoreVariable with
@@ -375,17 +418,17 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         let byRefVariable variableIndex =
 
             let byRefVariableFromExpression expression =
-                initTemp (ReadComputedVarExpr(expression)), (fun v -> WriteComputedVarStmt(expression, v))
+                initTemp (ReadComputedVarExpr(expression)), (fun v -> WriteComputedVarStmt(expression, v) |> addStatement)
 
             let byRefVariableFromValue value =
                 if value = 0uy then
-                    initTemp StackPeekExpr, (fun v -> StackUpdateStmt(v))
+                    initTemp StackPeekExpr, (fun v -> StackUpdateStmt(v) |> addStatement)
                 elif value < 16uy then
-                    let varIndex = byteConst (value - 1uy)
-                    initTemp (ReadLocalExpr(varIndex)), (fun v -> WriteLocalStmt(varIndex, v))
+                    let varIndex = value - 1uy
+                    initTemp (readLocal varIndex), (fun v -> writeLocal varIndex v)
                 else
                     let varIndex = byteConst (value - 16uy)
-                    initTemp (ReadGlobalExpr(varIndex)), (fun v -> WriteGlobalStmt(varIndex, v))
+                    initTemp (ReadGlobalExpr(varIndex)), (fun v -> WriteGlobalStmt(varIndex, v) |> addStatement)
 
             let byRefVariableFromOperandTemp temp =
                 match operandMap |> Map.tryFind temp with
@@ -460,14 +503,14 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             let read, write = byRefVariable varIndex
 
             let read = read |> toInt16
-            write (read .-. (one |> toInt16)) |> addStatement
+            write (read .-. (one |> toInt16))
 
         | "dec_chk", Any, Op2(varIndex,value) ->
             let read, write = byRefVariable varIndex
 
             let read = read |> toInt16
             let newValue = initTemp (read .-. (one |> toInt16))
-            write newValue |> addStatement
+            write newValue
             branchIf (newValue |> toInt16 .<. (value |> toInt16))
 
         | "div", Any, Op2(left, right) ->
@@ -592,14 +635,14 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             let read, write = byRefVariable varIndex
 
             let read = read |> toInt16
-            write (read .+. (one |> toInt16)) |> addStatement
+            write (read .+. (one |> toInt16))
 
         | "inc_chk", Any, Op2(varIndex,value) ->
             let read, write = byRefVariable varIndex
 
             let read = read |> toInt16
             let newValue = initTemp (read .+. (one |> toInt16))
-            write newValue |> addStatement
+            write newValue
             branchIf (newValue |> toInt16 .>. (value |> toInt16))
 
         | "insert_obj", Any, Op2(objNum, destObjNum) ->
@@ -743,7 +786,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
             let value = initTemp StackPopExpr
             let read, write = byRefVariable varIndex
 
-            write value |> addStatement
+            write value
 
         | "put_prop", Any, Op3(objNum, propNum, value) ->
             let firstPropertyAddress = readObjectFirstPropertyAddress(objNum)
@@ -845,7 +888,7 @@ type InstructionBinder(memory: Memory, builder: BoundTreeCreator, debugging: boo
         | "store", Any, Op2(varIndex, value) ->
             let read, write = byRefVariable varIndex
 
-            write value |> addStatement
+            write value
 
         | "storeb", Any, Op3(address, offset, value) ->
             let address = address .+. offset
@@ -884,54 +927,6 @@ type RoutineBinder(memory: Memory, debugging: bool) =
         let updater = new BoundTreeUpdater(tree)
         updater.Update f
         updater.GetTree()
-
-    let lower_ReplaceLocalsWithTemps tree =
-        if tree.Routine.Locals.Length = 0 then
-            tree
-        else
-            let hasComputedVariables = ref false
-
-            tree |> walkTree
-                (fun s ->
-                    match s with
-                    | WriteComputedVarStmt(_) -> hasComputedVariables := true
-                    | s -> ())
-                (fun e ->
-                    match e with
-                    | ReadComputedVarExpr(_) -> hasComputedVariables := true
-                    | e -> ())
-
-            if !hasComputedVariables then
-                tree
-            else
-                let updater = new BoundTreeUpdater(tree)
-
-                // First create temps for each local
-                let label = updater.NewLabel()
-                updater.MarkLabel(label)
-
-                let localTemps = Array.zeroCreate tree.Routine.Locals.Length
-                for i = 0 to localTemps.Length - 1 do
-                    localTemps.[i] <- updater.InitMutableTemp(ReadLocalExpr(byteConst (byte i)))
-
-                for s in tree.Statements do
-                    let s' =
-                        s |> rewriteStatement
-                            (fun s -> s)
-                            (fun e ->
-                                match e with
-                                | ReadLocalExpr(ConstantExpr(Int32Value i)) ->
-                                    let read,_ = localTemps.[i]
-                                    read
-                                | e -> e)
-
-                    match s' with
-                    | WriteLocalStmt(ConstantExpr(Int32Value i), value) ->
-                        let _,write = localTemps.[i]
-                        write value
-                    | s -> updater.AddStatement(s)
-
-                updater.GetTree()
 
     let lower_GlobalVariableReadsAndWrites tree =
         let globalVariableTableAddress =
@@ -1021,14 +1016,13 @@ type RoutineBinder(memory: Memory, debugging: bool) =
 
     let lower tree =
         tree
-        |> lower_ReplaceLocalsWithTemps
         |> lower_ComputedVariableReadsAndWrites
         |> lower_GlobalVariableReadsAndWrites
 
     member x.BindRoutine(routine: Routine) =
 
         let builder = new BoundTreeCreator(routine)
-        let binder = new InstructionBinder(memory, builder, debugging)
+        let binder = new InstructionBinder(memory, routine, builder, debugging)
 
         for i in routine.Instructions do
             binder.BindInstruction(i)

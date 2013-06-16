@@ -290,18 +290,6 @@ module BoundNodeConstruction =
     let toUInt16 v = ConversionExpr(ConversionKind.ToUInt16, v)
     let numberToText v = NumberToTextExpr(v)
 
-    let readVar v =
-        match v with
-        | StackVariable -> StackPopExpr
-        | LocalVariable(i) -> ReadLocalExpr(byteConst i)
-        | GlobalVariable(i) -> ReadGlobalExpr(byteConst i)
-
-    let writeVar e v =
-        match v with
-        | StackVariable -> StackPushStmt(e)
-        | LocalVariable(i) -> WriteLocalStmt(byteConst i, e)
-        | GlobalVariable(i) -> WriteGlobalStmt(byteConst i, e)
-
     let readByte a = ReadMemoryByteExpr(a)
     let readWord a = ReadMemoryWordExpr(a)
     let readText a = ReadMemoryTextExpr(a)

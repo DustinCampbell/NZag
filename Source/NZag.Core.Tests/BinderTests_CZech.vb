@@ -54,31 +54,30 @@ LABEL 00
     temp00 <- L00
     temp01 <- L01
     temp02 <- L02
-LABEL 01
     if (temp01 = temp00) is true then
-        jump-to: LABEL 05
-LABEL 02
+        jump-to: LABEL 04
+LABEL 01
     print: "\n\nERROR ["
     temp03 <- read-word(4f2)
     print: number-to-text(int16(temp03))
     print: "] "
     if (03 <= arg-count) is false then
-        jump-to: LABEL 04
-LABEL 03
+        jump-to: LABEL 03
+LABEL 02
     print: "("
     print: read-text(temp02 * 4)
     print: ")"
-LABEL 04
+LABEL 03
     discard: call 8ec ()
     print: " Expected "
     print: number-to-text(int16(temp01))
     print: "; got "
     print: number-to-text(int16(temp00))
     print: "\n\n"
-    jump-to: LABEL 06
-LABEL 05
+    jump-to: LABEL 05
+LABEL 04
     discard: call 8e0 ()
-LABEL 06
+LABEL 05
     return: 1
 ]]>
 
@@ -181,24 +180,23 @@ LABEL 06
 
 LABEL 00
     temp00 <- L00
-LABEL 01
     print: "Jumps"
     if (temp00 = 0) is true then
-        jump-to: LABEL 03
-LABEL 02
+        jump-to: LABEL 02
+LABEL 01
     print: " skipped"
     return: 0
-LABEL 03
+LABEL 02
     print: " ["
     temp01 <- read-word(4f2)
     temp02 <- (int16(temp01) + int16(01))
     print: number-to-text(int16(temp02))
     print: "]: "
     print: "jump"
-    jump-to: LABEL 04
+    jump-to: LABEL 03
     print: "bad!"
     quit
-LABEL 04
+LABEL 03
     discard: call 8e0 ()
     print: "je"
     discard: call 8e0 ()
@@ -367,14 +365,13 @@ LABEL 04
 
 LABEL 00
     temp00 <- L00
-LABEL 01
     print: "Variables"
     if (temp00 = 0) is true then
-        jump-to: LABEL 03
-LABEL 02
+        jump-to: LABEL 02
+LABEL 01
     print: " skipped"
     return: 0
-LABEL 03
+LABEL 02
     print: " ["
     temp01 <- read-word(4f2)
     temp02 <- (int16(temp01) + int16(01))
@@ -444,21 +441,21 @@ LABEL 03
     temp11 <- (int16(temp10) - int16(1))
     update-SP: temp11
     if (int16(temp11) < int16(05)) is true then
-        jump-to: LABEL 05
-LABEL 04
+        jump-to: LABEL 04
+LABEL 03
     discard: call 8e0 ()
     temp12 <- pop-SP
     discard: call 7e4 (temp12, 09, 0b31)
     temp13 <- pop-SP
     discard: call 7e4 (temp13, 01, 0b33)
-    jump-to: LABEL 06
-LABEL 05
+    jump-to: LABEL 05
+LABEL 04
     print: "\nbad ["
     temp14 <- read-word(4f2)
     print: number-to-text(int16(temp14))
     print: "]\n"
     discard: call 8ec ()
-LABEL 06
+LABEL 05
     print: "inc_chk"
     discard: call 8e0 ()
     discard: call 8e0 ()
@@ -572,15 +569,14 @@ LABEL 06
 
 LABEL 00
     temp00 <- L00
-LABEL 01
     print: "\n\n\n"
     print: "Print opcodes"
     if (temp00 = 0) is true then
-        jump-to: LABEL 03
-LABEL 02
+        jump-to: LABEL 02
+LABEL 01
     print: " skipped"
     return: 0
-LABEL 03
+LABEL 02
     print: " ["
     temp01 <- read-word(4f2)
     temp02 <- (int16(temp01) + int16(01))
@@ -768,14 +764,13 @@ LABEL 03
 
 LABEL 00
     temp00 <- L00
-LABEL 01
     print: "Subroutines"
     if (temp00 = 0) is true then
-        jump-to: LABEL 03
-LABEL 02
+        jump-to: LABEL 02
+LABEL 01
     print: " skipped"
     return: 0
-LABEL 03
+LABEL 02
     print: " ["
     temp01 <- read-word(4f2)
     temp02 <- (int16(temp01) + int16(01))
@@ -834,13 +829,13 @@ LABEL 03
     push-SP: 05b1
     temp0b <- pop-SP
     if (temp0b = 0) is false then
-        jump-to: LABEL 05
-LABEL 04
+        jump-to: LABEL 04
+LABEL 03
     temp03 <- 0
-    jump-to: LABEL 06
-LABEL 05
+    jump-to: LABEL 05
+LABEL 04
     temp03 <- call (temp0b * 4) ()
-LABEL 06
+LABEL 05
     discard: call 7e4 (temp03, 06)
     temp0c <- pop-SP
     discard: call 7e4 (temp0c, 01)
@@ -910,32 +905,31 @@ LABEL 00
     temp00 <- L00
     temp01 <- L01
     temp02 <- L02
-LABEL 01
     temp03 <- read-word((((temp00 - 1) * e) + 18c) + c)
     temp04 <- uint16((temp03 + 1) + (read-byte(temp03) * 2))
     if (temp01 <> 0) is false then
-        jump-to: LABEL 08
-LABEL 02
+        jump-to: LABEL 07
+LABEL 01
     temp05 <- read-byte(temp04)
     temp06 <- read-byte(temp04)
     if ((temp06 & 80) <> 80) is false then
-        jump-to: LABEL 04
-LABEL 03
+        jump-to: LABEL 03
+LABEL 02
     temp07 <- (temp06 >> 6)
-    jump-to: LABEL 07
-LABEL 04
+    jump-to: LABEL 06
+LABEL 03
     if ((read-byte(temp04 + 1) & 3f) = 0) is false then
-        jump-to: LABEL 06
-LABEL 05
+        jump-to: LABEL 05
+LABEL 04
     temp07 <- 40
-    jump-to: LABEL 07
-LABEL 06
+    jump-to: LABEL 06
+LABEL 05
     temp07 <- (read-byte(temp04 + 1) & 3f)
-LABEL 07
+LABEL 06
     temp04 <- uint16((temp04 + 1) + (temp07 + 1))
     if ((temp05 & 3f) > temp01) is true then
-        jump-to: LABEL 02
-LABEL 08
+        jump-to: LABEL 01
+LABEL 07
     temp08 <- (read-byte(temp04) & 3f)
     write-word(4fc) <- temp00
     write-word(4fe) <- temp01
