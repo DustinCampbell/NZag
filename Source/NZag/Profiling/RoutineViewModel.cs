@@ -43,5 +43,10 @@ namespace NZag.Profiling
         {
             get { return ((double)this.OptimizedILByteSize / (double)this.ILByteSize) * 100; }
         }
+
+        public string OptimizedILByteSizeDisplay
+        {
+            get { return string.Format("{0:#,0} ({1:0.00}%)", this.OptimizedILByteSize, this.OptimizedILByteSizePercentage); }
+        }
     }
 }

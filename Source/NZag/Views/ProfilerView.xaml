@@ -29,8 +29,7 @@
             <DataGridTextColumn Header="Compile Time" IsReadOnly="True" Binding="{Binding InitialCompileTime, Mode=OneWay, Converter={StaticResource TimeSpanToString}}"/>
             <DataGridTextColumn Header="Compile Time (opt.)" IsReadOnly="True" Binding="{Binding OptimizedCompileTime, Mode=OneWay, Converter={StaticResource TimeSpanToString}}"/>
             <DataGridTextColumn Header="IL Byte Size" IsReadOnly="True" Binding="{Binding ILByteSize, Mode=OneWay, StringFormat=\{0:#\,0\}}"/>
-            <DataGridTextColumn Header="IL Byte Size (opt.)" IsReadOnly="True" Binding="{Binding OptimizedILByteSize, Mode=OneWay, StringFormat=\{0:#\,0\}}"/>
-            <DataGridTextColumn Header="% IL Byte Size (opt.)" IsReadOnly="True" Binding="{Binding OptimizedILByteSizePercentage, Mode=OneWay, StringFormat=\{0:0.00\}}"/>
+            <DataGridTextColumn Header="IL Byte Size (opt.)" IsReadOnly="True" Binding="{Binding OptimizedILByteSizeDisplay, Mode=OneWay}"/>
             <DataGridTextColumn Header="# Invocations" IsReadOnly="True" Binding="{Binding InvocationCount, Mode=OneWay, StringFormat=\{0:#\,0\}}"/>
             <DataGridTextColumn Header="# Locals" IsReadOnly="True" Binding="{Binding LocalCount, Mode=OneWay, StringFormat=\{0:#\,0\}}"/>
             <DataGridTextColumn Header="# ZCode Instructions" IsReadOnly="True" Binding="{Binding InstructionCount, Mode=OneWay, StringFormat=\{0:#\,0\}}"/>
