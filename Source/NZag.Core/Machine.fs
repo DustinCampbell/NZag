@@ -5,7 +5,10 @@ open NZag.Reflection
 open NZag.Utilities
 
 type IProfiler =
-    abstract member RoutineCompiled : routine:Routine * compileTime:TimeSpan -> unit
+    abstract member RoutineCompiled : routine:Routine * compileTime:TimeSpan * ilByteSize:int * optimized:bool -> unit
+
+    abstract member EnterRoutine : routine:Routine -> unit
+    abstract member ExitRoutine : routine:Routine -> unit
 
 type Machine (memory: Memory, debugging: bool) as this =
 
@@ -87,7 +90,7 @@ type Machine (memory: Memory, debugging: bool) as this =
         }
 
         match profiler with
-        | Some(p) -> p.RoutineCompiled(routine, compileTime)
+        | Some(p) -> p.RoutineCompiled(routine, compileTime, generator.ILOffset, optimize)
         | None -> ()
 
         result
@@ -179,6 +182,18 @@ type Machine (memory: Memory, debugging: bool) as this =
     interface IMachine with
 
         member m.Debugging = debugging
+        member m.Profiling = profiler.IsSome
+
+        member m.EnterRoutine routine =
+            match profiler with
+            | Some(p) -> p.EnterRoutine(routine)
+            | None -> ()
+
+        member m.ExitRoutine routine =
+            match profiler with
+            | Some(p) -> p.ExitRoutine(routine)
+            | None -> ()
+
 
         member y.GetInitialLocalArray(routine) =
             let result = getOrCreateLocalArray()

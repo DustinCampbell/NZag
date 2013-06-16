@@ -8,6 +8,10 @@ open NZag.Utilities
 type IMachine =
 
     abstract member Debugging : bool
+    abstract member Profiling : bool
+
+    abstract member EnterRoutine : routine:Routine -> unit
+    abstract member ExitRoutine : routine:Routine -> unit
 
     abstract member GetInitialLocalArray : routine:Routine -> uint16[]
     abstract member ReleaseLocalArray : localArray:uint16[] -> unit
@@ -88,7 +92,15 @@ and ZFuncInvoker(machine: IMachine, routine: Routine) =
                 Debug.Indent()
                 Debug.WriteLine(sprintf "-- %s --" compiledRoutine.ZFunc.Method.Name)
 
-            compiledRoutine.ZFunc.Invoke(memory, locals, stack, sp, compiledRoutine.Invokers, argCount)
+            if machine.Profiling then
+                machine.EnterRoutine(routine)
+
+            let result = compiledRoutine.ZFunc.Invoke(memory, locals, stack, sp, compiledRoutine.Invokers, argCount)
+
+            if machine.Profiling then
+                machine.ExitRoutine(routine)
+
+            result
         finally
             machine.ReleaseLocalArray(locals)
 

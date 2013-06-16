@@ -1,24 +1,94 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Windows.Controls;
 using NZag.Core;
+using NZag.Extensions;
+using NZag.Profiling;
 using SimpleMVVM;
+using SimpleMVVM.Collections;
 
 namespace NZag.ViewModels
 {
     [Export]
     public class ProfilerViewModel : ViewModelBase<UserControl>, IProfiler
     {
+        private readonly SortedList<int, RoutineViewModel> routineList;
+
+        private readonly BulkObservableCollection<RoutineViewModel> routines;
+        private readonly ReadOnlyBulkObservableCollection<RoutineViewModel> readOnlyRoutines;
+
+        private bool refreshingData;
+
         [ImportingConstructor]
         private ProfilerViewModel()
             : base("Views/ProfilerView")
         {
+            this.routineList = new SortedList<int, RoutineViewModel>();
+            this.routines = new BulkObservableCollection<RoutineViewModel>();
+            this.readOnlyRoutines = routines.AsReadOnly();
         }
 
-        public void RoutineCompiled(Routine routine, TimeSpan compileTime)
+        public void RoutineCompiled(Routine routine, TimeSpan compileTime, int ilByteSize, bool optimized)
         {
-            Debug.WriteLine("Routine compiled: {0:x} - {1}", routine.Address.IntValue, compileTime);
+            var address = routine.Address.IntValue;
+
+            RoutineViewModel routineData;
+            if (!this.routineList.TryGetValue(address, out routineData))
+            {
+                Debug.Assert(!optimized);
+                routineData = new RoutineViewModel(address, compileTime, ilByteSize, routine.Locals.Length, routine.Instructions.Length);
+                this.routineList.Add(address, routineData);
+            }
+            else
+            {
+                Debug.Assert(optimized);
+                routineData.Recompiled(compileTime, ilByteSize);
+            }
+        }
+
+        public void EnterRoutine(Routine routine)
+        {
+            var address = routine.Address.IntValue;
+            var routineData = this.routineList[address];
+            routineData.IncrementInvocationCount();
+
+            if (!refreshingData)
+            {
+                this.View.PostAction(RefreshData);
+                refreshingData = true;
+            }
+        }
+
+        public void ExitRoutine(Routine routine)
+        {
+        }
+
+        private void RefreshData()
+        {
+            var routinesCopy = this.routines;
+
+            routinesCopy.BeginBulkOperation();
+            try
+            {
+                routinesCopy.Clear();
+                foreach (var pair in this.routineList)
+                {
+                    routinesCopy.Add(pair.Value);
+                }
+            }
+            finally
+            {
+                routinesCopy.EndBulkOperation();
+            }
+
+            refreshingData = false;
+        }
+
+        public ReadOnlyBulkObservableCollection<RoutineViewModel> Routines
+        {
+            get { return this.readOnlyRoutines; }
         }
     }
 }

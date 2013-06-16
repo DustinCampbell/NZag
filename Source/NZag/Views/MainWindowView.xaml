@@ -49,7 +49,17 @@
             </ToolBar>
         </ToolBarTray>
 
-        <Grid Name="ScreenContent" Grid.Row="2"/>
+        <Grid Name="ContentRoot"
+              Grid.Row="2">
+            <TabControl>
+                <TabItem Header="Game">
+                    <Grid Name="ScreenContent"/>
+                </TabItem>
+                <TabItem Header="Profiler">
+                    <Grid Name="ProfilerContent"/>
+                </TabItem>
+            </TabControl>
+        </Grid>
 
         <StatusBar Grid.Row="3">
 

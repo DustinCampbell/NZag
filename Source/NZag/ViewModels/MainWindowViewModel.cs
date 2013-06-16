@@ -57,6 +57,9 @@ namespace NZag.ViewModels
             var screenContent = view.FindName<Grid>("ScreenContent");
             screenContent.Children.Add(screenViewModel.CreateView());
 
+            var profilerContent = view.FindName<Grid>("ProfilerContent");
+            profilerContent.Children.Add(profilerViewModel.CreateView());
+
             this.OpenCommand = RegisterCommand("Open", "Open", OpenExecuted, () => true, new KeyGesture(Key.O, ModifierKeys.Control));
             this.LoadScriptCommand = RegisterCommand("Load Script...", "LoadScript", LoadScriptExecuted, CanLoadScriptExecute);
         }
