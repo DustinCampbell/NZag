@@ -306,9 +306,6 @@ module BoundNodeConstruction =
     let writeByte a v = WriteMemoryByteStmt(a, v)
     let writeWord a v = WriteMemoryWordStmt(a, v)
 
-    let printChar ch = PrintCharStmt(ch)
-    let printText text = PrintTextStmt(text)
-
     let random range = GenerateRandomNumberExpr(range)
     let randomize seed = SetRandomNumberSeedStmt(seed)
 
