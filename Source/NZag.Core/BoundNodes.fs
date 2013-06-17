@@ -306,8 +306,6 @@ module BoundNodeConstruction =
     let writeByte a v = WriteMemoryByteStmt(a, v)
     let writeWord a v = WriteMemoryWordStmt(a, v)
 
-    let discardValue e = DiscardValueStmt(e)
-
     let printChar ch = PrintCharStmt(ch)
     let printText text = PrintTextStmt(text)
 
@@ -551,26 +549,23 @@ module BoundNodeVisitors =
         let walkStmt = walkStatement fstmt fexpr
         tree.Statements |> List.iter walkStmt
 
-[<AbstractClass>]
-type BoundTreeBuilder() =
+[<Struct>]
+type Temp(temp: int, builder: BoundTreeBuilder) =
 
-    member x.AssignTemp temp value =
-        let write = WriteTempStmt(temp, value)
-        x.AddStatement(write)
+    member x.Read = TempExpr(temp)
+    member x.Write value = WriteTempStmt(temp, value) |> builder.AddStatement
+
+    static member (!!) (m: Temp) = m.Read
+    static member (<--) (m: Temp, v: Expression) =
+        m.Write(v)
+
+and [<AbstractClass>] BoundTreeBuilder() =
 
     member x.InitTemp value =
         let temp = x.NewTemp()
-        x.AssignTemp temp value
-        TempExpr(temp)
-
-    member x.InitMutableTemp value =
-        let temp = x.NewTemp()
-        x.AssignTemp temp value
-
-        let read = TempExpr(temp)
-        let write v = WriteTempStmt(temp, v) |> x.AddStatement
-
-        read, write
+        let result = new Temp(temp, x)
+        result <-- value
+        result
 
     member x.MarkLabel label =
         let label = LabelStmt(label)
