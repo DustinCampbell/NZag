@@ -236,6 +236,22 @@ type InstructionBinder(memory: Memory, routine: Routine, builder: BoundTreeCreat
                 writeObjectSibling objNum (readObjectChild destObjNum) |> addStatement
                 writeObjectChild destObjNum objNum |> addStatement)
 
+    let readStack, writeStack =
+        let read indirect =
+            if indirect then StackPeekExpr
+            else StackPopExpr
+
+        let write indirect v =
+            if indirect then StackUpdateStmt(v) |> addStatement
+            else StackPushStmt(v) |> addStatement
+
+        read,write
+
+    let peekStack = readStack true
+    let popStack = readStack false
+    let pushStack = writeStack false
+    let updateStack = writeStack true
+
     let readLocal, writeLocal =
         // Determine whether this routine contains any instructions that use computed
         // variables. If not, we can optimize by using temps for locals.
@@ -285,17 +301,17 @@ type InstructionBinder(memory: Memory, routine: Routine, builder: BoundTreeCreat
         let write i e = writeWord (computeAddress i) e |> addStatement
         read, write
 
-    let readVariable v =
-        match v with
-        | StackVariable -> StackPopExpr
+    let readVariable variable =
+        match variable with
+        | StackVariable -> popStack
         | LocalVariable(i) -> readLocal (byteConst i)
         | GlobalVariable(i) -> readGlobal (byteConst i)
 
-    let writeVariable e v =
-        match v with
-        | StackVariable -> StackPushStmt(e) |> addStatement
-        | LocalVariable(i) -> writeLocal (byteConst i) e
-        | GlobalVariable(i) -> writeGlobal (byteConst i) e
+    let writeVariable value variable =
+        match variable with
+        | StackVariable -> pushStack value
+        | LocalVariable(i) -> writeLocal (byteConst i) value
+        | GlobalVariable(i) -> writeGlobal (byteConst i) value
 
     let bindOperand = function
         | LargeConstantOperand(v) -> wordConst v
@@ -432,18 +448,18 @@ type InstructionBinder(memory: Memory, routine: Routine, builder: BoundTreeCreat
 
             let fromByte value =
                 if value = 0uy then
-                    let read() = !!(initTemp StackPeekExpr)
-                    let write e = StackUpdateStmt(e) |> addStatement
+                    let read() = (initTemp peekStack).Read
+                    let write v = updateStack v
                     read, write
                 elif value < 16uy then
                     let i = byteConst (value - 1uy)
                     let read() = readLocal i
-                    let write e = writeLocal i e
+                    let write v = writeLocal i v
                     read, write
                 else
                     let i = byteConst (value - 16uy)
                     let read() = readGlobal i
-                    let write e = writeGlobal i e
+                    let write v = writeGlobal i v
                     read, write
 
             let fromExpression expression =
@@ -453,7 +469,7 @@ type InstructionBinder(memory: Memory, routine: Routine, builder: BoundTreeCreat
 
                     ifThenElse (!!index .=. zero)
                         (fun () ->
-                            value <-- StackPeekExpr
+                            value <-- peekStack
                         )
                         (fun () ->
                             ifThenElse (!!index .<. sixteen)
@@ -469,22 +485,22 @@ type InstructionBinder(memory: Memory, routine: Routine, builder: BoundTreeCreat
 
                     !!value
 
-                let write e =
+                let write v =
                     let index = initTemp expression
 
                     ifThenElse (!!index .=. zero)
                         (fun () ->
-                            StackUpdateStmt(e) |> addStatement
+                            updateStack v
                         )
                         (fun () ->
                             ifThenElse (!!index .<. sixteen)
                                 (fun () ->
                                     let i = !!index .-. one
-                                    writeLocal i e
+                                    writeLocal i v
                                 )
                                 (fun () ->
                                     let i = !!index .-. sixteen
-                                    writeGlobal i e
+                                    writeGlobal i v
                                 )
                         )
 
@@ -843,7 +859,7 @@ type InstructionBinder(memory: Memory, routine: Routine, builder: BoundTreeCreat
             ret one
 
         | "pull", Any, Op1(varIndex) ->
-            let value = initTemp StackPopExpr
+            let value = initTemp popStack
             let read, write = byRefVariable varIndex
 
             write !!value
@@ -876,7 +892,7 @@ type InstructionBinder(memory: Memory, routine: Routine, builder: BoundTreeCreat
                     writeWord !!propAddress value |> addStatement)
 
         | "push", Any, Op1(value) ->
-            StackPushStmt(value) |> addStatement
+            pushStack value
 
         | "quit", Any, NoOps ->
             QuitStmt |> addStatement
@@ -907,7 +923,7 @@ type InstructionBinder(memory: Memory, routine: Routine, builder: BoundTreeCreat
             ret value
 
         | "ret_popped", Any, NoOps ->
-            ret StackPopExpr
+            ret popStack
 
         | "rfalse", Any, NoOps ->
             ret zero
