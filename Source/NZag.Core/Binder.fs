@@ -30,6 +30,10 @@ type Binder(memory: Memory, builder: BoundTreeCreator, debugging: bool) =
         WriteMemoryWordStmt(address, value)
             |> builder.AddStatement
 
+    member x.RuntimeException message =
+        RuntimeExceptionStmt(message)
+            |> builder.AddStatement
+
 type ObjectBinder(memory, builder, debugging) =
     inherit Binder(memory, builder, debugging)
 
@@ -164,7 +168,7 @@ type ObjectBinder(memory, builder, debugging) =
         let nameAddress = !!propsAddress .+. one
         readTextOfLength nameAddress nameLength
 
-    member x.ReadFirstPropertyAddress objNum =
+    member x.GetFirstPropertyAddress objNum =
         let propTableAddress = computePropertyTableAddress objNum
         let propsAddress = builder.InitTemp (x.ReadWord propTableAddress)
 
@@ -174,7 +178,7 @@ type ObjectBinder(memory, builder, debugging) =
 
         result |> toUInt16
 
-    member x.ReadNextPropertyAddress propAddress =
+    member x.GetNextPropertyAddress propAddress =
         let propSizeByte = builder.InitTemp (x.ReadByte propAddress)
 
         let propSize = 
@@ -184,21 +188,179 @@ type ObjectBinder(memory, builder, debugging) =
                 let scratch = builder.InitTemp zero
                 builder.IfThenElse ((!!propSizeByte .&. (int32Const 0x80)) .<>. (int32Const 0x80))
                     (fun () ->
-                        scratch <-- (!!propSizeByte .>>. six))
+                        scratch <-- (!!propSizeByte .>>. six)
+                    )
                     (fun () -> 
                         let nextByteAddress = propAddress .+. one
                         let nextPropSizeByte = x.ReadByte nextByteAddress
                         let nextPropSizeByte' = nextPropSizeByte .&. (int32Const 0x3f)
                         builder.IfThenElse (nextPropSizeByte' .=. zero)
                             (fun () ->
-                                scratch <-- (int32Const 64))
+                                scratch <-- (int32Const 64)
+                            )
                             (fun () -> 
-                                scratch <-- nextPropSizeByte'))
+                                scratch <-- nextPropSizeByte')
+                            )
                 !!scratch
 
         let result = (propAddress .+. one) .+. (propSize .+. one)
 
         result |> toUInt16
+
+    member x.GetPropertyAddress objNum propNum =
+        let firstPropertyAddress = x.GetFirstPropertyAddress objNum
+
+        let propAddress = builder.InitTemp(firstPropertyAddress)
+        let firstByte = builder.InitTemp(zero)
+        let stopLoop = builder.InitTemp(zero)
+        let result = builder.InitTemp(zero)
+
+        let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
+
+        builder.LoopWhile (!!stopLoop .=. zero)
+            (fun () ->
+                firstByte <-- (x.ReadByte !!propAddress)
+
+                builder.IfThenElse ((!!firstByte .&. mask) .<=. propNum)
+                    (fun () ->
+                        stopLoop <-- one
+                    )
+                    (fun () ->
+                        propAddress <-- (x.GetNextPropertyAddress !!propAddress)
+                    )
+            )
+
+        builder.IfThen ((!!firstByte .&. mask) .=. propNum)
+            (fun () ->
+                if memory.Version >= 4 then
+                    builder.IfThen ((!!firstByte .&. (int32Const 0x80)) .<>. zero)
+                        (fun() ->
+                            propAddress <-- (!!propAddress .+. one)
+                        )
+
+                result <-- (!!propAddress .+. one))
+
+        !!result
+
+    member x.GetPropertyLength dataAddress =
+        let result = builder.InitTemp(zero)
+
+        builder.IfThen (dataAddress .<>. zero)
+            (fun () ->
+                result <-- (x.ReadByte (dataAddress .-. one))
+
+                if memory.Version <= 3 then
+                    result <-- (((!!result .>>. five) .+. one) |> toByte)
+                else
+                    builder.IfThenElse ((!!result .&. (int32Const 0x80)) .=. zero)
+                        (fun () ->
+                            result <-- (((!!result .>>. six) .+. one) |> toByte)
+                        )
+                        (fun () ->
+                            result <-- (!!result .&. (int32Const 0x3f))
+                        )
+                builder.IfThen (!!result .=. zero)
+                    (fun () ->
+                        result <-- int32Const 64
+                    )
+            )
+
+        !!result
+
+    member x.GetNextPropertyNumber objNum propNum =
+        let firstPropertyAddress = x.GetFirstPropertyAddress(objNum)
+        let propAddress = builder.InitTemp(firstPropertyAddress)
+        let firstByte = builder.InitTemp (x.ReadByte !!propAddress)
+
+        let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
+
+        builder.IfThen (propNum .<>. zero)
+            (fun () ->
+                builder.LoopWhile ((!!firstByte .&. mask) .>. propNum)
+                    (fun () ->
+                        firstByte <-- (x.ReadByte !!propAddress)
+                        let nextPropAddress = x.GetNextPropertyAddress !!propAddress
+                        propAddress <-- nextPropAddress
+                    )
+            )
+
+        (x.ReadByte !!propAddress) .&. mask
+
+    member x.ReadPropertyValue objNum propNum =
+        let firstPropertyAddress = x.GetFirstPropertyAddress(objNum)
+        let propAddress = builder.InitTemp(firstPropertyAddress)
+        let firstByte = builder.InitTemp(zero)
+        let stopLoop = builder.InitTemp(zero)
+        let result = builder.InitTemp(zero)
+
+        let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
+        let comp = if memory.Version <= 3 then byteConst 0xe0uy else byteConst 0xc0uy
+
+        builder.LoopWhile (!!stopLoop .=. zero)
+            (fun () ->
+                firstByte <-- (x.ReadByte !!propAddress)
+                builder.IfThenElse ((!!firstByte .&. mask) .<=. propNum)
+                    (fun () ->
+                        stopLoop <-- one
+                    )
+                    (fun () ->
+                        propAddress <-- (x.GetNextPropertyAddress !!propAddress)
+                    )
+            )
+
+        builder.IfThenElse ((!!firstByte .&. mask) .=. propNum)
+            (fun () ->
+                propAddress <-- (!!propAddress .+. one)
+
+                builder.IfThenElse ((!!firstByte .&. comp) .=. zero)
+                    (fun () ->
+                        result <-- (x.ReadByte !!propAddress)
+                    )
+                    (fun () ->
+                        result <-- (x.ReadWord !!propAddress)
+                    )
+            )
+            (fun () ->
+                result <-- (x.ReadPropertyDefault propNum)
+            )
+
+        !!result
+
+    member x.WritePropertyValue objNum propNum value =
+        let firstPropertyAddress = x.GetFirstPropertyAddress(objNum)
+        let propAddress = builder.InitTemp(firstPropertyAddress)
+        let firstByte = builder.InitTemp(zero)
+        let stopLoop = builder.InitTemp(zero)
+
+        let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
+        let comp = if memory.Version <= 3 then byteConst 0xe0uy else byteConst 0xc0uy
+
+        builder.LoopWhile (!!stopLoop .=. zero)
+            (fun () ->
+                firstByte <-- x.ReadByte !!propAddress
+                builder.IfThenElse ((!!firstByte .&. mask) .<=. propNum)
+                    (fun () ->
+                        stopLoop <-- one
+                    )
+                    (fun () ->
+                        propAddress <-- x.GetNextPropertyAddress !!propAddress
+                    )
+            )
+
+        builder.IfThen ((!!firstByte .&. mask) .<>. propNum)
+            (fun () ->
+                x.RuntimeException("Property not found!")
+            )
+
+        propAddress <-- (!!propAddress .+. one)
+
+        builder.IfThenElse ((!!firstByte .&. comp) .=. zero)
+            (fun () ->
+                x.WriteByte !!propAddress (value |> toByte)
+            )
+            (fun () ->
+                x.WriteWord !!propAddress value
+            )
 
     member x.Remove objNum =
         let leftSibling = builder.InitTemp zero
@@ -655,9 +817,11 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
 
             ifThenElse (places .>. zero)
                 (fun () ->
-                    store (number .<<. (places .&. (int32Const 0x1f))))
+                    store (number .<<. (places .&. (int32Const 0x1f)))
+                )
                 (fun () ->
-                    store (number .>>. ((negate places) .&. (int32Const 0x1f))))
+                    store (number .>>. ((negate places) .&. (int32Const 0x1f)))
+                )
 
         | "buffer_mode", AtLeast 4, Op1(flag) ->
             // TODO: Do we need to do anything with this -- we always buffer!
@@ -709,23 +873,7 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
             branchIf (child .<>. zero)
 
         | "get_next_prop", Any, Op2(objNum, propNum) ->
-            let firstPropertyAddress = objects.ReadFirstPropertyAddress(objNum)
-            let propAddress = initTemp firstPropertyAddress
-            let firstByte = initTemp (this.ReadByte !!propAddress)
-
-            let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
-
-            ifThen (propNum .<>. zero)
-                (fun () ->
-                    loopWhile ((!!firstByte .&. mask) .>. propNum)
-                        (fun () ->
-                            firstByte <-- (this.ReadByte !!propAddress)
-                            let nextPropAddress = objects.ReadNextPropertyAddress !!propAddress
-                            propAddress <-- nextPropAddress
-                        )
-                )
-
-            let result = (this.ReadByte !!propAddress) .&. mask
+            let result = objects.GetNextPropertyNumber objNum propNum
             store result
 
         | "get_parent", Any, Op1(objNum) ->
@@ -733,106 +881,16 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
             store parent
 
         | "get_prop", Any, Op2(objNum, propNum) ->
-            let firstPropertyAddress = objects.ReadFirstPropertyAddress(objNum)
-            let propAddress = initTemp firstPropertyAddress
-            let firstByte = initTemp zero
-            let stopLoop = initTemp zero
-            let result = initTemp zero
-
-            let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
-            let comp = if memory.Version <= 3 then byteConst 0xe0uy else byteConst 0xc0uy
-
-            loopWhile (!!stopLoop .=. zero)
-                (fun () ->
-                    firstByte <-- (this.ReadByte !!propAddress)
-                    ifThenElse ((!!firstByte .&. mask) .<=. propNum)
-                        (fun () ->
-                            stopLoop <-- one
-                        )
-                        (fun () ->
-                            propAddress <-- (objects.ReadNextPropertyAddress !!propAddress)
-                        )
-                )
-
-            ifThenElse ((!!firstByte .&. mask) .=. propNum)
-                (fun () ->
-                    propAddress <-- (!!propAddress .+. one)
-
-                    ifThenElse ((!!firstByte .&. comp) .=. zero)
-                        (fun () ->
-                            result <-- (this.ReadByte !!propAddress)
-                        )
-                        (fun () ->
-                            result <-- (this.ReadWord !!propAddress)
-                        )
-                )
-                (fun () ->
-                    result <-- (objects.ReadPropertyDefault propNum)
-                )
-
-            store !!result
+            let result = objects.ReadPropertyValue objNum propNum
+            store result
 
         | "get_prop_addr", Any, Op2(objNum, propNum) ->
-            let firstPropertyAddress = objects.ReadFirstPropertyAddress(objNum)
-
-            let propAddress = initTemp firstPropertyAddress
-            let firstByte = initTemp zero
-            let stopLoop = initTemp zero
-
-            let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
-
-            loopWhile (!!stopLoop .=. zero)
-                (fun () ->
-                    firstByte <-- (this.ReadByte !!propAddress)
-
-                    ifThenElse ((!!firstByte .&. mask) .<=. propNum)
-                        (fun () ->
-                            stopLoop <-- one
-                        )
-                        (fun () ->
-                            propAddress <-- (objects.ReadNextPropertyAddress !!propAddress)
-                        )
-                )
-
-            ifThenElse ((!!firstByte .&. mask) .=. propNum)
-                (fun () ->
-                    if memory.Version >= 4 then
-                        ifThen ((!!firstByte .&. (int32Const 0x80)) .<>. zero)
-                            (fun() ->
-                                propAddress <-- (!!propAddress .+. one)
-                            )
-
-                    store (!!propAddress .+. one))
-                (fun () ->
-                    store zero
-                )
+            let result = objects.GetPropertyAddress objNum propNum
+            store result
 
         | "get_prop_len", Any, Op1(dataAddress) ->
-            let result = initTemp zero
-
-            ifThenElse (dataAddress .=. zero)
-                (fun () ->
-                    store zero
-                )
-                (fun () ->
-                    result <-- (this.ReadByte (dataAddress .-. one))
-
-                    if memory.Version <= 3 then
-                        result <-- (((!!result .>>. five) .+. one) |> toByte)
-                    else
-                        ifThenElse ((!!result .&. (int32Const 0x80)) .=. zero)
-                            (fun () ->
-                                result <-- (((!!result .>>. six) .+. one) |> toByte)
-                            )
-                            (fun () ->
-                                result <-- (!!result .&. (int32Const 0x3f))
-                            )
-                    ifThen (!!result .=. zero)
-                        (fun () ->
-                            result <-- int32Const 64)
-
-                    store !!result
-                )
+            let result = objects.GetPropertyLength dataAddress
+            store result
 
         | "get_sibling", Any, Op1(objNum) ->
             let sibling = objects.ReadSibling objNum
@@ -985,40 +1043,7 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
             variable <-- !!value
 
         | "put_prop", Any, Op3(objNum, propNum, value) ->
-            let firstPropertyAddress = objects.ReadFirstPropertyAddress(objNum)
-            let propAddress = initTemp firstPropertyAddress
-            let firstByte = initTemp zero
-            let stopLoop = initTemp zero
-
-            let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
-            let comp = if memory.Version <= 3 then byteConst 0xe0uy else byteConst 0xc0uy
-
-            loopWhile (!!stopLoop .=. zero)
-                (fun () ->
-                    firstByte <-- this.ReadByte !!propAddress
-                    ifThenElse ((!!firstByte .&. mask) .<=. propNum)
-                        (fun () ->
-                            stopLoop <-- one
-                        )
-                        (fun () ->
-                            propAddress <-- objects.ReadNextPropertyAddress !!propAddress
-                        )
-                )
-
-            ifThen ((!!firstByte .&. mask) .<>. propNum)
-                (fun () ->
-                    RuntimeExceptionStmt("Property not found!") |> addStatement
-                )
-
-            propAddress <-- (!!propAddress .+. one)
-
-            ifThenElse ((!!firstByte .&. comp) .=. zero)
-                (fun () ->
-                    this.WriteByte !!propAddress (value |> toByte)
-                )
-                (fun () ->
-                    this.WriteWord !!propAddress value
-                )
+            objects.WritePropertyValue objNum propNum value
 
         | "push", Any, Op1(value) ->
             pushStack value
@@ -1136,7 +1161,7 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
             branchIf VerifyExpr
 
         | (n,k,ops) ->
-            runtimeException "Unsupported opcode: %s (v.%d) with %d operands" n k ops.Length |> addStatement
+            x.RuntimeException (sprintf "Unsupported opcode: %s (v.%d) with %d operands" n k ops.Length)
 
 type RoutineBinder(memory: Memory, debugging: bool) =
 

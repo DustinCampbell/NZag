@@ -40,7 +40,10 @@ namespace NZag.ViewModels
             {
                 Debug.Assert(!optimized);
                 routineData = new RoutineViewModel(address, compileTime, ilByteSize, routine.Locals.Length, routine.Instructions.Length);
-                this.routineList.Add(address, routineData);
+                lock (gate)
+                {
+                    this.routineList.Add(address, routineData);
+                }
             }
             else
             {

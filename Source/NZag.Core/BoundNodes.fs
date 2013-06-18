@@ -310,9 +310,6 @@ module BoundNodeConstruction =
     let debugOut s args =
         DebugOutputStmt(textConst s, args)
 
-    let runtimeException message =
-        Printf.ksprintf (fun s -> RuntimeExceptionStmt(s)) message
-
 [<AutoOpen>]
 module ConversionPatterns =
 
