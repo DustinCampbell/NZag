@@ -2,13 +2,21 @@
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using NZag.Services;
 
 namespace NZag.Windows
 {
     internal class ZWindowManager
     {
+        private readonly FontAndColorService fontAndColorService;
+
         private ZWindow rootWindow;
         private ZWindow activeWindow;
+
+        public ZWindowManager(FontAndColorService fontAndColorService)
+        {
+            this.fontAndColorService = fontAndColorService;
+        }
 
         public void ActivateWindow(ZWindow window)
         {
@@ -67,7 +75,7 @@ namespace NZag.Windows
                 parentGrid.Children.Remove(splitWindow);
 
                 var oldParentWindow = splitWindow.ParentWindow as ZPairWindow;
-                var newParentWindow = new ZPairWindow(this, splitWindow, newWindow, position, splitSize);
+                var newParentWindow = new ZPairWindow(this, this.fontAndColorService, splitWindow, newWindow, position, splitSize);
 
                 if (oldParentWindow != null)
                 {
@@ -104,11 +112,11 @@ namespace NZag.Windows
             switch (kind)
             {
                 case ZWindowKind.Blank:
-                    return new ZBlankWindow(this);
+                    return new ZBlankWindow(this, this.fontAndColorService);
                 case ZWindowKind.TextBuffer:
-                    return new ZTextBufferWindow(this);
+                    return new ZTextBufferWindow(this, this.fontAndColorService);
                 case ZWindowKind.TextGrid:
-                    return new ZTextGridWindow(this);
+                    return new ZTextGridWindow(this, this.fontAndColorService);
                 default:
                     throw new InvalidOperationException("Invalid window kind: " + kind.ToString());
             }

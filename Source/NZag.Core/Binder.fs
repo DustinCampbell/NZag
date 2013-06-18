@@ -1096,6 +1096,12 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
         | "set_attr", Any, Op2(objNum, attrNum) ->
             objects.WriteAttribute objNum attrNum true
 
+        | "set_color", Is 6, Op3(foreground, background, window) ->
+            failcompile "set_color not implemented for version 6"
+
+        | "set_color", AtLeast 5, Op2(foreground, background) ->
+            SetColorsStmt(foreground, background) |> addStatement
+
         | "set_cursor", Is 6, Op3(line, column, window) ->
             failcompile "set_cursor not implemented for version 6"
 

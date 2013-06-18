@@ -344,3 +344,11 @@ type Machine (memory: Memory, debugging: bool) as this =
         member y.SetTextStyle(style) =
             screen.SetTextStyleAsync(style).Wait()
 
+        member y.SetColors(foreground, background) =
+            if foreground <> ZColor.None then
+                screen.SetForegroundColorAsync(foreground).Wait()
+
+            if background <> ZColor.None then
+                screen.SetBackgroundColorAsync(background).Wait()
+
+

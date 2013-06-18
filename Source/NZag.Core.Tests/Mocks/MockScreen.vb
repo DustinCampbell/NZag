@@ -81,6 +81,14 @@ Namespace Mocks
             Return Task.Factory.StartNew(Sub() Exit Sub)
         End Function
 
+        Public Function SetBackgroundColorAsync(color As ZColor) As Task Implements IScreen.SetBackgroundColorAsync
+            Return Task.Factory.StartNew(Sub() Exit Sub)
+        End Function
+
+        Public Function SetForegroundColorAsync(color As ZColor) As Task Implements IScreen.SetForegroundColorAsync
+            Return Task.Factory.StartNew(Sub() Exit Sub)
+        End Function
+
         Public ReadOnly Property FontHeightInUnits As Byte Implements IScreen.FontHeightInUnits
             Get
                 Return 0
@@ -122,6 +130,5 @@ Namespace Mocks
                 Return _builder.ToString()
             End Get
         End Property
-
     End Class
 End Namespace

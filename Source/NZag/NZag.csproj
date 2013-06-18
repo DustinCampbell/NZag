@@ -44,6 +44,7 @@
     <Compile Include="Extensions\InputElementExtensions.cs" />
     <Compile Include="Profiling\RoutineViewModel.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="Services\FontAndColorService.cs" />
     <Compile Include="Services\GameService.cs" />
     <Compile Include="TimeSpanToStringValueConverter.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />

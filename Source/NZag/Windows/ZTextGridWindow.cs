@@ -1,8 +1,8 @@
 ﻿using System.Globalization;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using NZag.Controls;
+using NZag.Services;
 
 namespace NZag.Windows
 {
@@ -15,8 +15,8 @@ namespace NZag.Windows
         private bool italic;
         private bool reverse;
 
-        public ZTextGridWindow(ZWindowManager manager)
-            : base(manager)
+        public ZTextGridWindow(ZWindowManager manager, FontAndColorService fontAndColorService)
+            : base(manager, fontAndColorService)
         {
             var zero = new FormattedText(
                 textToFormat: "0",
@@ -32,97 +32,98 @@ namespace NZag.Windows
             this.Children.Add(this.textGrid);
         }
 
-        public override Task<bool> SetBoldAsync(bool value)
+        public override bool SetBold(bool value)
         {
-            return RunOnUIThread(() =>
+            var oldValue = this.bold;
+            this.bold = value;
+            this.textGrid.SetBold(value);
+            return oldValue;
+        }
+
+        public override bool SetItalic(bool value)
+        {
+            var oldValue = this.italic;
+            this.italic = value;
+            this.textGrid.SetItalic(value);
+            return oldValue;
+        }
+
+        public override bool SetReverse(bool value)
+        {
+            var oldValue = this.reverse;
+            this.reverse = value;
+            this.textGrid.SetReverse(value);
+            return oldValue;
+        }
+
+        public override void Clear()
+        {
+            this.textGrid.Clear();
+        }
+
+        public override void PutChar(char ch, bool forceFixedWidthFont)
+        {
+            Brush foregroundBrush, backgroundBrush;
+            if (this.reverse)
             {
-                var oldValue = this.bold;
-                this.bold = value;
-                this.textGrid.SetBold(value);
-                return oldValue;
-            });
-        }
-
-        public override Task<bool> SetItalicAsync(bool value)
-        {
-            return RunOnUIThread(() =>
+                foregroundBrush = BackgroundBrush;
+                backgroundBrush = ForegroundBrush;
+            }
+            else
             {
-                var oldValue = this.italic;
-                this.italic = value;
-                this.textGrid.SetItalic(value);
-                return oldValue;
-            });
+                foregroundBrush = ForegroundBrush;
+                backgroundBrush = BackgroundBrush;
+            }
+
+            this.textGrid.PutChar(ch, foregroundBrush, backgroundBrush);
         }
 
-        public override Task<bool> SetReverseAsync(bool value)
+        public override void PutText(string text, bool forceFixedWidthFont)
         {
-            return RunOnUIThread(() =>
+            Brush foregroundBrush, backgroundBrush;
+            if (this.reverse)
             {
-                var oldValue = this.reverse;
-                this.reverse = value;
-                this.textGrid.SetReverse(value);
-                return oldValue;
-            });
-        }
-
-        public override Task ClearAsync()
-        {
-            return RunOnUIThread(() =>
-                this.textGrid.Clear());
-        }
-
-        public override Task PutCharAsync(char ch, bool forceFixedWidthFont)
-        {
-            return RunOnUIThread(() =>
-                this.textGrid.PutChar(ch));
-        }
-
-        public override Task PutTextAsync(string text, bool forceFixedWidthFont)
-        {
-            return RunOnUIThread(() =>
+                foregroundBrush = BackgroundBrush;
+                backgroundBrush = ForegroundBrush;
+            }
+            else
             {
-                foreach (var ch in text)
-                {
-                    this.textGrid.PutChar(ch);
-                }
-            });
-        }
+                foregroundBrush = ForegroundBrush;
+                backgroundBrush = BackgroundBrush;
+            }
 
-        public override Task<int> GetCursorColumnAsync()
-        {
-            return RunOnUIThread(() =>
-                this.textGrid.CursorColumn);
-        }
-
-        public override Task<int> GetCursorLineAsync()
-        {
-            return RunOnUIThread(() =>
-                this.textGrid.CursorLine);
-        }
-
-        public override Task SetCursorAsync(int line, int column)
-        {
-            return RunOnUIThread(() =>
-                this.textGrid.SetCursor(line, column));
-        }
-
-        public override Task<int> GetHeightAsync()
-        {
-            return RunOnUIThread(() =>
+            foreach (var ch in text)
             {
-                var rowIndex = GetRow(this);
-                return (int)(this.ParentWindow.RowDefinitions[rowIndex].Height.Value / this.RowHeight);
-            });
+                this.textGrid.PutChar(ch, foregroundBrush, backgroundBrush);
+            }
         }
 
-        public override Task SetHeightAsync(int lines)
+        public override int GetCursorColumn()
         {
-            return RunOnUIThread(() =>
-            {
-                var rowIndex = GetRow(this);
-                this.ParentWindow.RowDefinitions[rowIndex].Height = new GridLength(lines * this.RowHeight, GridUnitType.Pixel);
-                this.textGrid.SetHeight(lines);
-            });
+            return this.textGrid.CursorColumn;
+        }
+
+        public override int GetCursorLine()
+        {
+            return this.textGrid.CursorLine;
+        }
+
+        public override void SetCursorAsync(int line, int column)
+        {
+            this.textGrid.SetCursor(line, column);
+        }
+
+        public override int GetHeight()
+        {
+            var rowIndex = GetRow(this);
+            return (int)(this.ParentWindow.RowDefinitions[rowIndex].Height.Value / this.RowHeight);
+        }
+
+        public override void SetHeight(int lines)
+        {
+            var rowIndex = GetRow(this);
+            this.ParentWindow.RowDefinitions[rowIndex].Height = new GridLength(lines * this.RowHeight, GridUnitType.Pixel);
+            this.textGrid.SetHeight(lines);
         }
 
         public override int RowHeight

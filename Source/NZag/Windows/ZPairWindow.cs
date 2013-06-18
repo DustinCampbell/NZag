@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using NZag.Services;
 
 namespace NZag.Windows
 {
@@ -8,8 +9,14 @@ namespace NZag.Windows
         private ZWindow child1;
         private ZWindow child2;
 
-        public ZPairWindow(ZWindowManager manager, ZWindow child1, ZWindow child2, ZWindowPosition child2Position, GridLength child2Size)
-            : base(manager)
+        public ZPairWindow(
+            ZWindowManager manager,
+            FontAndColorService fontAndColorService,
+            ZWindow child1,
+            ZWindow child2,
+            ZWindowPosition child2Position,
+            GridLength child2Size)
+            : base(manager, fontAndColorService)
         {
             this.child1 = child1;
             this.child2 = child2;

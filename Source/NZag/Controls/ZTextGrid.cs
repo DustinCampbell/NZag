@@ -57,7 +57,7 @@ namespace NZag.Controls
             this.cursorLine = 0;
         }
 
-        public void PutChar(char ch)
+        public void PutChar(char ch, Brush foregroundBrush, Brush backgroundBrush)
         {
             if (ch == '\n')
             {
@@ -83,25 +83,13 @@ namespace NZag.Controls
                 var x = fontCharSize.Width * cursorColumn;
                 var y = fontCharSize.Height * cursorLine;
 
-                Brush foreground, background;
-                if (this.reverse)
-                {
-                    foreground = Brushes.White;
-                    background = Brushes.Black;
-                }
-                else
-                {
-                    foreground = Brushes.Black;
-                    background = Brushes.White;
-                }
-
                 var backgroundRect = new Rect(
                     Math.Floor(x),
                     Math.Floor(y),
                     Math.Ceiling(fontCharSize.Width + 0.5),
                     Math.Ceiling(fontCharSize.Height));
 
-                backgroundContext.DrawRectangle(background, null, backgroundRect);
+                backgroundContext.DrawRectangle(backgroundBrush, null, backgroundRect);
                 backgroundContext.Close();
 
                 this.visuals.Insert(0, backgroundVisual);
@@ -116,7 +104,7 @@ namespace NZag.Controls
                         FlowDirection.LeftToRight,
                         GetTypeface(),
                         16.0,
-                        foreground,
+                        foregroundBrush,
                         new NumberSubstitution(NumberCultureSource.User, CultureInfo.InstalledUICulture, NumberSubstitutionMethod.AsCulture),
                         TextFormattingMode.Display),
                     new Point(x, y));

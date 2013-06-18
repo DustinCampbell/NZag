@@ -47,6 +47,7 @@ type IMachine =
     abstract member ShowStatus : unit -> unit
 
     abstract member SetTextStyle : style:ZTextStyle -> unit
+    abstract member SetColors : foreground:ZColor * background:ZColor -> unit
 
 and ZCompiledRoutine =
   { Routine : Routine
@@ -215,6 +216,7 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
     let setCursor           = Reflect<IMachine>.GetMethod<int, int>("SetCursor")
     let showStatus          = Reflect<IMachine>.GetMethod("ShowStatus")
     let setTextStyle        = Reflect<IMachine>.GetMethod<ZTextStyle>("SetTextStyle")
+    let setColors           = Reflect<IMachine>.GetMethod<ZColor, ZColor>("SetColors")
 
     let peekStack() =
         builder.Arguments.LoadStack()
@@ -484,6 +486,11 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
             builder.Arguments.LoadMachine()
             emitExpression e
             builder.Call(setTextStyle)
+        | SetColorsStmt(foreground, background) ->
+            builder.Arguments.LoadMachine()
+            emitExpression foreground
+            emitExpression background
+            builder.Call(setColors)
         | SetWindowStmt(e) ->
             builder.Arguments.LoadMachine()
             emitExpression e

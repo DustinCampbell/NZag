@@ -219,8 +219,11 @@ type Statement =
     /// Prints the text represented by the given expression to the active window
     | PrintTextStmt of Expression
 
-    /// Sets the text style of the active window
+    /// Sets the text style of the screen
     | SetTextStyleStmt of Expression
+
+    /// Sets the foreground and background colors of the screen
+    | SetColorsStmt of Expression * Expression
 
     /// Sets the active window
     | SetWindowStmt of Expression
@@ -426,6 +429,8 @@ module BoundNodeVisitors =
             fstmt (PrintTextStmt(rewriteExpr e))
         | SetTextStyleStmt(e) ->
             fstmt (SetTextStyleStmt(rewriteExpr e))
+        | SetColorsStmt(e1,e2) ->
+            fstmt (SetColorsStmt(rewriteExpr e1, rewriteExpr e2))
         | SetWindowStmt(e) ->
             fstmt (SetWindowStmt(rewriteExpr e))
         | ClearWindowStmt(e) ->
@@ -523,6 +528,7 @@ module BoundNodeVisitors =
             | WriteMemoryByteStmt(e1,e2)
             | WriteMemoryWordStmt(e1,e2)
             | SelectMemoryOutputStreamStmt(e1,e2)
+            | SetColorsStmt(e1,e2)
             | SetCursorStmt(e1,e2) ->
                 visitExpr e1
                 visitExpr e2
@@ -984,6 +990,12 @@ type BoundNodeDumper (builder : StringBuilder) =
             append "set-text-style"
             parenthesize (fun () ->
                 dumpExpression e)
+        | SetColorsStmt(foreground, background) ->
+            append "set-colors"
+            parenthesize (fun () ->
+                dumpExpression foreground
+                append ", "
+                dumpExpression background)
         | SetWindowStmt(e) ->
             append "set-window"
             parenthesize (fun () ->

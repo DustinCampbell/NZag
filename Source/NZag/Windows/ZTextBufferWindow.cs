@@ -7,6 +7,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using NZag.Extensions;
+using NZag.Services;
 
 namespace NZag.Windows
 {
@@ -25,8 +26,8 @@ namespace NZag.Windows
         private bool fixedPitch;
         private bool reverse;
 
-        public ZTextBufferWindow(ZWindowManager manager)
-            : base(manager)
+        public ZTextBufferWindow(ZWindowManager manager, FontAndColorService fontAndColorService)
+            : base(manager, fontAndColorService)
         {
             this.normalFontFamily = new FontFamily("Cambria");
             this.fixedFontFamily = new FontFamily("Consolas");
@@ -60,11 +61,11 @@ namespace NZag.Windows
             this.Children.Add(this.scrollViewer);
         }
 
-        private async Task ForceFixedWidthFontAsync(bool value, Action action)
+        private void ForceFixedWidthFontAsync(bool value, Action action)
         {
-            var oldValue = await this.SetFixedPitchAsync(value);
+            var oldValue = this.SetFixedPitch(value);
             action();
-            await this.SetFixedPitchAsync(oldValue);
+            this.SetFixedPitch(oldValue);
         }
 
         private Run CreateFormattedRun(string text)
@@ -87,13 +88,13 @@ namespace NZag.Windows
 
             if (this.reverse)
             {
-                run.Background = Brushes.Black;
-                run.Foreground = Brushes.White;
+                run.Background = ForegroundBrush;
+                run.Foreground = BackgroundBrush;
             }
             else
             {
-                run.Background = Brushes.White;
-                run.Foreground = Brushes.Black;
+                run.Background = BackgroundBrush;
+                run.Foreground = ForegroundBrush;
             }
 
             return run;
@@ -108,141 +109,121 @@ namespace NZag.Windows
             }
         }
 
-        private Task SetKeyboardFocusAsync(IInputElement element)
+        private void ClearInlines()
         {
-            return RunOnUIThread(() =>
-                Keyboard.Focus(element));
+            this.paragraph.Inlines.Clear();
         }
 
-        private Task ClearInlinesAsync()
+        public override void Clear()
         {
-            return RunOnUIThread(() =>
-                this.paragraph.Inlines.Clear());
+            ClearInlines();
         }
 
-        public override async Task ClearAsync()
+        protected override async Task<char> ReadCharCoreAsync()
         {
-            await ClearInlinesAsync();
-        }
+            AssertIsForeground();
 
-        public override async Task<char> ReadCharAsync()
-        {
-            await SetKeyboardFocusAsync(this.scrollViewer);
+            Keyboard.Focus(this.scrollViewer);
             var args = await this.scrollViewer.TextInputAsync();
 
             return args.Text[0];
         }
 
-        public override Task<string> ReadTextAsync(int maxChars)
+        protected override async Task<string> ReadTextCoreAsync(int maxChars)
         {
-            return RunOnUIThread(async () =>
+            AssertIsForeground();
+
+            var inputTextBox = new TextBox
             {
-                var inputTextBox = new TextBox
+                FontFamily = normalFontFamily,
+                FontSize = 16.0,
+                Padding = new Thickness(0.0),
+                Margin = new Thickness(0.0),
+                BorderBrush = Brushes.Transparent,
+                BorderThickness = new Thickness(0.0),
+                Background = Brushes.WhiteSmoke,
+                MaxLength = maxChars
+            };
+
+            var scrollContext = this.scrollViewer.FindFirstVisualChild<ScrollContentPresenter>();
+            var lastCharacterRect = this.document.ContentEnd.GetCharacterRect(LogicalDirection.Forward);
+            var minWidth = scrollContext.ActualHeight - this.document.PagePadding.Right - lastCharacterRect.Right;
+            inputTextBox.MinWidth = Math.Max(minWidth, 0);
+
+            var container = new InlineUIContainer(inputTextBox, this.document.ContentEnd)
+            {
+                BaselineAlignment = BaselineAlignment.TextBottom
+            };
+
+            this.paragraph.Inlines.Add(container);
+
+            if (!inputTextBox.Focus())
+            {
+                inputTextBox.PostAction(() => inputTextBox.Focus());
+            }
+
+            string text = null;
+            while (text == null)
+            {
+                var args = await inputTextBox.KeyUpAsync();
+                if (args.Key == Key.Return)
                 {
-                    FontFamily = normalFontFamily,
-                    FontSize = 16.0,
-                    Padding = new Thickness(0.0),
-                    Margin = new Thickness(0.0),
-                    BorderBrush = Brushes.Transparent,
-                    BorderThickness = new Thickness(0.0),
-                    Background = Brushes.WhiteSmoke,
-                    MaxLength = maxChars
-                };
-
-                var scrollContext = this.scrollViewer.FindFirstVisualChild<ScrollContentPresenter>();
-                var lastCharacterRect = this.document.ContentEnd.GetCharacterRect(LogicalDirection.Forward);
-                var minWidth = scrollContext.ActualHeight - this.document.PagePadding.Right - lastCharacterRect.Right;
-                inputTextBox.MinWidth = Math.Max(minWidth, 0);
-
-                var container = new InlineUIContainer(inputTextBox, this.document.ContentEnd)
-                {
-                    BaselineAlignment = BaselineAlignment.TextBottom
-                };
-
-                this.paragraph.Inlines.Add(container);
-
-                if (!inputTextBox.Focus())
-                {
-                    inputTextBox.PostAction(() => inputTextBox.Focus());
+                    text = inputTextBox.Text;
                 }
+            }
 
-                string text = null;
-                while (text == null)
-                {
-                    var args = await inputTextBox.KeyUpAsync();
-                    if (args.Key == Key.Return)
-                    {
-                        text = inputTextBox.Text;
-                    }
-                }
+            this.paragraph.Inlines.Remove(container);
+            PutText(text + "\r\n", forceFixedWidthFont: false);
 
-                this.paragraph.Inlines.Remove(container);
-                await PutTextAsync(text + "\r\n", forceFixedWidthFont: false);
-
-                return text;
-            });
+            return text;
         }
 
-        public override Task PutCharAsync(char ch, bool forceFixedWidthFont)
+        public override void PutChar(char ch, bool forceFixedWidthFont)
         {
-            return RunOnUIThread(async () =>
-                await ForceFixedWidthFontAsync(forceFixedWidthFont, () =>
-                {
-                    var run = CreateFormattedRun(ch.ToString(CultureInfo.InvariantCulture));
-                    this.paragraph.Inlines.Add(run);
-                    ScrollToEnd();
-                }));
-        }
-
-        public override Task PutTextAsync(string text, bool forceFixedWidthFont)
-        {
-            return RunOnUIThread(async () =>
-                await ForceFixedWidthFontAsync(forceFixedWidthFont, () =>
-                {
-                    var run = CreateFormattedRun(text);
-                    this.paragraph.Inlines.Add(run);
-                    ScrollToEnd();
-                }));
-        }
-
-        public override Task<bool> SetBoldAsync(bool value)
-        {
-            return RunOnUIThread(() =>
+            ForceFixedWidthFontAsync(forceFixedWidthFont, () =>
             {
-                var oldValue = this.bold;
-                this.bold = value;
-                return oldValue;
+                var run = CreateFormattedRun(ch.ToString(CultureInfo.InvariantCulture));
+                this.paragraph.Inlines.Add(run);
+                ScrollToEnd();
             });
         }
 
-        public override Task<bool> SetItalicAsync(bool value)
+        public override void PutText(string text, bool forceFixedWidthFont)
         {
-            return RunOnUIThread(() =>
+            ForceFixedWidthFontAsync(forceFixedWidthFont, () =>
             {
-                var oldValue = this.italic;
-                this.italic = value;
-                return oldValue;
+                var run = CreateFormattedRun(text);
+                this.paragraph.Inlines.Add(run);
+                ScrollToEnd();
             });
         }
 
-        public override Task<bool> SetFixedPitchAsync(bool value)
+        public override bool SetBold(bool value)
         {
-            return RunOnUIThread(() =>
-            {
-                var oldValue = this.fixedPitch;
-                this.fixedPitch = value;
-                return oldValue;
-            });
+            var oldValue = this.bold;
+            this.bold = value;
+            return oldValue;
         }
 
-        public override Task<bool> SetReverseAsync(bool value)
+        public override bool SetItalic(bool value)
         {
-            return RunOnUIThread(() =>
-            {
-                var oldValue = this.reverse;
-                this.reverse = value;
-                return oldValue;
-            });
+            var oldValue = this.italic;
+            this.italic = value;
+            return oldValue;
+        }
+
+        public override bool SetFixedPitch(bool value)
+        {
+            var oldValue = this.fixedPitch;
+            this.fixedPitch = value;
+            return oldValue;
+        }
+
+        public override bool SetReverse(bool value)
+        {
+            var oldValue = this.reverse;
+            this.reverse = value;
+            return oldValue;
         }
 
         public override int RowHeight

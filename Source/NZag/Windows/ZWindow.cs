@@ -1,25 +1,25 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Media;
+using NZag.Services;
 using NZag.Utilities;
+using SimpleMVVM.Threading;
 
 namespace NZag.Windows
 {
     internal abstract class ZWindow : Grid
     {
-        private readonly TaskScheduler scheduler;
-        private readonly TaskFactory factory;
-
         protected readonly ZWindowManager Manager;
+        private readonly FontAndColorService fontAndColorService;
+        private readonly ForegroundThreadAffinitizedObject foregroundThreadAffinitizedObject;
+
         private ZWindow parentWindow;
 
-        protected ZWindow(ZWindowManager manager)
+        protected ZWindow(ZWindowManager manager, FontAndColorService fontAndColorService)
         {
             this.Manager = manager;
-
-            this.scheduler = TaskScheduler.FromCurrentSynchronizationContext();
-            this.factory = new TaskFactory(scheduler);
+            this.fontAndColorService = fontAndColorService;
+            this.foregroundThreadAffinitizedObject = new ForegroundThreadAffinitizedObject();
 
             UseLayoutRounding = true;
             SnapsToDevicePixels = true;
@@ -28,24 +28,9 @@ namespace NZag.Windows
             TextOptions.SetTextRenderingMode(this, TextRenderingMode.Auto);
         }
 
-        protected Task RunOnUIThread(Action a)
+        protected void AssertIsForeground()
         {
-            return this.factory.StartNew(a);
-        }
-
-        protected Task RunOnUIThread(Func<Task> f)
-        {
-            return this.factory.StartNew(f).Unwrap();
-        }
-
-        protected Task<T> RunOnUIThread<T>(Func<T> f)
-        {
-            return this.factory.StartNew(f);
-        }
-
-        protected Task<T> RunOnUIThread<T>(Func<Task<T>> f)
-        {
-            return this.factory.StartNew(f).Unwrap();
+            this.foregroundThreadAffinitizedObject.AssertIsForeground();
         }
 
         public ZWindow ParentWindow
@@ -53,85 +38,110 @@ namespace NZag.Windows
             get { return this.parentWindow; }
         }
 
+        protected Brush ForegroundBrush
+        {
+            get { return this.fontAndColorService.ForegroundBrush; }
+        }
+
+        protected Brush BackgroundBrush
+        {
+            get { return this.fontAndColorService.BackgroundBrush; }
+        }
+
         public void SetParentWindow(ZWindow newParentWindow)
         {
             this.parentWindow = newParentWindow;
         }
 
-        public Task ActivateAsync()
+        public void Activate()
         {
-            return RunOnUIThread(() =>
-                this.Manager.ActivateWindow(this));
+            this.Manager.ActivateWindow(this);
         }
 
-        public virtual Task<bool> SetBoldAsync(bool value)
+        public virtual bool SetBold(bool value)
         {
-            return Task.FromResult(false);
+            return false;
         }
 
-        public virtual Task<bool> SetItalicAsync(bool value)
+        public virtual bool SetItalic(bool value)
         {
-            return Task.FromResult(false);
+            return false;
         }
 
-        public virtual Task<bool> SetFixedPitchAsync(bool value)
+        public virtual bool SetFixedPitch(bool value)
         {
-            return Task.FromResult(false);
+            return false;
         }
 
-        public virtual Task<bool> SetReverseAsync(bool value)
+        public virtual bool SetReverse(bool value)
         {
-            return Task.FromResult(false);
+            return false;
         }
 
-        public virtual Task ClearAsync()
+        public virtual void Clear()
         {
             throw new Exceptions.RuntimeException("Window does not support clear operation.");
         }
 
-        public virtual Task<char> ReadCharAsync()
+        protected virtual Task<char> ReadCharCoreAsync()
         {
             throw new Exceptions.RuntimeException("Window does not support user input.");
         }
 
-        public virtual Task<string> ReadTextAsync(int maxChars)
+        public Task<char> ReadCharAsync()
+        {
+            return this.foregroundThreadAffinitizedObject.InvokeBelowInputPriority(() =>
+            {
+                return ReadCharCoreAsync();
+            }).Unwrap();
+        }
+
+        protected virtual Task<string> ReadTextCoreAsync(int maxChars)
         {
             throw new Exceptions.RuntimeException("Window does not support user input.");
         }
 
-        public virtual Task PutCharAsync(char ch, bool forceFixedWidthFont)
+        public Task<string> ReadTextAsync(int maxChars)
+        {
+            return this.foregroundThreadAffinitizedObject.InvokeBelowInputPriority(() =>
+            {
+                return ReadTextCoreAsync(maxChars);
+            }).Unwrap();
+        }
+
+        public virtual void PutChar(char ch, bool forceFixedWidthFont)
         {
             throw new Exceptions.RuntimeException("Window does not support text display.");
         }
 
-        public virtual Task PutTextAsync(string text, bool forceFixedWidthFont)
+        public virtual void PutText(string text, bool forceFixedWidthFont)
         {
             throw new Exceptions.RuntimeException("Window does not support text display.");
         }
 
-        public virtual Task<int> GetHeightAsync()
+        public virtual int GetHeight()
         {
-            return Task.FromResult(0);
+            return 0;
         }
 
-        public virtual Task SetHeightAsync(int lines)
+        public virtual void SetHeight(int lines)
         {
-            return new Task(() => { });
+            // Do nothing in base implementation.
         }
 
-        public virtual Task<int> GetCursorColumnAsync()
+        public virtual int GetCursorColumn()
         {
-            return Task.FromResult(0);
+            return 0;
         }
 
-        public virtual Task<int> GetCursorLineAsync()
+        public virtual int GetCursorLine()
         {
-            return Task.FromResult(0);
+            return 0;
         }
 
-        public virtual Task SetCursorAsync(int line, int column)
+        public virtual void SetCursorAsync(int line, int column)
         {
-            return new Task(() => { });
+            // Do nothing in base implementation.
         }
 
         public virtual int RowHeight

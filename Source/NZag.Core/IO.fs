@@ -20,6 +20,20 @@ type ZTextStyle =
     | Italic = 0x04
     | FixedPitch = 0x08
 
+[<Flags>]
+type ZColor =
+    | None = 0
+    | Default = 1
+    | Black = 2
+    | Red = 3
+    | Green = 4
+    | Yellow = 5
+    | Blue = 6
+    | Magenta = 7
+    | Cyan = 8
+    | White = 9
+    | Gray = 10
+
 type IScreen =
     inherit IInputStream
     inherit IOutputStream
@@ -39,6 +53,8 @@ type IScreen =
     abstract member SetCursorAsync : line:int * column:int -> Task
 
     abstract SetTextStyleAsync : style:ZTextStyle -> Task
+    abstract SetForegroundColorAsync : color:ZColor -> Task
+    abstract SetBackgroundColorAsync : color:ZColor -> Task
 
     abstract member ScreenHeightInLines : byte
     abstract member ScreenWidthInColumns : byte
@@ -87,6 +103,8 @@ module NullInstances =
             member x.SetCursorAsync(line, column) = emptyTask
 
             member x.SetTextStyleAsync _ = emptyTask
+            member x.SetForegroundColorAsync _ = emptyTask
+            member x.SetBackgroundColorAsync _ = emptyTask
 
             member x.ScreenHeightInLines = 0uy
             member x.ScreenWidthInColumns = 0uy
