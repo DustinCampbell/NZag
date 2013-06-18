@@ -1122,7 +1122,7 @@ LABEL 57
     discard: call 169c8 (03, temp2c)
     jump-to: LABEL 59
 LABEL 58
-    if (((read-byte(((temp2c - 1) * e) + 188) & 0080) <> 0) = 1) is true then
+    if (((read-byte(((temp2c - 1) * e) + 188) & 80) <> 0) = 1) is true then
         jump-to: LABEL 5e
 LABEL 59
     if (int16(01) > int16(temp2c)) is true then
@@ -1134,7 +1134,7 @@ LABEL 5b
     discard: call 169c8 (03, temp2c)
     jump-to: LABEL 5d
 LABEL 5c
-    if (((read-byte((((temp2c - 1) * e) + 188) + 2) & 0002) <> 0) = 1) is true then
+    if (((read-byte((((temp2c - 1) * e) + 188) + 2) & 2) <> 0) = 1) is true then
         jump-to: LABEL 5e
 LABEL 5d
     discard: call 13a88 (1007, 18, temp2c)
@@ -2180,7 +2180,7 @@ LABEL 167
     jump-to: LABEL 16a
 LABEL 168
     temp106 <- read-word(3c53)
-    if (((read-byte(((temp106 - 1) * e) + 188) & 0080) <> 0) = 1) is false then
+    if (((read-byte(((temp106 - 1) * e) + 188) & 80) <> 0) = 1) is false then
         jump-to: LABEL 16a
 LABEL 169
     temp107 <- read-word(3c53)
@@ -2200,7 +2200,7 @@ LABEL 16c
     jump-to: LABEL 16e
 LABEL 16d
     temp10b <- read-word(3c53)
-    if (((read-byte(((temp10b - 1) * e) + 188) & 0008) <> 0) = 1) is true then
+    if (((read-byte(((temp10b - 1) * e) + 188) & 8) <> 0) = 1) is true then
         jump-to: LABEL 173
 LABEL 16e
     temp10c <- read-word(3c53)
@@ -2216,7 +2216,7 @@ LABEL 170
     jump-to: LABEL 172
 LABEL 171
     temp10f <- read-word(3c53)
-    if (((read-byte((((temp10f - 1) * e) + 188) + 2) & 0008) <> 0) = 1) is true then
+    if (((read-byte((((temp10f - 1) * e) + 188) + 2) & 8) <> 0) = 1) is true then
         jump-to: LABEL 173
 LABEL 172
     temp110 <- read-word(3c53)
@@ -2236,7 +2236,7 @@ LABEL 175
     jump-to: LABEL 17c
 LABEL 176
     temp114 <- read-word(3c53)
-    if (((read-byte(((temp114 - 1) * e) + 188) & 0008) <> 0) = 1) is false then
+    if (((read-byte(((temp114 - 1) * e) + 188) & 8) <> 0) = 1) is false then
         jump-to: LABEL 17c
 LABEL 177
     temp115 <- read-word(3c53)
@@ -2252,7 +2252,7 @@ LABEL 179
     jump-to: LABEL 17b
 LABEL 17a
     temp118 <- read-word(3c53)
-    if (((read-byte((((temp118 - 1) * e) + 188) + 1) & 0002) <> 0) = 1) is true then
+    if (((read-byte((((temp118 - 1) * e) + 188) + 1) & 2) <> 0) = 1) is true then
         jump-to: LABEL 17c
 LABEL 17b
     temp119 <- read-word(3c53)

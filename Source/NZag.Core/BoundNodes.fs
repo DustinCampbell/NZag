@@ -301,13 +301,8 @@ module BoundNodeConstruction =
     let toUInt16 v = ConversionExpr(ConversionKind.ToUInt16, v)
     let numberToText v = NumberToTextExpr(v)
 
-    let readByte a = ReadMemoryByteExpr(a)
-    let readWord a = ReadMemoryWordExpr(a)
     let readText a = ReadMemoryTextExpr(a)
     let readTextOfLength a l = ReadMemoryTextOfLengthExpr(a, l)
-
-    let writeByte a v = WriteMemoryByteStmt(a, v)
-    let writeWord a v = WriteMemoryWordStmt(a, v)
 
     let random range = GenerateRandomNumberExpr(range)
     let randomize seed = SetRandomNumberSeedStmt(seed)

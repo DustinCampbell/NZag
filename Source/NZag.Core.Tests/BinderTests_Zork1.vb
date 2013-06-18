@@ -238,7 +238,7 @@ LABEL 00
     if (temp00 = 0) is true then
         jump-to: LABEL 04
 LABEL 01
-    if (((read-byte(904) & 0010) <> 0) = 1) is false then
+    if (((read-byte(904) & 10) <> 0) = 1) is false then
         jump-to: LABEL 03
 LABEL 02
     return: 39
@@ -412,7 +412,7 @@ LABEL 09
     write-word(2271) <- b4
     push-SP: call 9530 (a0)
     temp19 <- read-word(2271)
-    if (((read-byte(((temp19 - 1) * 9) + 2ee) & 0010) <> 0) = 1) is true then
+    if (((read-byte(((temp19 - 1) * 9) + 2ee) & 10) <> 0) = 1) is true then
         jump-to: LABEL 0b
 LABEL 0a
     push-SP: call 6ee0 ()
@@ -937,13 +937,13 @@ LABEL 3a
         jump-to: LABEL 3c
 LABEL 3b
     temp31 <- read-byte((((temp1e - 1) * 9) + 2ee) + 4)
-    if (((read-byte((((temp31 - 1) * 9) + 2ee) + 1) & 0020) <> 0) = 1) is false then
+    if (((read-byte((((temp31 - 1) * 9) + 2ee) + 1) & 20) <> 0) = 1) is false then
         jump-to: LABEL 1a
 LABEL 3c
-    if (((read-byte((((temp1e - 1) * 9) + 2ee) + 2) & 0040) <> 0) = 1) is true then
+    if (((read-byte((((temp1e - 1) * 9) + 2ee) + 2) & 40) <> 0) = 1) is true then
         jump-to: LABEL 3f
 LABEL 3d
-    if (((read-byte((((temp1e - 1) * 9) + 2ee) + 1) & 0004) <> 0) = 1) is true then
+    if (((read-byte((((temp1e - 1) * 9) + 2ee) + 1) & 4) <> 0) = 1) is true then
         jump-to: LABEL 3f
 LABEL 3e
     jump-to: LABEL 1a
@@ -1006,7 +1006,7 @@ LABEL 4d
 LABEL 4e
     jump-to: LABEL 50
 LABEL 4f
-    temp3f <- uint16(read-word(2d0))
+    temp3f <- read-word(2d0)
 LABEL 50
     if (temp3f = 0) is false then
         jump-to: LABEL 52
@@ -1244,7 +1244,7 @@ LABEL 15
 LABEL 16
     jump-to: LABEL 18
 LABEL 17
-    temp1a <- uint16(read-word(2d0))
+    temp1a <- read-word(2d0)
 LABEL 18
     if (temp1a = 0) is false then
         jump-to: LABEL 1a
@@ -1291,7 +1291,7 @@ LABEL 24
 LABEL 25
     jump-to: LABEL 27
 LABEL 26
-    temp22 <- uint16(read-word(2d0))
+    temp22 <- read-word(2d0)
 LABEL 27
     if (temp22 = 0) is false then
         jump-to: LABEL 29
@@ -1354,7 +1354,7 @@ LABEL 39
 LABEL 3a
     jump-to: LABEL 3c
 LABEL 3b
-    temp2a <- uint16(read-word(2d0))
+    temp2a <- read-word(2d0)
 LABEL 3c
     if (temp2a = 0) is false then
         jump-to: LABEL 3e
@@ -1410,7 +1410,7 @@ LABEL 4b
 LABEL 4c
     jump-to: LABEL 4e
 LABEL 4d
-    temp32 <- uint16(read-word(2b2))
+    temp32 <- read-word(2b2)
 LABEL 4e
     if (temp32 = 0) is false then
         jump-to: LABEL 50
@@ -1461,7 +1461,7 @@ LABEL 5c
 LABEL 5d
     jump-to: LABEL 5f
 LABEL 5e
-    temp38 <- uint16(read-word(2d0))
+    temp38 <- read-word(2d0)
 LABEL 5f
     if (temp38 = 0) is false then
         jump-to: LABEL 61
@@ -1582,28 +1582,28 @@ LABEL 0c
     if (temp02 = 00) is false then
         jump-to: LABEL 0f
 LABEL 0d
-    if (((read-byte((((temp00 - 1) * 9) + 2ee) + 1) & 0080) <> 0) = 1) is true then
+    if (((read-byte((((temp00 - 1) * 9) + 2ee) + 1) & 80) <> 0) = 1) is true then
         jump-to: LABEL 0f
 LABEL 0e
-    if (((read-byte((((temp00 - 1) * 9) + 2ee) + 1) & 0020) <> 0) = 1) is false then
+    if (((read-byte((((temp00 - 1) * 9) + 2ee) + 1) & 20) <> 0) = 1) is false then
         jump-to: LABEL 18
 LABEL 0f
     if (read-byte((((temp00 - 1) * 9) + 2ee) + 6) <> 0) is false then
         jump-to: LABEL 18
 LABEL 10
-    if (((read-byte((((temp00 - 1) * 9) + 2ee) + 1) & 0010) <> 0) = 1) is true then
+    if (((read-byte((((temp00 - 1) * 9) + 2ee) + 1) & 10) <> 0) = 1) is true then
         jump-to: LABEL 12
 LABEL 11
-    if (((read-byte((((temp00 - 1) * 9) + 2ee) + 1) & 0008) <> 0) = 1) is false then
+    if (((read-byte((((temp00 - 1) * 9) + 2ee) + 1) & 8) <> 0) = 1) is false then
         jump-to: LABEL 18
 LABEL 12
-    if (((read-byte((((temp00 - 1) * 9) + 2ee) + 1) & 0020) <> 0) = 1) is false then
+    if (((read-byte((((temp00 - 1) * 9) + 2ee) + 1) & 20) <> 0) = 1) is false then
         jump-to: LABEL 14
 LABEL 13
     push-SP: 01
     jump-to: LABEL 17
 LABEL 14
-    if (((read-byte((((temp00 - 1) * 9) + 2ee) + 1) & 0080) <> 0) = 1) is false then
+    if (((read-byte((((temp00 - 1) * 9) + 2ee) + 1) & 80) <> 0) = 1) is false then
         jump-to: LABEL 16
 LABEL 15
     push-SP: 01
@@ -1710,21 +1710,21 @@ LABEL 06
     return: 00
 LABEL 07
     temp06 <- read-word(2271)
-    if (((read-byte(((temp06 - 1) * 9) + 2ee) & 0010) <> 0) = 1) is true then
+    if (((read-byte(((temp06 - 1) * 9) + 2ee) & 10) <> 0) = 1) is true then
         jump-to: LABEL 09
 LABEL 08
     temp07 <- read-word(2271)
     temp08 <- (((temp07 - 1) * 9) + 2ee)
-    write-byte(temp08) <- byte(read-byte(temp08) | 0010)
+    write-byte(temp08) <- byte(read-byte(temp08) | 10)
     temp03 <- 01
 LABEL 09
     temp09 <- read-word(2271)
-    if (((read-byte(((temp09 - 1) * 9) + 2ee) & 0004) <> 0) = 1) is false then
+    if (((read-byte(((temp09 - 1) * 9) + 2ee) & 4) <> 0) = 1) is false then
         jump-to: LABEL 0b
 LABEL 0a
     temp0a <- read-word(2271)
     temp0b <- (((temp0a - 1) * 9) + 2ee)
-    write-byte(temp0b) <- byte(read-byte(temp0b) & not 0010)
+    write-byte(temp0b) <- byte(read-byte(temp0b) & not 10)
 LABEL 0b
     temp0c <- read-word(2271)
     if (read-byte((((temp0c - 1) * 9) + 2ee) + 4) = 52) is false then
@@ -1735,7 +1735,7 @@ LABEL 0c
     print: read-text(temp0e + 1, read-byte(temp0e))
     temp0f <- read-word(234f)
     temp10 <- read-byte((((temp0f - 1) * 9) + 2ee) + 4)
-    if (((read-byte((((temp10 - 1) * 9) + 2ee) + 3) & 0010) <> 0) = 1) is false then
+    if (((read-byte((((temp10 - 1) * 9) + 2ee) + 3) & 10) <> 0) = 1) is false then
         jump-to: LABEL 0e
 LABEL 0d
     print: ", in the "
@@ -1787,7 +1787,7 @@ LABEL 19
 LABEL 1a
     jump-to: LABEL 1c
 LABEL 1b
-    temp1a <- uint16(read-word(2d0))
+    temp1a <- read-word(2d0)
 LABEL 1c
     if (temp1a = 0) is false then
         jump-to: LABEL 1e
@@ -1835,7 +1835,7 @@ LABEL 28
 LABEL 29
     jump-to: LABEL 2b
 LABEL 2a
-    temp22 <- uint16(read-word(2c4))
+    temp22 <- read-word(2c4)
 LABEL 2b
     if (temp22 = 0) is true then
         jump-to: LABEL 2d
@@ -1875,7 +1875,7 @@ LABEL 34
 LABEL 35
     jump-to: LABEL 37
 LABEL 36
-    temp29 <- uint16(read-word(2d0))
+    temp29 <- read-word(2d0)
 LABEL 37
     if (temp29 = 0) is false then
         jump-to: LABEL 39
@@ -1889,7 +1889,7 @@ LABEL 3a
     if (temp2a = temp10) is true then
         return: 1
 LABEL 3b
-    if (((read-byte((((temp10 - 1) * 9) + 2ee) + 3) & 0010) <> 0) = 1) is false then
+    if (((read-byte((((temp10 - 1) * 9) + 2ee) + 3) & 10) <> 0) = 1) is false then
         return: 1
 LABEL 3c
     temp2b <- read-word((((temp10 - 1) * 9) + 2ee) + 7)
@@ -1922,7 +1922,7 @@ LABEL 43
 LABEL 44
     jump-to: LABEL 46
 LABEL 45
-    temp30 <- uint16(read-word(2d0))
+    temp30 <- read-word(2d0)
 LABEL 46
     if (temp30 = 0) is false then
         jump-to: LABEL 48
@@ -2013,7 +2013,7 @@ LABEL 00
     temp01 <- L04
     temp02 <- read-byte(6eb)
 LABEL 01
-    if (((read-byte(6e7) & 0001) <> 0) = 1) is true then
+    if (((read-byte(6e7) & 1) <> 0) = 1) is true then
         jump-to: LABEL 03
 LABEL 02
     push-SP: 01
@@ -2048,7 +2048,7 @@ LABEL 0b
     if (temp02 = temp06) is false then
         jump-to: LABEL 11
 LABEL 0c
-    if (((read-byte((((temp02 - 1) * 9) + 2ee) + 2) & 0008) <> 0) = 1) is true then
+    if (((read-byte((((temp02 - 1) * 9) + 2ee) + 2) & 8) <> 0) = 1) is true then
         jump-to: LABEL 11
 LABEL 0d
     temp07 <- read-word(2271)
@@ -2059,7 +2059,7 @@ LABEL 0e
     if (temp08 = 0) is false then
         return: 1
 LABEL 0f
-    if (((read-byte(6e7) & 0001) <> 0) = 1) is false then
+    if (((read-byte(6e7) & 1) <> 0) = 1) is false then
         jump-to: LABEL 1a
 LABEL 10
     temp04 <- 00
@@ -2068,21 +2068,21 @@ LABEL 11
     if (read-byte(6eb) = temp02) is false then
         jump-to: LABEL 14
 LABEL 12
-    if (((read-byte(6e7) & 0001) <> 0) = 1) is true then
+    if (((read-byte(6e7) & 1) <> 0) = 1) is true then
         jump-to: LABEL 14
 LABEL 13
-    write-byte(6e7) <- byte(read-byte(6e7) | 0001)
+    write-byte(6e7) <- byte(read-byte(6e7) | 1)
     temp04 <- 00
 LABEL 14
-    if (((read-byte(((temp02 - 1) * 9) + 2ee) & 0010) <> 0) = 1) is false then
+    if (((read-byte(((temp02 - 1) * 9) + 2ee) & 10) <> 0) = 1) is false then
         jump-to: LABEL 1a
 LABEL 15
     push-SP: call 103b8 (temp02, 72, 4b)
-    if (((read-byte(((temp02 - 1) * 9) + 2ee) & 0004) <> 0) = 1) is false then
+    if (((read-byte(((temp02 - 1) * 9) + 2ee) & 4) <> 0) = 1) is false then
         jump-to: LABEL 18
 LABEL 16
     temp09 <- read-word(2271)
-    if (((read-byte(((temp09 - 1) * 9) + 2ee) & 0004) <> 0) = 1) is false then
+    if (((read-byte(((temp09 - 1) * 9) + 2ee) & 4) <> 0) = 1) is false then
         jump-to: LABEL 18
 LABEL 17
     push-SP: call d32c (temp02)
@@ -2125,10 +2125,10 @@ LABEL 23
     if (read-byte(5cd) <> 0) is true then
         jump-to: LABEL 24
 LABEL 24
-    if (((read-byte((((temp02 - 1) * 9) + 2ee) + 1) & 0040) <> 0) = 1) is true then
+    if (((read-byte((((temp02 - 1) * 9) + 2ee) + 1) & 40) <> 0) = 1) is true then
         jump-to: LABEL 20
 LABEL 25
-    if (((read-byte(((temp02 - 1) * 9) + 2ee) & 0002) <> 0) = 1) is false then
+    if (((read-byte(((temp02 - 1) * 9) + 2ee) & 2) <> 0) = 1) is false then
         jump-to: LABEL 20
 LABEL 26
     temp0d <- temp02
@@ -2178,8 +2178,8 @@ LABEL 34
     write-byte(6ec) <- read-byte((((temp0d - 1) * 9) + 2ee) + 6)
     write-byte((((temp0d - 1) * 9) + 2ee) + 6) <- 72
 LABEL 35
-    write-byte(6e7) <- byte(read-byte(6e7) & not 0020)
-    write-byte(6e7) <- byte(read-byte(6e7) | 0001)
+    write-byte(6e7) <- byte(read-byte(6e7) & not 20)
+    write-byte(6e7) <- byte(read-byte(6e7) | 1)
     write-word(22af) <- 00
     jump-to: LABEL 01
 LABEL 36
