@@ -16,35 +16,7 @@ type ByRefOperand(read: (unit -> Expression), write: (Expression -> unit)) =
         op.Write(v)
 
 [<AbstractClass>]
-type Binder(routine: Routine, memory: Memory, builder: BoundTreeCreator, debugging: bool) =
-
-    let packedMultiplier =
-        match memory.Version with
-        | 1 | 2 | 3 -> 2
-        | 4 | 5 | 6 | 7 -> 4
-        | 8 -> 8
-        | v -> failcompilef "Invalid version number: %d" v
-
-    let routinesOffset =
-        memory |> Header.readRoutinesOffset |> int
-
-    let stringsOffset =
-        memory |> Header.readStringOffset |> int
-
-    let unpackAddress address offset =
-        match address with
-        | ConstantExpr(Int32Value address) ->
-            let baseAddress = address * packedMultiplier
-            if memory.Version = 6 || memory.Version = 7 then
-                int32Const (baseAddress + offset)
-            else
-                int32Const baseAddress
-        | _ ->
-            let baseAddress = address .*. (int32Const packedMultiplier)
-            if memory.Version = 6 || memory.Version = 7 then
-                baseAddress .+. (int32Const offset)
-            else
-                baseAddress
+type Binder(memory: Memory, builder: BoundTreeCreator, debugging: bool) =
 
     member x.ReadByte address =
         ReadMemoryByteExpr(address)
@@ -58,29 +30,8 @@ type Binder(routine: Routine, memory: Memory, builder: BoundTreeCreator, debuggi
         WriteMemoryWordStmt(address, value)
             |> builder.AddStatement
 
-    member x.UnpackRoutineAddress address =
-        unpackAddress address routinesOffset
-
-    member x.UnpackStringAddress address =
-        unpackAddress address stringsOffset
-
-    member x.Call address args processResult =
-        match address with
-        | ConstantExpr(Int32Value _) ->
-            let unpackedAddress = x.UnpackRoutineAddress address
-            processResult (CallExpr(unpackedAddress, args))
-        | _ ->
-            builder.IfThenElse (address .=. zero)
-                (fun () ->
-                    processResult zero
-                )
-                (fun () ->
-                    let unpackedAddress = x.UnpackRoutineAddress address
-                    processResult (CallExpr(unpackedAddress, args))
-                )
-
-type ObjectBinder(routine, memory, builder, debugging) =
-    inherit Binder(routine, memory, builder, debugging)
+type ObjectBinder(memory, builder, debugging) =
+    inherit Binder(memory, builder, debugging)
 
     let objectTableAddress = int (memory |> Header.readObjectTableAddress)
     let propertyDefaultsSize = if memory.Version <= 3 then 31 else 63
@@ -305,10 +256,10 @@ type ObjectBinder(routine, memory, builder, debugging) =
                 x.WriteChild destObjNum objNum
             )
 
-type InstructionBinder(routine, memory, builder, debugging) as this =
-    inherit Binder(routine, memory, builder, debugging)
+type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
+    inherit Binder(memory, builder, debugging)
 
-    let objects = new ObjectBinder(routine, memory, builder, debugging)
+    let objects = new ObjectBinder(memory, builder, debugging)
 
     let addStatement s =
         builder.AddStatement(s)
@@ -337,6 +288,54 @@ type InstructionBinder(routine, memory, builder, debugging) as this =
         PrintCharStmt(ch) |> addStatement
     let printText text =
         PrintTextStmt(text) |> addStatement
+
+    let packedMultiplier =
+        match memory.Version with
+        | 1 | 2 | 3 -> 2
+        | 4 | 5 | 6 | 7 -> 4
+        | 8 -> 8
+        | v -> failcompilef "Invalid version number: %d" v
+
+    let routinesOffset =
+        memory |> Header.readRoutinesOffset |> int
+
+    let stringsOffset =
+        memory |> Header.readStringOffset |> int
+
+    let unpackAddress address offset =
+        match address with
+        | ConstantExpr(Int32Value address) ->
+            let baseAddress = address * packedMultiplier
+            if memory.Version = 6 || memory.Version = 7 then
+                int32Const (baseAddress + offset)
+            else
+                int32Const baseAddress
+        | _ ->
+            let baseAddress = address .*. (int32Const packedMultiplier)
+            if memory.Version = 6 || memory.Version = 7 then
+                baseAddress .+. (int32Const offset)
+            else
+                baseAddress
+    let unpackRoutineAddress address =
+        unpackAddress address routinesOffset
+
+    let unpackStringAddress address =
+        unpackAddress address stringsOffset
+
+    let call address args processResult =
+        match address with
+        | ConstantExpr(Int32Value _) ->
+            let unpackedAddress = unpackRoutineAddress address
+            processResult (CallExpr(unpackedAddress, args))
+        | _ ->
+            builder.IfThenElse (address .=. zero)
+                (fun () ->
+                    processResult zero
+                )
+                (fun () ->
+                    let unpackedAddress = unpackRoutineAddress address
+                    processResult (CallExpr(unpackedAddress, args))
+                )
 
     let readStack, writeStack =
         let read indirect =
@@ -670,14 +669,14 @@ type InstructionBinder(routine, memory, builder, debugging) as this =
         | "call_vs", Any, OpAndList(address, args)
         | "call_vs2", AtLeast 4, OpAndList(address, args) ->
 
-            this.Call address args store
+            call address args store
 
         | "call_1n", AtLeast 5, OpAndList(address, args)
         | "call_2n", AtLeast 5, OpAndList(address, args)
         | "call_vn", AtLeast 5, OpAndList(address, args)
         | "call_vn2", AtLeast 4, OpAndList(address, args) ->
 
-            this.Call address args discard
+            call address args discard
 
         | "check_arg_count", AtLeast 5, Op1(number) ->
             branchIf (number .<=. ArgCountExpr)
@@ -973,7 +972,7 @@ type InstructionBinder(routine, memory, builder, debugging) as this =
             printText text
 
         | "print_paddr", Any, Op1(address) ->
-            let text = readText (this.UnpackStringAddress address)
+            let text = readText (unpackStringAddress address)
             printText text
 
         | "print_ret", Any, NoOps ->
