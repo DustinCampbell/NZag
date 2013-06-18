@@ -338,6 +338,9 @@ type Machine (memory: Memory, debugging: bool) as this =
         member y.SetCursor(line, column) =
             screen.SetCursorAsync(line - 1, column - 1).Wait()
 
+        member y.ShowStatus() =
+            screen.ShowStatusAsync().Wait()
+
         member y.SetTextStyle(style) =
             screen.SetTextStyleAsync(style).Wait()
 

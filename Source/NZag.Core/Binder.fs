@@ -984,6 +984,9 @@ type InstructionBinder(memory: Memory, routine: Routine, builder: BoundTreeCreat
         | "set_window", AtLeast 3, Op1(window) ->
             SetWindowStmt(window) |> addStatement
 
+        | "show_status", AtLeast 3, NoOps ->
+            ShowStatusStmt |> addStatement
+
         | "split_window", AtLeast 3, Op1(lines) ->
             SplitWindowStmt(lines) |> addStatement
 

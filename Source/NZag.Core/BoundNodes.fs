@@ -234,6 +234,9 @@ type Statement =
     /// Moves the cursor in the active window to the given line and column
     | SetCursorStmt of Expression * Expression
 
+    /// Updates the status bar
+    | ShowStatusStmt
+
     /// Outputs the text represented by the given expression for debugging
     | DebugOutputStmt of Expression * list<Expression>
 
@@ -439,6 +442,8 @@ module BoundNodeVisitors =
             fstmt (SplitWindowStmt(rewriteExpr e))
         | SetCursorStmt(e1,e2) ->
             fstmt (SetCursorStmt(rewriteExpr e1, rewriteExpr e2))
+        | ShowStatusStmt ->
+            fstmt (ShowStatusStmt)
         | DebugOutputStmt(e, elist) ->
             fstmt (DebugOutputStmt(rewriteExpr e, elist |> List.map rewriteExpr))
         | RuntimeExceptionStmt(s) ->
@@ -500,6 +505,7 @@ module BoundNodeVisitors =
             | LabelStmt(_)
             | JumpStmt(_)
             | QuitStmt
+            | ShowStatusStmt
             | RuntimeExceptionStmt(_) ->
                 ()
             | ReturnStmt(e)
@@ -1004,6 +1010,8 @@ type BoundNodeDumper (builder : StringBuilder) =
                 dumpExpression line
                 append ", "
                 dumpExpression column)
+        | ShowStatusStmt ->
+            append "show-status"
         | RuntimeExceptionStmt(s) ->
             appendf "RUNTIME EXCEPTION: %s" s
         | DebugOutputStmt(e, args) ->
