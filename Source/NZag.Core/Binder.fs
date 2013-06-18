@@ -34,7 +34,7 @@ type Binder(memory: Memory, builder: BoundTreeCreator, debugging: bool) =
         RuntimeExceptionStmt(message)
             |> builder.AddStatement
 
-type ObjectBinder(memory, builder, debugging) =
+type ObjectBinder(memory, builder, debugging) as this =
     inherit Binder(memory, builder, debugging)
 
     let objectTableAddress = int (memory |> Header.readObjectTableAddress)
@@ -107,6 +107,45 @@ type ObjectBinder(memory, builder, debugging) =
         | _ ->
             one .<<. ((seven .-. (attrNum .%. eight)) .&. int32Const 0x1f)
 
+    let getFirstPropertyAddress objNum =
+        let propTableAddress = computePropertyTableAddress objNum
+        let propsAddress = builder.InitTemp (this.ReadWord propTableAddress)
+
+        // First property is address after object name
+        let nameLength = this.ReadByte !!propsAddress
+        let result = (!!propsAddress .+. one) .+. (nameLength .*. two)
+
+        result |> toUInt16
+
+    let getNextPropertyAddress propAddress =
+        let propSizeByte = builder.InitTemp (this.ReadByte propAddress)
+
+        let propSize = 
+            if memory.Version <= 3 then
+                !!propSizeByte .>>. five
+            else
+                let scratch = builder.InitTemp zero
+                builder.IfThenElse ((!!propSizeByte .&. (int32Const 0x80)) .<>. (int32Const 0x80))
+                    (fun () ->
+                        scratch <-- (!!propSizeByte .>>. six)
+                    )
+                    (fun () -> 
+                        let nextByteAddress = propAddress .+. one
+                        let nextPropSizeByte = this.ReadByte nextByteAddress
+                        let nextPropSizeByte' = nextPropSizeByte .&. (int32Const 0x3f)
+                        builder.IfThenElse (nextPropSizeByte' .=. zero)
+                            (fun () ->
+                                scratch <-- (int32Const 64)
+                            )
+                            (fun () -> 
+                                scratch <-- nextPropSizeByte')
+                            )
+                !!scratch
+
+        let result = (propAddress .+. one) .+. (propSize .+. one)
+
+        result |> toUInt16
+
     member x.ReadPropertyDefault propNum =
         let propDefaultAddress = computePropertyDefaultAddress propNum
         x.ReadWord propDefaultAddress
@@ -168,47 +207,8 @@ type ObjectBinder(memory, builder, debugging) =
         let nameAddress = !!propsAddress .+. one
         readTextOfLength nameAddress nameLength
 
-    member x.GetFirstPropertyAddress objNum =
-        let propTableAddress = computePropertyTableAddress objNum
-        let propsAddress = builder.InitTemp (x.ReadWord propTableAddress)
-
-        // First property is address after object name
-        let nameLength = x.ReadByte !!propsAddress
-        let result = (!!propsAddress .+. one) .+. (nameLength .*. two)
-
-        result |> toUInt16
-
-    member x.GetNextPropertyAddress propAddress =
-        let propSizeByte = builder.InitTemp (x.ReadByte propAddress)
-
-        let propSize = 
-            if memory.Version <= 3 then
-                !!propSizeByte .>>. five
-            else
-                let scratch = builder.InitTemp zero
-                builder.IfThenElse ((!!propSizeByte .&. (int32Const 0x80)) .<>. (int32Const 0x80))
-                    (fun () ->
-                        scratch <-- (!!propSizeByte .>>. six)
-                    )
-                    (fun () -> 
-                        let nextByteAddress = propAddress .+. one
-                        let nextPropSizeByte = x.ReadByte nextByteAddress
-                        let nextPropSizeByte' = nextPropSizeByte .&. (int32Const 0x3f)
-                        builder.IfThenElse (nextPropSizeByte' .=. zero)
-                            (fun () ->
-                                scratch <-- (int32Const 64)
-                            )
-                            (fun () -> 
-                                scratch <-- nextPropSizeByte')
-                            )
-                !!scratch
-
-        let result = (propAddress .+. one) .+. (propSize .+. one)
-
-        result |> toUInt16
-
     member x.GetPropertyAddress objNum propNum =
-        let firstPropertyAddress = x.GetFirstPropertyAddress objNum
+        let firstPropertyAddress = getFirstPropertyAddress objNum
 
         let propAddress = builder.InitTemp(firstPropertyAddress)
         let firstByte = builder.InitTemp(zero)
@@ -226,7 +226,7 @@ type ObjectBinder(memory, builder, debugging) =
                         stopLoop <-- one
                     )
                     (fun () ->
-                        propAddress <-- (x.GetNextPropertyAddress !!propAddress)
+                        propAddress <-- (getNextPropertyAddress !!propAddress)
                     )
             )
 
@@ -268,7 +268,7 @@ type ObjectBinder(memory, builder, debugging) =
         !!result
 
     member x.GetNextPropertyNumber objNum propNum =
-        let firstPropertyAddress = x.GetFirstPropertyAddress(objNum)
+        let firstPropertyAddress = getFirstPropertyAddress(objNum)
         let propAddress = builder.InitTemp(firstPropertyAddress)
         let firstByte = builder.InitTemp (x.ReadByte !!propAddress)
 
@@ -279,7 +279,7 @@ type ObjectBinder(memory, builder, debugging) =
                 builder.LoopWhile ((!!firstByte .&. mask) .>. propNum)
                     (fun () ->
                         firstByte <-- (x.ReadByte !!propAddress)
-                        let nextPropAddress = x.GetNextPropertyAddress !!propAddress
+                        let nextPropAddress = getNextPropertyAddress !!propAddress
                         propAddress <-- nextPropAddress
                     )
             )
@@ -287,7 +287,7 @@ type ObjectBinder(memory, builder, debugging) =
         (x.ReadByte !!propAddress) .&. mask
 
     member x.ReadPropertyValue objNum propNum =
-        let firstPropertyAddress = x.GetFirstPropertyAddress(objNum)
+        let firstPropertyAddress = getFirstPropertyAddress(objNum)
         let propAddress = builder.InitTemp(firstPropertyAddress)
         let firstByte = builder.InitTemp(zero)
         let stopLoop = builder.InitTemp(zero)
@@ -304,7 +304,7 @@ type ObjectBinder(memory, builder, debugging) =
                         stopLoop <-- one
                     )
                     (fun () ->
-                        propAddress <-- (x.GetNextPropertyAddress !!propAddress)
+                        propAddress <-- (getNextPropertyAddress !!propAddress)
                     )
             )
 
@@ -327,7 +327,7 @@ type ObjectBinder(memory, builder, debugging) =
         !!result
 
     member x.WritePropertyValue objNum propNum value =
-        let firstPropertyAddress = x.GetFirstPropertyAddress(objNum)
+        let firstPropertyAddress = getFirstPropertyAddress(objNum)
         let propAddress = builder.InitTemp(firstPropertyAddress)
         let firstByte = builder.InitTemp(zero)
         let stopLoop = builder.InitTemp(zero)
@@ -343,7 +343,7 @@ type ObjectBinder(memory, builder, debugging) =
                         stopLoop <-- one
                     )
                     (fun () ->
-                        propAddress <-- x.GetNextPropertyAddress !!propAddress
+                        propAddress <-- getNextPropertyAddress !!propAddress
                     )
             )
 
