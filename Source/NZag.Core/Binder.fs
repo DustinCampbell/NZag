@@ -847,7 +847,7 @@ type InstructionBinder(memory: Memory, routine: Routine, builder: BoundTreeCreat
         | "output_stream", AtLeast 3, Op1(number) ->
             SelectOutputStreamStmt(number) |> addStatement
 
-        | "output_stream", AtLeast 5, Op2(number, table) ->
+        | "output_stream", AtLeast 4, Op2(number, table) ->
             SelectMemoryOutputStreamStmt(number, table) |> addStatement
 
         | "piracy", AtLeast 5, NoOps ->

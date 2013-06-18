@@ -336,7 +336,7 @@ type Machine (memory: Memory, debugging: bool) as this =
                 screen.SplitAsync(int lines).Wait()
 
         member y.SetCursor(line, column) =
-            screen.SetCursorAsync(line, column).Wait()
+            screen.SetCursorAsync(line - 1, column - 1).Wait()
 
         member y.SetTextStyle(style) =
             screen.SetTextStyleAsync(style).Wait()
