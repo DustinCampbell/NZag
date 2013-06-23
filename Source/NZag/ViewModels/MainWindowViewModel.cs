@@ -85,6 +85,11 @@ namespace NZag.ViewModels
 
             if (dialog.ShowDialog() == true)
             {
+                if (this.gameService.IsGameOpen)
+                {
+                    this.gameService.CloseGame();
+                }
+
                 this.gameService.OpenGame(dialog.FileName);
             }
         }

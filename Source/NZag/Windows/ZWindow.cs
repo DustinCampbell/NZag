@@ -13,7 +13,7 @@ namespace NZag.Windows
         private readonly FontAndColorService fontAndColorService;
         private readonly ForegroundThreadAffinitizedObject foregroundThreadAffinitizedObject;
 
-        private ZWindow parentWindow;
+        private ZPairWindow parentWindow;
 
         protected ZWindow(ZWindowManager manager, FontAndColorService fontAndColorService)
         {
@@ -33,7 +33,7 @@ namespace NZag.Windows
             this.foregroundThreadAffinitizedObject.AssertIsForeground();
         }
 
-        public ZWindow ParentWindow
+        public ZPairWindow ParentWindow
         {
             get { return this.parentWindow; }
         }
@@ -48,7 +48,7 @@ namespace NZag.Windows
             get { return this.fontAndColorService.BackgroundBrush; }
         }
 
-        public void SetParentWindow(ZWindow newParentWindow)
+        public void SetParentWindow(ZPairWindow newParentWindow)
         {
             this.parentWindow = newParentWindow;
         }

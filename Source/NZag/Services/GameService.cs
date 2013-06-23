@@ -15,6 +15,15 @@ namespace NZag.Services
         private string[] script;
         private int scriptIndex = -1;
 
+        private void OnGameClosing()
+        {
+            var handler = GameClosing;
+            if (handler != null)
+            {
+                handler(this, EventArgs.Empty);
+            }
+        }
+
         private void OnGameOpened()
         {
             var handler = GameOpened;
@@ -57,6 +66,15 @@ namespace NZag.Services
             var command = this.script[this.scriptIndex];
             this.scriptIndex++;
             return command;
+        }
+
+        public void CloseGame()
+        {
+            OnGameClosing();
+
+            this.gameFileName = null;
+            this.machine = null;
+            this.script = null;
         }
 
         public void OpenGame(string fileName)
@@ -109,6 +127,7 @@ namespace NZag.Services
             get { return this.scriptFileName; }
         }
 
+        public event EventHandler GameClosing;
         public event EventHandler GameOpened;
         public event EventHandler ScriptLoaded;
     }

@@ -92,6 +92,42 @@ namespace NZag.Windows
             return newWindow;
         }
 
+        public void CloseWindow(ZWindow window)
+        {
+            var parentGrid = (Grid)window.Parent;
+            parentGrid.Children.Remove(window);
+
+            var parent = window.ParentWindow;
+            if (parent == null) // root window
+            {
+                this.rootWindow = null;
+            }
+            else
+            {
+                var sibling = parent.Child1 == window
+                    ? parent.Child2
+                    : parent.Child1;
+
+                parentGrid.Children.Remove(sibling);
+
+                var grandParentGrid = (Grid)parent.Parent;
+                grandParentGrid.Children.Remove(parent);
+
+                var grandParent = parent.ParentWindow;
+                if (grandParent == null) // root window
+                {
+                    this.rootWindow = sibling;
+                    sibling.SetParentWindow(null);
+                }
+                else
+                {
+                    grandParent.Replace(parent, sibling);
+                }
+
+                grandParent.Children.Add(sibling);
+            }
+        }
+
         private bool IsVertical(ZWindowPosition position)
         {
             switch (position)

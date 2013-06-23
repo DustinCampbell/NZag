@@ -40,6 +40,7 @@ namespace NZag.ViewModels
             this.windowManager = new ZWindowManager(fontAndColorService);
 
             this.gameService.GameOpened += OnGameOpened;
+            this.gameService.GameClosing += OnGameClosing;
         }
 
         protected override void OnViewCreated(UserControl view)
@@ -54,6 +55,13 @@ namespace NZag.ViewModels
             this.upperWindow = this.windowManager.OpenWindow(ZWindowKind.TextGrid, this.mainWindow, ZWindowPosition.Above);
 
             this.windowManager.ActivateWindow(this.mainWindow);
+        }
+
+        private void OnGameClosing(object sender, EventArgs e)
+        {
+            this.mainWindow = null;
+            this.upperWindow = null;
+            this.windowManager.CloseWindow(this.windowManager.RootWindow);
         }
 
         private void ResetStatusHeight()
