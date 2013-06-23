@@ -19,6 +19,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="24"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="24"/>
         </Grid.RowDefinitions>
@@ -35,22 +36,47 @@
 
         <ToolBarTray Grid.Row="1"
                      RenderOptions.BitmapScalingMode="NearestNeighbor">
-            <ToolBar>
-                <Button Command="{Binding LoadScriptCommand}">
-                    <controls:AutoDisableImage Source="{StaticResource ScriptImage}"/>
-                </Button>
-                <TextBlock VerticalAlignment="Center"
-                           Margin="4,0"
-                           Text="{Binding ScriptName}"/>
+            <ToolBar ToolBarTray.IsLocked="True">
+                <StackPanel Orientation="Horizontal">
+                    <Button Command="{Binding OpenGameCommand}"
+                            Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+                        <controls:AutoDisableImage Source="{StaticResource OpenImage}"/>
+                    </Button>
+
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Margin="4,0"
+                        Text="{Binding GameName}"/>
+                </StackPanel>
+
                 <Separator/>
-                <Button Command="{Binding OpenCommand}">
-                    <controls:AutoDisableImage Source="{StaticResource OpenImage}"/>
+
+                <StackPanel Orientation="Horizontal">
+                    <Button Command="{Binding LoadScriptCommand}"
+                            Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+                        <controls:AutoDisableImage Source="{StaticResource ScriptImage}"/>
+                    </Button>
+
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Margin="4,0"
+                        Text="{Binding ScriptName}"/>
+                </StackPanel>
+            </ToolBar>
+        </ToolBarTray>
+
+        <ToolBarTray Grid.Row="2"
+                     RenderOptions.BitmapScalingMode="NearestNeighbor">
+
+            <ToolBar ToolBarTray.IsLocked="True">
+                <Button Command="{Binding PlayGameCommand}">
+                    <controls:AutoDisableImage Source="{StaticResource PlayImage}"/>
                 </Button>
             </ToolBar>
         </ToolBarTray>
 
         <Grid Name="ContentRoot"
-              Grid.Row="2">
+              Grid.Row="3">
             <TabControl>
                 <TabItem Header="Game">
                     <Grid Name="ScreenContent"/>
@@ -61,7 +87,7 @@
             </TabControl>
         </Grid>
 
-        <StatusBar Grid.Row="3">
+        <StatusBar Grid.Row="4">
 
         </StatusBar>
     </Grid>

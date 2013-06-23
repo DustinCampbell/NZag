@@ -42,6 +42,16 @@ namespace NZag.ViewModels
             }
         }
 
+        public string GameName
+        {
+            get
+            {
+                return this.gameService.IsGameOpen
+                    ? Path.GetFileName(this.gameService.GameFileName)
+                    : "None";
+            }
+        }
+
         public string ScriptName
         {
             get
@@ -60,14 +70,15 @@ namespace NZag.ViewModels
             var profilerContent = view.FindName<Grid>("ProfilerContent");
             profilerContent.Children.Add(profilerViewModel.CreateView());
 
-            this.OpenCommand = RegisterCommand("Open", "Open", OpenExecuted, () => true, new KeyGesture(Key.O, ModifierKeys.Control));
+            this.OpenGameCommand = RegisterCommand("Open", "Open", OpenGameExecuted, CanOpenGameExecute, new KeyGesture(Key.O, ModifierKeys.Control));
             this.LoadScriptCommand = RegisterCommand("Load Script...", "LoadScript", LoadScriptExecuted, CanLoadScriptExecute);
+            this.PlayGameCommand = RegisterCommand("Play", "Play", PlayGameExecuted, CanPlayGameExecute, new KeyGesture(Key.F5));
         }
 
         private void OnGameOpened(object sender, EventArgs e)
         {
             this.PropertyChanged("Title");
-            this.gameService.StartGame(this.screenViewModel, this.profilerViewModel);
+            this.PropertyChanged("GameName");
         }
 
         private void OnScriptLoaded(object sender, EventArgs e)
@@ -75,7 +86,12 @@ namespace NZag.ViewModels
             this.PropertyChanged("ScriptName");
         }
 
-        private void OpenExecuted()
+        private bool CanOpenGameExecute()
+        {
+            return true;
+        }
+
+        private void OpenGameExecuted()
         {
             var dialog = new OpenFileDialog
             {
@@ -96,7 +112,7 @@ namespace NZag.ViewModels
 
         private bool CanLoadScriptExecute()
         {
-            return !this.gameService.IsGameOpen;
+            return true;
         }
 
         private void LoadScriptExecuted()
@@ -113,7 +129,18 @@ namespace NZag.ViewModels
             }
         }
 
-        public ICommand OpenCommand { get; private set; }
+        private bool CanPlayGameExecute()
+        {
+            return this.gameService.IsGameOpen;
+        }
+
+        private void PlayGameExecuted()
+        {
+            this.gameService.StartGame(this.screenViewModel, this.profilerViewModel);
+        }
+
+        public ICommand OpenGameCommand { get; private set; }
         public ICommand LoadScriptCommand { get; private set; }
+        public ICommand PlayGameCommand { get; private set; }
     }
 }
