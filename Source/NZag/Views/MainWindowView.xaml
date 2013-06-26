@@ -62,6 +62,12 @@
                         Margin="4,0"
                         Text="{Binding ScriptName}"/>
                 </StackPanel>
+
+                <Separator/>
+
+                <ToggleButton Name="ProfileButton" Content="Profile"
+                              Command="{Binding ProfileCommand}" 
+                              CommandParameter="{Binding ElementName=ProfileButton, Path=IsChecked}"/>
             </ToolBar>
         </ToolBarTray>
 
@@ -81,9 +87,22 @@
                 <TabItem Header="Game">
                     <Grid Name="ScreenContent"/>
                 </TabItem>
+                
                 <TabItem Header="Profiler">
                     <Grid Name="ProfilerContent"/>
                 </TabItem>
+                
+                <TabControl.ItemContainerStyle>
+                    <Style TargetType="TabItem">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ElementName=ProfileButton, Path=IsChecked}" Value="False">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TabControl.ItemContainerStyle>
             </TabControl>
         </Grid>
 

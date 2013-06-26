@@ -16,6 +16,7 @@ namespace NZag.ViewModels
         private readonly GameService gameService;
         private readonly ScreenViewModel screenViewModel;
         private readonly ProfilerViewModel profilerViewModel;
+        private bool profilingEnabled;
 
         [ImportingConstructor]
         private MainWindowViewModel(
@@ -73,6 +74,7 @@ namespace NZag.ViewModels
             this.OpenGameCommand = RegisterCommand("Open", "Open", OpenGameExecuted, CanOpenGameExecute, new KeyGesture(Key.O, ModifierKeys.Control));
             this.LoadScriptCommand = RegisterCommand("Load Script...", "LoadScript", LoadScriptExecuted, CanLoadScriptExecute);
             this.PlayGameCommand = RegisterCommand("Play", "Play", PlayGameExecuted, CanPlayGameExecute, new KeyGesture(Key.F5));
+            this.ProfileCommand = RegisterCommand<bool>("Profile", "Profile", ProfileExecuted, CanProfileExecute);
         }
 
         private void OnGameOpened(object sender, EventArgs e)
@@ -136,11 +138,29 @@ namespace NZag.ViewModels
 
         private void PlayGameExecuted()
         {
-            this.gameService.StartGame(this.screenViewModel, this.profilerViewModel);
+            if (this.profilingEnabled)
+            {
+                this.gameService.StartGame(this.screenViewModel, this.profilerViewModel);
+            }
+            else
+            {
+                this.gameService.StartGame(this.screenViewModel);
+            }
+        }
+
+        private bool CanProfileExecute(bool enabled)
+        {
+            return true;
+        }
+
+        private void ProfileExecuted(bool enabled)
+        {
+            this.profilingEnabled = enabled;
         }
 
         public ICommand OpenGameCommand { get; private set; }
         public ICommand LoadScriptCommand { get; private set; }
         public ICommand PlayGameCommand { get; private set; }
+        public ICommand ProfileCommand { get; private set; }
     }
 }
