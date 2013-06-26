@@ -17,7 +17,7 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="24"/>
+            <RowDefinition Height="0"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -78,6 +78,10 @@
                 <Button Command="{Binding PlayGameCommand}">
                     <controls:AutoDisableImage Source="{StaticResource PlayImage}"/>
                 </Button>
+
+                <Button Command="{Binding ResetGameCommand}">
+                    <controls:AutoDisableImage Source="{StaticResource ResetImage}"/>
+                </Button>
             </ToolBar>
         </ToolBarTray>
 
@@ -91,6 +95,18 @@
                 <TabItem Header="Profiler">
                     <Grid Name="ProfilerContent"/>
                 </TabItem>
+
+                <TabControl.Style>
+                    <Style TargetType="TabControl">
+                        <Setter Property="SelectedIndex" Value="0"/>
+
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ElementName=ProfileButton, Path=IsChecked}" Value="False">
+                                <Setter Property="SelectedIndex" Value="0"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TabControl.Style>
                 
                 <TabControl.ItemContainerStyle>
                     <Style TargetType="TabItem">
