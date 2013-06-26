@@ -825,7 +825,7 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
 
         | "buffer_mode", AtLeast 4, Op1(flag) ->
             // TODO: Do we need to do anything with this -- we always buffer!
-            discard zero
+            ()
 
         | "call", Any, OpAndList(address, args)
         | "call_1s", AtLeast 4, OpAndList(address, args)
@@ -1086,6 +1086,10 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
 
         | "rtrue", Any, NoOps ->
             ret one
+
+        | "save_undo", AtLeast 5, NoOps ->
+            // TODO: Support undo
+            ()
 
         | "scan_table", AtLeast 4, Op3(x, table, len) ->
             scanTable x table len (byteConst 0x82uy)
