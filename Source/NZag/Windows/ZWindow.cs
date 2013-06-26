@@ -48,6 +48,11 @@ namespace NZag.Windows
             get { return this.fontAndColorService.BackgroundBrush; }
         }
 
+        protected double FontSize
+        {
+            get { return this.fontAndColorService.FontSize; }
+        }
+
         public void SetParentWindow(ZPairWindow newParentWindow)
         {
             this.parentWindow = newParentWindow;

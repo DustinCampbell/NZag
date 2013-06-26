@@ -37,7 +37,7 @@ namespace NZag.Windows
                 culture: CultureInfo.InstalledUICulture,
                 flowDirection: FlowDirection.LeftToRight,
                 typeface: new Typeface(normalFontFamily, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal),
-                emSize: 16.0,
+                emSize: this.FontSize,
                 foreground: Brushes.Black);
 
             this.fontCharSize = new Size(zero.Width, zero.Height);
@@ -45,7 +45,7 @@ namespace NZag.Windows
             this.document = new FlowDocument
             {
                 FontFamily = normalFontFamily,
-                FontSize = 16.0,
+                FontSize = this.FontSize,
                 PagePadding = new Thickness(8.0)
             };
 
@@ -136,7 +136,7 @@ namespace NZag.Windows
             var inputTextBox = new TextBox
             {
                 FontFamily = normalFontFamily,
-                FontSize = 16.0,
+                FontSize = this.FontSize,
                 Padding = new Thickness(0.0),
                 Margin = new Thickness(0.0),
                 BorderBrush = Brushes.Transparent,

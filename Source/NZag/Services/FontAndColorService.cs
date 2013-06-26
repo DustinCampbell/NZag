@@ -14,6 +14,8 @@ namespace NZag.Services
         private Brush foregroundBrush = Brushes.Black;
         private Brush backgroundBrush = Brushes.White;
 
+        private double fontSize = 20.0;
+
         private static Brush GetZColorBrush(ZColor color)
         {
             switch (color)
@@ -64,6 +66,11 @@ namespace NZag.Services
         public Brush BackgroundBrush
         {
             get { return this.backgroundBrush; }
+        }
+
+        public double FontSize
+        {
+            get { return this.fontSize; }
         }
     }
 }

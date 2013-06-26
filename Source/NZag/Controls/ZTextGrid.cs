@@ -11,6 +11,7 @@ namespace NZag.Controls
         private readonly VisualCollection visuals;
         private readonly SortedList<Tuple<int, int>, VisualPair> visualPairs;
 
+        private readonly double fontSize;
         private readonly Size fontCharSize;
 
         private int cursorLine;
@@ -21,17 +22,19 @@ namespace NZag.Controls
         private bool italic;
         private bool reverse;
 
-        public ZTextGrid()
+        public ZTextGrid(double fontSize)
         {
             this.visuals = new VisualCollection(this);
             this.visualPairs = new SortedList<Tuple<int, int>, VisualPair>();
+
+            this.fontSize = fontSize;
 
             var zero = new FormattedText(
                 textToFormat: "0",
                 culture: CultureInfo.InstalledUICulture,
                 flowDirection: FlowDirection.LeftToRight,
                 typeface: GetTypeface(),
-                emSize: 16.0,
+                emSize: fontSize,
                 foreground: Brushes.Black);
 
             this.fontCharSize = new Size(zero.Width, zero.Height);
@@ -103,7 +106,7 @@ namespace NZag.Controls
                         CultureInfo.InstalledUICulture,
                         FlowDirection.LeftToRight,
                         GetTypeface(),
-                        16.0,
+                        this.fontSize,
                         foregroundBrush,
                         new NumberSubstitution(NumberCultureSource.User, CultureInfo.InstalledUICulture, NumberSubstitutionMethod.AsCulture),
                         TextFormattingMode.Display),

@@ -23,12 +23,12 @@ namespace NZag.Windows
                 culture: CultureInfo.InstalledUICulture,
                 flowDirection: FlowDirection.LeftToRight,
                 typeface: new Typeface(new FontFamily("Consolas"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal),
-                emSize: 16.0,
+                emSize: this.FontSize,
                 foreground: Brushes.Black);
 
             this.fontCharSize = new Size(zero.Width, zero.Height);
 
-            this.textGrid = new ZTextGrid();
+            this.textGrid = new ZTextGrid(this.FontSize);
             this.Children.Add(this.textGrid);
         }
 

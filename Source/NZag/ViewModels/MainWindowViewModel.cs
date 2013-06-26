@@ -177,7 +177,11 @@ namespace NZag.ViewModels
             this.gameService.CloseGame();
 
             this.gameService.OpenGame(gameFileName);
-            this.gameService.LoadScript(scriptFileName);
+
+            if (!string.IsNullOrWhiteSpace(scriptFileName))
+            {
+                this.gameService.LoadScript(scriptFileName);
+            }
 
             StartGame();
         }
