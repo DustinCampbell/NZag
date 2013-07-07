@@ -156,6 +156,12 @@ type Expression =
     /// Reads timed user text input using the specified addresses for storing text and parse results respectively.
     | ReadTimedInputTextExpr of Expression * Expression * Expression * Expression
 
+    /// Gets the current column of the cursor
+    | GetCursorColumnExpr
+
+    /// Gets the current line of the cursor
+    | GetCursorLineExpr
+
     | VerifyExpr
 
 type Statement =
@@ -310,9 +316,6 @@ module BoundNodeConstruction =
     let random range = GenerateRandomNumberExpr(range)
     let randomize seed = SetRandomNumberSeedStmt(seed)
 
-    let debugOut s args =
-        DebugOutputStmt(textConst s, args)
-
 [<AutoOpen>]
 module ConversionPatterns =
 
@@ -381,6 +384,10 @@ module BoundNodeVisitors =
             fexpr (ReadTimedInputCharExpr(rewriteExpr e1, rewriteExpr e2))
         | ReadTimedInputTextExpr(e1,e2,e3,e4) ->
             fexpr (ReadTimedInputTextExpr(rewriteExpr e1, rewriteExpr e2, rewriteExpr e3, rewriteExpr e4))
+        | GetCursorColumnExpr ->
+            fexpr GetCursorColumnExpr
+        | GetCursorLineExpr ->
+            fexpr GetCursorLineExpr
         | VerifyExpr ->
             fexpr VerifyExpr
 
@@ -463,6 +470,8 @@ module BoundNodeVisitors =
             | StackPeekExpr
             | ArgCountExpr
             | ReadInputCharExpr
+            | GetCursorColumnExpr
+            | GetCursorLineExpr
             | VerifyExpr ->
                 ()
             | ReadLocalExpr(e)
@@ -550,21 +559,59 @@ module BoundNodeVisitors =
         let walkStmt = walkStatement fstmt fexpr
         tree.Statements |> List.iter walkStmt
 
+open BoundNodeConstruction
+
 [<Struct>]
 type Temp(temp: int, builder: BoundTreeBuilder) =
 
     member x.Read = TempExpr(temp)
-    member x.Write value = WriteTempStmt(temp, value) |> builder.AddStatement
+
+    member x.Write(value: Expression) =
+        WriteTempStmt(temp, value) |> builder.AddStatement
+
+    member x.Increment() =
+        let value = x.Read
+        x.Write (value .+. one)
+
+    member x.Decrement() =
+        let value = x.Read
+        x.Write (value .-. one)
+
+    member x.IsZero =
+        x.Read .=. zero
 
     static member (!!) (m: Temp) = m.Read
     static member (<--) (m: Temp, v: Expression) =
         m.Write(v)
 
+and [<Struct>] BoolTemp(temp: int, builder: BoundTreeBuilder) =
+
+    member x.Read = TempExpr(temp)
+
+    member x.Write(value: bool) =
+        let value = if value then one else zero
+        WriteTempStmt(temp, value) |> builder.AddStatement
+
+    member x.IsFalse =
+        x.Read .=. zero
+    member x.IsTrue =
+        x.Read .=. one
+
+    static member (!!) (m: BoolTemp) = m.Read
+    static member (<--) (m: BoolTemp, v: bool) =
+        m.Write(v)
+
 and [<AbstractClass>] BoundTreeBuilder() =
 
-    member x.InitTemp value =
+    member x.InitTemp (value: Expression) =
         let temp = x.NewTemp()
         let result = new Temp(temp, x)
+        result <-- value
+        result
+
+    member x.InitBoolTemp (value: bool) =
+        let temp = x.NewTemp()
+        let result = new BoolTemp(temp, x)
         result <-- value
         result
 
@@ -899,6 +946,10 @@ type BoundNodeDumper (builder : StringBuilder) =
                 dumpExpression e3
                 append ", "
                 dumpExpression e4)
+        | GetCursorColumnExpr ->
+            append "get-cursor-column"
+        | GetCursorLineExpr ->
+            append "get-cursor-line"
         | VerifyExpr ->
             append "verify"
 

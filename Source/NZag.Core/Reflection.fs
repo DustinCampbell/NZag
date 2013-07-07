@@ -299,7 +299,7 @@ type ILBuilder (generator: ILGenerator) =
             member y.ToInt16() =
                 generator.Emit(OpCodes.Conv_I2)
             member y.ToUInt16() =
-                generator.Emit(OpCodes.Conv_U2) }
+                generator.Emit(OpCodes.Conv_U2)}
 
     member x.Arrays =
         { new IArrays with
@@ -332,7 +332,7 @@ type ILBuilder (generator: ILGenerator) =
         loadFormat()
         argsArray.Load()
 
-        let stringFormat = Reflect<System.String>.GetMethod<string, obj>("Format")
+        let stringFormat = Reflect<System.String>.GetMethod<string, obj[]>("Format")
         x.Call(stringFormat)
 
         let debugWriteLine = Reflect<System.Diagnostics.Debug>.GetMethod<string>("WriteLine")

@@ -30,6 +30,10 @@ type Binder(memory: Memory, builder: BoundTreeCreator, debugging: bool) =
         WriteMemoryWordStmt(address, value)
             |> builder.AddStatement
 
+    member x.DebugOut message args =
+        DebugOutputStmt(textConst message, args)
+            |> builder.AddStatement
+
     member x.RuntimeException message =
         RuntimeExceptionStmt(message)
             |> builder.AddStatement
@@ -212,18 +216,18 @@ type ObjectBinder(memory, builder, debugging) as this =
 
         let propAddress = builder.InitTemp(firstPropertyAddress)
         let firstByte = builder.InitTemp(zero)
-        let stopLoop = builder.InitTemp(zero)
+        let stop = builder.InitBoolTemp(false)
         let result = builder.InitTemp(zero)
 
         let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
 
-        builder.LoopWhile (!!stopLoop .=. zero)
+        builder.LoopWhile (stop.IsFalse)
             (fun () ->
                 firstByte <-- (x.ReadByte !!propAddress)
 
                 builder.IfThenElse ((!!firstByte .&. mask) .<=. propNum)
                     (fun () ->
-                        stopLoop <-- one
+                        stop <-- true
                     )
                     (fun () ->
                         propAddress <-- (getNextPropertyAddress !!propAddress)
@@ -290,18 +294,18 @@ type ObjectBinder(memory, builder, debugging) as this =
         let firstPropertyAddress = getFirstPropertyAddress(objNum)
         let propAddress = builder.InitTemp(firstPropertyAddress)
         let firstByte = builder.InitTemp(zero)
-        let stopLoop = builder.InitTemp(zero)
+        let stop = builder.InitBoolTemp(false)
         let result = builder.InitTemp(zero)
 
         let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
         let comp = if memory.Version <= 3 then byteConst 0xe0uy else byteConst 0xc0uy
 
-        builder.LoopWhile (!!stopLoop .=. zero)
+        builder.LoopWhile (stop.IsFalse)
             (fun () ->
                 firstByte <-- (x.ReadByte !!propAddress)
                 builder.IfThenElse ((!!firstByte .&. mask) .<=. propNum)
                     (fun () ->
-                        stopLoop <-- one
+                        stop <-- true
                     )
                     (fun () ->
                         propAddress <-- (getNextPropertyAddress !!propAddress)
@@ -330,17 +334,17 @@ type ObjectBinder(memory, builder, debugging) as this =
         let firstPropertyAddress = getFirstPropertyAddress(objNum)
         let propAddress = builder.InitTemp(firstPropertyAddress)
         let firstByte = builder.InitTemp(zero)
-        let stopLoop = builder.InitTemp(zero)
+        let stop = builder.InitBoolTemp(false)
 
         let mask = if memory.Version <= 3 then byteConst 0x1fuy else byteConst 0x3fuy
         let comp = if memory.Version <= 3 then byteConst 0xe0uy else byteConst 0xc0uy
 
-        builder.LoopWhile (!!stopLoop .=. zero)
+        builder.LoopWhile (stop.IsFalse)
             (fun () ->
                 firstByte <-- x.ReadByte !!propAddress
                 builder.IfThenElse ((!!firstByte .&. mask) .<=. propNum)
                     (fun () ->
-                        stopLoop <-- one
+                        stop <-- true
                     )
                     (fun () ->
                         propAddress <-- getNextPropertyAddress !!propAddress
@@ -418,10 +422,46 @@ type ObjectBinder(memory, builder, debugging) as this =
                 x.WriteChild destObjNum objNum
             )
 
+type ScreenBinder(memory, builder, debugging) =
+    inherit Binder(memory, builder, debugging)
+
+    member x.SelectOutputStream number =
+        SelectOutputStreamStmt(number) |> builder.AddStatement
+    member x.SelectMemoryOutputStream number table =
+        SelectMemoryOutputStreamStmt(number, table) |> builder.AddStatement
+
+    member x.PrintChar ch =
+        PrintCharStmt(ch) |> builder.AddStatement
+    member x.PrintText text =
+        PrintTextStmt(text) |> builder.AddStatement
+
+    member x.ClearWindow window =
+        ClearWindowStmt(window) |> builder.AddStatement
+    member x.SetWindow window =
+        SetWindowStmt(window) |> builder.AddStatement
+    member x.SplitWindow lines =
+        SplitWindowStmt(lines) |> builder.AddStatement
+
+    member x.SetCursor line column =
+        SetCursorStmt(line, column) |> builder.AddStatement
+    member x.GetCursorColumn() =
+        GetCursorColumnExpr
+    member x.GetCursorLine() =
+        GetCursorLineExpr
+
+    member x.SetColor foreground background =
+        SetColorsStmt(foreground, background) |> builder.AddStatement
+    member x.SetTextStyle style =
+        SetTextStyleStmt(style) |> builder.AddStatement
+
+    member x.ShowStatus() =
+        ShowStatusStmt |> builder.AddStatement
+
 type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
     inherit Binder(memory, builder, debugging)
 
     let objects = new ObjectBinder(memory, builder, debugging)
+    let screen = new ScreenBinder(memory, builder, debugging)
 
     let addStatement s =
         builder.AddStatement(s)
@@ -437,6 +477,9 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
     let initTemp expression =
         builder.InitTemp expression
 
+    let initBoolTemp value =
+        builder.InitBoolTemp value
+
     let ifThenElse condition whenTrue whenFalse =
         builder.IfThenElse condition whenTrue whenFalse
 
@@ -445,11 +488,6 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
 
     let loopWhile condition whileFalse =
         builder.LoopWhile condition whileFalse
-
-    let printChar ch =
-        PrintCharStmt(ch) |> addStatement
-    let printText text =
-        PrintTextStmt(text) |> addStatement
 
     let packedMultiplier =
         match memory.Version with
@@ -617,20 +655,128 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
             DiscardValueStmt(expression)
                 |> addStatement
 
+        let copyTable first second size =
+            ifThenElse (second .=. zero)
+                (fun () ->
+                    // if second is zero, zero out first table
+
+                    let i = initTemp zero
+                    let stop = initBoolTemp false
+
+                    loopWhile (stop.IsFalse)
+                        (fun () ->
+                            this.WriteByte (first .+. !!i) zero
+
+                            i.Increment()
+
+                            ifThen (!!i .=. size)
+                                (fun () ->
+                                    stop <-- true
+                                )
+                        )
+                )
+                (fun () ->
+                    ifThenElse (((size |> toInt16) .<. zero) .|. first .>. second)
+                        (fun () ->
+                            // copy forwards
+
+                            let sizeCopy = initTemp size
+                            ifThen ((!!sizeCopy |> toInt16) .<. zero)
+                                (fun () ->
+                                    sizeCopy <-- toUInt16 (negate (size |> toInt16))
+                                )
+
+                            let i = initTemp zero
+                            let stop = initBoolTemp false
+
+                            loopWhile (stop.IsFalse)
+                                (fun () ->
+                                    let value = this.ReadByte (first .+. !!i)
+                                    this.WriteByte (second .+. !!i) value
+
+                                    i.Increment()
+
+                                    ifThen (!!i .=. !!sizeCopy)
+                                        (fun () ->
+                                            stop <-- true
+                                        )
+                                )
+                        )
+                        (fun () ->
+                            // copy backwards
+                            let i = initTemp (size .-. one)
+                            let stop = initBoolTemp false
+
+                            loopWhile (stop.IsFalse)
+                                (fun () ->
+                                    let value = this.ReadByte (first .+. !!i)
+                                    this.WriteByte (second .+. !!i) value
+                                )
+
+                            i.Decrement()
+
+                            ifThen (!!i .<. zero)
+                                (fun () ->
+                                    stop <-- true
+                                )
+                        )
+                )
+
+        let printTable table width height skip =
+            let address = initTemp table
+            let left = initTemp (screen.GetCursorColumn())
+            let i = initTemp zero
+            let stop = initBoolTemp false
+
+            loopWhile (stop.IsFalse)
+                (fun () ->
+                    ifThen (!!i .<>. zero)
+                        (fun () ->
+                            let y = screen.GetCursorLine() .+. one
+                            screen.SetCursor y !!left
+                        )
+
+                    let j = initTemp zero
+                    let stopInner = initBoolTemp false
+
+                    loopWhile (stopInner.IsFalse)
+                        (fun () ->
+                            let ch = initTemp (this.ReadByte !!address)
+                            address.Increment()
+                            screen.PrintChar !!ch
+
+                            j.Increment()
+
+                            ifThen (!!j .=. width)
+                                (fun () ->
+                                    stopInner <-- true
+                                )
+                        )
+
+                    address <-- !!address .+. skip
+
+                    i.Increment()
+
+                    ifThen (!!i .=. height)
+                        (fun () ->
+                            stop <-- true
+                        )
+                )
+
         let scanTable x table len form =
             let address = initTemp table
-            let index = initTemp zero
-            let stopLoop = initTemp zero
-            let finished = initTemp zero
+            let i = initTemp zero
+            let stopLoop = initBoolTemp false
+            let finished = initBoolTemp false
 
-            loopWhile (!!stopLoop .=. zero)
+            loopWhile (stopLoop.IsFalse)
                 (fun () ->
                     ifThenElse ((form .&. (byteConst 0x80uy)) .<>. zero)
                         (fun () ->
                             ifThen ((this.ReadWord !!address) .=. x)
                                 (fun () ->
-                                    stopLoop <-- one
-                                    finished <-- one
+                                    stopLoop <-- true
+                                    finished <-- true
                                     store !!address
                                     branchIf one
                                 )
@@ -638,8 +784,8 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
                         (fun () ->
                             ifThen ((this.ReadByte !!address) .=. x)
                                 (fun () ->
-                                    stopLoop <-- one
-                                    finished <-- one
+                                    stopLoop <-- true
+                                    finished <-- true
                                     store !!address
                                     branchIf one
                                 )
@@ -647,15 +793,15 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
 
                     address <-- !!address .+. (form .&. (byteConst 0x7fuy))
 
-                    index <-- !!index .+. one
+                    i.Increment()
 
-                    ifThen (!!index .=. len)
+                    ifThen (!!i .=. len)
                         (fun () ->
-                            stopLoop <-- one
+                            stopLoop <-- true
                         )
                 )
 
-            ifThen (!!finished .=. zero)
+            ifThen (finished.IsFalse)
                 (fun () ->
                     store zero
                     branchIf zero
@@ -708,7 +854,7 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
                         | GlobalVariable(i) ->
                             builder |> StringBuilder.appendString ((sprintf " G%02x=" i) + formatItem "x"))
 
-            debugOut (builder.ToString()) operands |> addStatement
+            this.DebugOut (builder.ToString()) operands
 
         let byRefVariable variableIndex =
 
@@ -848,6 +994,9 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
         | "clear_attr", Any, Op2(objNum, attrNum) ->
             objects.WriteAttribute objNum attrNum false
 
+        | "copy_table", AtLeast 5, Op3(first, second, size) ->
+            copyTable first second size
+
         | "dec", Any, Op1(ByRef(variable)) ->
             let read = !!variable |> toInt16
             variable <-- (read .-. (one |> toInt16))
@@ -865,7 +1014,7 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
             store (left ./. right)
 
         | "erase_window", AtLeast 4, Op1(window) ->
-            ClearWindowStmt(window) |> addStatement
+            screen.ClearWindow window
 
         | "get_child", Any, Op1(objNum) ->
             let child = objects.ReadChild objNum
@@ -992,7 +1141,7 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
             store (left .*. right)
 
         | "new_line", Any, NoOps ->
-            printText (textConst "\n")
+            screen.PrintText (textConst "\n")
 
         | "not", AtLeast 5, Op1(value) ->
             let result = UnaryOperationKind.Not |> unaryOp value
@@ -1002,41 +1151,50 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
             store (left .|. right)
 
         | "output_stream", AtLeast 3, Op1(number) ->
-            SelectOutputStreamStmt(number) |> addStatement
+            screen.SelectOutputStream number
 
         | "output_stream", AtLeast 4, Op2(number, table) ->
-            SelectMemoryOutputStreamStmt(number, table) |> addStatement
+            screen.SelectMemoryOutputStream number table
 
         | "piracy", AtLeast 5, NoOps ->
             branchIf (one)
 
         | "print", Any, NoOps ->
             let text = textConst instruction.Text.Value
-            printText text
+            screen.PrintText text
 
         | "print_addr", Any, Op1(address) ->
             let text = readText address
-            printText text
+            screen.PrintText text
 
         | "print_char", Any, Op1(ch) ->
-            printChar ch
+            screen.PrintChar ch
 
         | "print_num", Any, Op1(number) ->
             let text = numberToText(number |> toInt16)
-            printText text
+            screen.PrintText text
 
         | "print_obj", Any, Op1(objNum) ->
             let text = objects.ReadShortName objNum
-            printText text
+            screen.PrintText text
 
         | "print_paddr", Any, Op1(address) ->
             let text = readText (unpackStringAddress address)
-            printText text
+            screen.PrintText text
 
         | "print_ret", Any, NoOps ->
             let text = textConst instruction.Text.Value
-            printText text
+            screen.PrintText text
             ret one
+
+        | "print_table", AtLeast 5, Op2(table, width) ->
+            printTable table width one zero
+
+        | "print_table", AtLeast 5, Op3(table, width, height) ->
+            printTable table width height zero
+
+        | "print_table", AtLeast 5, Op4(table, width, height, skip) ->
+            printTable table width height skip
 
         | "pull", Any, Op1(ByRef(variable)) ->
             let value = initTemp popStack
@@ -1104,25 +1262,25 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
             failcompile "set_color not implemented for version 6"
 
         | "set_color", AtLeast 5, Op2(foreground, background) ->
-            SetColorsStmt(foreground, background) |> addStatement
+            screen.SetColor foreground background
 
         | "set_cursor", Is 6, Op3(line, column, window) ->
             failcompile "set_cursor not implemented for version 6"
 
         | "set_cursor", AtLeast 4, Op2(line, column) ->
-            SetCursorStmt(line, column) |> addStatement
+            screen.SetCursor line column
 
-        | "set_text_style", AtLeast 4, Op1(textStyle) ->
-            SetTextStyleStmt(textStyle) |> addStatement
+        | "set_text_style", AtLeast 4, Op1(style) ->
+            screen.SetTextStyle style
 
         | "set_window", AtLeast 3, Op1(window) ->
-            SetWindowStmt(window) |> addStatement
+            screen.SetWindow window
 
         | "show_status", AtLeast 3, NoOps ->
-            ShowStatusStmt |> addStatement
+            screen.ShowStatus()
 
         | "split_window", AtLeast 3, Op1(lines) ->
-            SplitWindowStmt(lines) |> addStatement
+            screen.SplitWindow lines
 
         | "sread", AtMost 3, Op2(textBuffer, parseBuffer) ->
             discard (ReadInputTextExpr(textBuffer, parseBuffer))

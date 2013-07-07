@@ -43,6 +43,8 @@ type IMachine =
     abstract member SplitWindow : lines:int16 -> unit
 
     abstract member SetCursor : line:int * column:int -> unit
+    abstract member GetCursorColumn : unit -> int
+    abstract member GetCursorLine : unit -> int
 
     abstract member ShowStatus : unit -> unit
 
@@ -214,6 +216,8 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
     let setWindow           = Reflect<IMachine>.GetMethod<int16>("SetWindow")
     let clearWindow         = Reflect<IMachine>.GetMethod<int16>("ClearWindow")
     let setCursor           = Reflect<IMachine>.GetMethod<int, int>("SetCursor")
+    let getCursorColumn     = Reflect<IMachine>.GetMethod("GetCursorColumn")
+    let getCursorLine       = Reflect<IMachine>.GetMethod("GetCursorLine")
     let showStatus          = Reflect<IMachine>.GetMethod("ShowStatus")
     let setTextStyle        = Reflect<IMachine>.GetMethod<ZTextStyle>("SetTextStyle")
     let setColors           = Reflect<IMachine>.GetMethod<ZColor, ZColor>("SetColors")
@@ -377,6 +381,12 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
             emitExpression time
             emitExpression routine
             builder.Call(readTimedInputChar)
+        | GetCursorColumnExpr ->
+            builder.Arguments.LoadMachine()
+            builder.Call(getCursorColumn)
+        | GetCursorLineExpr ->
+            builder.Arguments.LoadMachine()
+            builder.Call(getCursorLine)
         | VerifyExpr ->
             builder.Arguments.LoadMachine()
             builder.Call(verify)

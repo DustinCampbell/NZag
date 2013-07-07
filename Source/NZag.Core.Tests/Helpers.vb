@@ -7,6 +7,7 @@ Module Helpers
     Public Const Zork1 = "zork1.z3"
     Public Const CZech = "czech.z5"
     Public Const Advent = "Advent.z5"
+    Public Const Count = "COUNT.Z5"
 
     Function GameMemory(name As String) As Memory
         Dim asm = Assembly.GetExecutingAssembly()

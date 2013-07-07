@@ -337,6 +337,10 @@ type Machine (memory: Memory, debugging: bool) as this =
 
         member y.SetCursor(line, column) =
             screen.SetCursorAsync(line - 1, column - 1).Wait()
+        member y.GetCursorColumn() =
+            screen.GetCursorColumnAsync().Result
+        member y.GetCursorLine() =
+            screen.GetCursorLineAsync().Result
 
         member y.ShowStatus() =
             screen.ShowStatusAsync().Wait()

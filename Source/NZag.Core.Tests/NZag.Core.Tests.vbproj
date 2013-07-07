@@ -41,6 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AnalysisTests.vb" />
+    <Compile Include="BinderTests_Count.vb" />
     <Compile Include="BinderTests_Zork1.vb" />
     <Compile Include="BinderTests_CZech.vb" />
     <Compile Include="BinderTests_Advent.vb" />
@@ -86,6 +87,11 @@
   <ItemGroup>
     <EmbeddedResource Include="..\..\ZCode\Advent\Advent.z5">
       <Link>Resources\Advent.z5</Link>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\ZCode\Adams\COUNT.Z5">
+      <Link>Resources\COUNT.Z5</Link>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
