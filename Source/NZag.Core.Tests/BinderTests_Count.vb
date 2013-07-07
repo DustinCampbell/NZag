@@ -3,8 +3,19 @@
 #Region "Count_24AC (debugging)"
 
 #Region "ZCode"
-    ' 7dd:  e0 3f 09 12 ff          call_vs         2448 -> gef
-    ' 7e2:  ba                      quit  
+    '24ad:  10 00 21 1b             LOADB           #00,#21 -> G0b
+    '24b1:  10 00 20 1c             LOADB           #00,#20 -> G0c
+    '24b5:  55 1b 01 00             SUB             G0b,#01 -> -(SP)
+    '24b9:  e2 9b 21 00 00          STOREB          G11,#00,(SP)+
+    '24be:  e2 97 21 01 3c          STOREB          G11,#01,#3c
+    '24c3:  0d 01 02                STORE           L00,#02
+    '24c6:  55 1b 02 00             SUB             G0b,#02 -> -(SP)
+    '24ca:  62 01 00 00 0c          JL              L00,(SP)+ [FALSE] 24d9
+    '24cf:  e2 a7 21 01 2d          STOREB          G11,L00,#2d
+    '24d4:  95 01                   INC             L00
+    '24d6:  8c ff ef                JUMP            24c6
+    '24d9:  e2 a7 21 01 3e          STOREB          G11,L00,#3e
+    '24de:  b0                      RTRUE           
 #End Region
 
     <Fact>
