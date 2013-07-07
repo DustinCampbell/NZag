@@ -661,18 +661,12 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
                     // if second is zero, zero out first table
 
                     let i = initTemp zero
-                    let stop = initBoolTemp false
 
-                    loopWhile (stop.IsFalse)
+                    loopWhile (!!i .<. size)
                         (fun () ->
                             this.WriteByte (first .+. !!i) zero
 
                             i.Increment()
-
-                            ifThen (!!i .=. size)
-                                (fun () ->
-                                    stop <-- true
-                                )
                         )
                 )
                 (fun () ->
@@ -687,38 +681,26 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
                                 )
 
                             let i = initTemp zero
-                            let stop = initBoolTemp false
 
-                            loopWhile (stop.IsFalse)
+                            loopWhile (!!i .<. !!sizeCopy)
                                 (fun () ->
                                     let value = this.ReadByte (first .+. !!i)
                                     this.WriteByte (second .+. !!i) value
 
                                     i.Increment()
-
-                                    ifThen (!!i .=. !!sizeCopy)
-                                        (fun () ->
-                                            stop <-- true
-                                        )
                                 )
                         )
                         (fun () ->
                             // copy backwards
                             let i = initTemp (size .-. one)
-                            let stop = initBoolTemp false
 
-                            loopWhile (stop.IsFalse)
+                            loopWhile (!!i .>=. zero)
                                 (fun () ->
                                     let value = this.ReadByte (first .+. !!i)
                                     this.WriteByte (second .+. !!i) value
                                 )
 
                             i.Decrement()
-
-                            ifThen (!!i .<. zero)
-                                (fun () ->
-                                    stop <-- true
-                                )
                         )
                 )
 
@@ -726,9 +708,8 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
             let address = initTemp table
             let left = initTemp (screen.GetCursorColumn())
             let i = initTemp zero
-            let stop = initBoolTemp false
 
-            loopWhile (stop.IsFalse)
+            loopWhile (!!i .<. height)
                 (fun () ->
                     ifThen (!!i .<>. zero)
                         (fun () ->
@@ -737,30 +718,19 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
                         )
 
                     let j = initTemp zero
-                    let stopInner = initBoolTemp false
 
-                    loopWhile (stopInner.IsFalse)
+                    loopWhile (!!j .<. width)
                         (fun () ->
                             let ch = initTemp (this.ReadByte !!address)
                             address.Increment()
                             screen.PrintChar !!ch
 
                             j.Increment()
-
-                            ifThen (!!j .=. width)
-                                (fun () ->
-                                    stopInner <-- true
-                                )
                         )
 
                     address <-- !!address .+. skip
 
                     i.Increment()
-
-                    ifThen (!!i .=. height)
-                        (fun () ->
-                            stop <-- true
-                        )
                 )
 
         let scanTable x table len form =
