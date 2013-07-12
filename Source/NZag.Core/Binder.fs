@@ -469,11 +469,6 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
     let ret expression =
         builder.Return(expression)
 
-    let getTempIndex t =
-        match t with
-        | TempExpr(t) -> t
-        | _ -> failcompile "Expected temp"
-
     let initTemp expression =
         builder.InitTemp expression
 
@@ -516,6 +511,7 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
                 baseAddress .+. (int32Const offset)
             else
                 baseAddress
+
     let unpackRoutineAddress address =
         unpackAddress address routinesOffset
 
