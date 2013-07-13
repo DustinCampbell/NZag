@@ -115,3 +115,90 @@ module Dictionary =
         | Some(entryAddress) -> entryAddress
         | None -> 0
 
+    let private tokenizeWord textBuffer parseBuffer start length dictionary flag (memory: Memory) =
+        let mutable address = parseBuffer
+
+        let tokenMax = memory.ReadByte(address)
+        address <- address + 1
+        let tokenCount = memory.ReadByte(address)
+
+        if tokenCount < tokenMax then
+            memory.WriteByte(address, tokenCount + 1uy)
+            address <- parseBuffer + 1
+
+        let wordChars = Array.zeroCreate length
+        for i = 0 to length - 1 do
+            wordChars.[i] <- char (memory.ReadByte(textBuffer + start + i))
+
+        let word = String.fromCharArray wordChars
+
+        let wordAddress = uint16 (memory |> lookupWord word dictionary)
+
+        if wordAddress <> 0us || not flag then
+            address <- address + int (tokenCount * 4uy)
+
+            memory.WriteWord(address, wordAddress)
+            memory.WriteByte(address + 2, byte length)
+            memory.WriteByte(address + 3, byte start)
+
+    let tokenizeLine textBuffer parseBuffer dictionary flag (memory: Memory) =
+        // User standard dictionary if none is provided.
+        let dictionary = if dictionary = 0 then int (memory |> Header.readDictionaryAddress)
+                         else dictionary
+
+        // Set number of parse tokens to zero.
+        memory.WriteByte(parseBuffer + 1, 0uy)
+
+        let mutable address1 = textBuffer
+        let mutable address2 = 0
+
+        let length =
+            if memory.Version >= 5 then
+                address1 <- address1 + 1
+                int (memory.ReadByte(address1))
+            else
+                0
+
+        let mutable zc = 0uy
+        let mutable stop = false
+        while not stop do
+            // Get next ZSCII character
+            address1 <- address1 + 1
+
+            if memory.Version >= 5 && address1 = textBuffer + length + 2 then
+                zc <- 0uy
+            else
+                zc <- memory.ReadByte(address1)
+
+            // Check for separator
+            let mutable separatorAddress = dictionary
+            let mutable separatorCount = memory.ReadByte(separatorAddress)
+            separatorAddress <- separatorAddress + 1
+
+            let mutable stopSeparatorSearch = false
+            while not stopSeparatorSearch do
+                let separator = memory.ReadByte(separatorAddress)
+                separatorAddress <- separatorAddress + 1
+
+                if zc = separator then
+                    stopSeparatorSearch <- true
+                else
+                    separatorCount <- separatorCount - 1uy
+                    if separatorCount = 0uy then
+                        stopSeparatorSearch <- true
+
+            // This could be the start or end of a word
+            if separatorCount = 0uy && zc <> 0x20uy && zc <> 0uy then
+                if address2 = 0 then
+                    address2 <- address1
+            else if address2 <> 0 then
+                memory |> tokenizeWord textBuffer (address2 - textBuffer) (address1 - address2) parseBuffer dictionary flag
+                address2 <- 0
+
+            // Translate separator (which is a word in its own right)
+            if separatorCount <> 0uy then
+                memory |> tokenizeWord textBuffer (address1 - textBuffer) 1 parseBuffer dictionary flag
+
+            if zc = 0uy then
+                stop <- true
+

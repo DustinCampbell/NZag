@@ -97,6 +97,9 @@ module String =
     let replace (oldValue : string) (newValue : string) (s : string) =
         s.Replace(oldValue, newValue)
 
+    let fromCharArray (chars: char[]) =
+        new string(chars)
+
     let toCharArray (s : string) =
         s.ToCharArray()
 
