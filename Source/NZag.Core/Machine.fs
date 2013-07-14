@@ -250,38 +250,18 @@ type Machine (memory: Memory, debugging: bool) as this =
                 System.Diagnostics.Debug.WriteLine(sprintf "TEXT INPUT: %s" text)
 
             // Write text to textBuffer
-            let mutable address = textBuffer + 1
+            let mutable textAddress = textBuffer + 1
 
             if memory.Version >= 5 then
-                memory.WriteByte(address, byte text.Length)
-                address <- address + 1
+                memory.WriteByte(textAddress, byte text.Length)
+                textAddress <- textAddress + 1
 
             for i = 0 to text.Length - 1 do
-                memory.WriteByte(address + i, byte text.[i])
+                memory.WriteByte(textAddress + i, byte text.[i])
 
-            memory.WriteByte(address + text.Length, 0uy)
+            memory.WriteByte(textAddress + text.Length, 0uy)
 
-            // Tokenize command and write result to parseBuffer
-            if parseBuffer > 0 then
-                let tokens = memory |> Dictionary.tokenizeCommand text dictionaryAddress
-
-                let maxWords = memory.ReadByte(parseBuffer)
-                let parsedWords = min maxWords (byte tokens.Length)
-
-                let mutable address = parseBuffer + 1
-                memory.WriteByte(address, parsedWords)
-                address <- address + 1
-
-                for token in tokens do
-                    let entryAddress = memory |> Dictionary.lookupWord token.Text dictionaryAddress
-                    memory.WriteWord(address, uint16 entryAddress)
-                    address <- address + 2
-
-                    memory.WriteByte(address, byte token.Length)
-                    address <- address + 1
-
-                    memory.WriteByte(address, byte (token.Start + 1))
-                    address <- address + 1
+            memory |> Dictionary.tokenizeLine textBuffer parseBuffer dictionaryAddress true
 
             0
 
