@@ -74,31 +74,33 @@ module Dictionary =
         | Some(entryAddress) -> entryAddress
         | None -> 0
 
-    let private tokenizeWord textBuffer parseBuffer start length dictionary flag (memory: Memory) =
-        let mutable address = parseBuffer
+    let private createTokenizeWord textBuffer parseBuffer dictionaryAddress flag (memory: Memory) =
+        (fun start length ->
+            let mutable address = parseBuffer
 
-        let tokenMax = memory.ReadByte(address)
-        address <- address + 1
-        let tokenCount = memory.ReadByte(address)
-
-        if tokenCount < tokenMax then
-            memory.WriteByte(address, tokenCount + 1uy)
+            let tokenMax = memory.ReadByte(address)
             address <- address + 1
+            let tokenCount = memory.ReadByte(address)
 
-        let wordChars = Array.zeroCreate length
-        for i = 0 to length - 1 do
-            wordChars.[i] <- char (memory.ReadByte(textBuffer + start + i))
+            if tokenCount < tokenMax then
+                memory.WriteByte(address, tokenCount + 1uy)
+                address <- address + 1
 
-        let word = String.fromCharArray wordChars
+            let wordChars = Array.zeroCreate length
+            for i = 0 to length - 1 do
+                wordChars.[i] <- char (memory.ReadByte(textBuffer + start + i))
 
-        let wordAddress = memory |> lookupWord word dictionary
+            let word = String.fromCharArray wordChars
 
-        if wordAddress <> 0 && flag then
-            address <- address + int (tokenCount * 4uy)
+            let wordAddress = memory |> lookupWord word dictionaryAddress
 
-            memory.WriteWord(address, uint16 wordAddress)
-            memory.WriteByte(address + 2, byte length)
-            memory.WriteByte(address + 3, byte start)
+            if wordAddress <> 0 && flag then
+                address <- address + int (tokenCount * 4uy)
+
+                memory.WriteWord(address, uint16 wordAddress)
+                memory.WriteByte(address + 2, byte length)
+                memory.WriteByte(address + 3, byte start)
+        )
 
     let tokenizeLine textBuffer parseBuffer dictionaryAddress flag (memory: Memory) =
         // Use standard dictionary if none is provided.
@@ -108,6 +110,8 @@ module Dictionary =
 
         // Read in the separators
         let wordSeparators = memory |> readWordSeparators dictionaryAddress
+
+        let tokenizeWord = memory |> createTokenizeWord textBuffer parseBuffer dictionaryAddress flag
 
         // Set number of parse tokens to zero.
         memory.WriteByte(parseBuffer + 1, 0uy)
@@ -128,10 +132,8 @@ module Dictionary =
             // Get next ZSCII character
             endAddress <- endAddress + 1
 
-            if memory.Version >= 5 && endAddress = textBuffer + length + 2 then
-                zc <- 0uy
-            else
-                zc <- memory.ReadByte(endAddress)
+            zc <- if memory.Version >= 5 && endAddress = textBuffer + length + 2 then 0uy
+                  else memory.ReadByte(endAddress)
 
             // Is this a word separator?
             let wordSeparatorIndex = wordSeparators |> Array.tryFindIndex ((=) zc)
@@ -142,12 +144,12 @@ module Dictionary =
                 if startAddress = 0 then
                     startAddress <- endAddress
             else if startAddress <> 0 then
-                memory |> tokenizeWord textBuffer parseBuffer (startAddress - textBuffer) (endAddress - startAddress) dictionaryAddress flag
+                tokenizeWord (startAddress - textBuffer) (endAddress - startAddress)
                 startAddress <- 0
 
             // Translate separator (which is a word in its own right)
             if wordSeparatorIndex.IsSome then
-                memory |> tokenizeWord textBuffer parseBuffer (endAddress - textBuffer) 1 dictionaryAddress flag
+                tokenizeWord (endAddress - textBuffer) 1
 
             if zc = 0uy then
                 stop <- true
