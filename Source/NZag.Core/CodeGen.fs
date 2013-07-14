@@ -46,6 +46,7 @@ type IMachine =
     abstract member GetCursorColumn : unit -> int
     abstract member GetCursorLine : unit -> int
 
+    abstract member Tokenize : textBuffer:int * parseBuffer:int * dictionaryAddress:int * ignoreUnrecognizedWords:bool -> unit
     abstract member ShowStatus : unit -> unit
 
     abstract member SetTextStyle : style:ZTextStyle -> unit
@@ -218,6 +219,7 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
     let setCursor           = Reflect<IMachine>.GetMethod<int, int>("SetCursor")
     let getCursorColumn     = Reflect<IMachine>.GetMethod("GetCursorColumn")
     let getCursorLine       = Reflect<IMachine>.GetMethod("GetCursorLine")
+    let tokenize            = Reflect<IMachine>.GetMethod<int, int, int, bool>("Tokenize")
     let showStatus          = Reflect<IMachine>.GetMethod("ShowStatus")
     let setTextStyle        = Reflect<IMachine>.GetMethod<ZTextStyle>("SetTextStyle")
     let setColors           = Reflect<IMachine>.GetMethod<ZColor, ZColor>("SetColors")
@@ -523,6 +525,13 @@ type CodeGenerator private (tree: BoundTree, machine: IMachine, builder: ILBuild
                 (fun () -> emitExpression e),
                 elist.Length,
                 (fun i -> elist.[i] |> emitExpression))
+        | TokenizeStmt(textBuffer, parseBuffer, dictionaryAddress, ignoreUnrecognizedWords) ->
+            builder.Arguments.LoadMachine()
+            emitExpression textBuffer
+            emitExpression parseBuffer
+            emitExpression dictionaryAddress
+            emitExpression ignoreUnrecognizedWords
+            builder.Call(tokenize)
         | ShowStatusStmt ->
             builder.Arguments.LoadMachine()
             builder.Call(showStatus)

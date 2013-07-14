@@ -74,7 +74,7 @@ module Dictionary =
         | Some(entryAddress) -> entryAddress
         | None -> 0
 
-    let private createTokenizeWord textBuffer parseBuffer dictionaryAddress flag (memory: Memory) =
+    let private createTokenizeWord textBuffer parseBuffer dictionaryAddress ignoreUnrecognizedWords (memory: Memory) =
         (fun start length ->
             let mutable address = parseBuffer
 
@@ -94,7 +94,7 @@ module Dictionary =
 
             let wordAddress = memory |> lookupWord word dictionaryAddress
 
-            if wordAddress <> 0 && flag then
+            if wordAddress <> 0 || not ignoreUnrecognizedWords then
                 address <- address + int (tokenCount * 4uy)
 
                 memory.WriteWord(address, uint16 wordAddress)
@@ -102,7 +102,7 @@ module Dictionary =
                 memory.WriteByte(address + 3, byte start)
         )
 
-    let tokenizeLine textBuffer parseBuffer dictionaryAddress flag (memory: Memory) =
+    let tokenize textBuffer parseBuffer dictionaryAddress ignoreUnrecognizedWords (memory: Memory) =
         // Use standard dictionary if none is provided.
         let dictionaryAddress =
             if dictionaryAddress = 0 then int (memory |> Header.readDictionaryAddress)
@@ -111,7 +111,7 @@ module Dictionary =
         // Read in the separators
         let wordSeparators = memory |> readWordSeparators dictionaryAddress
 
-        let tokenizeWord = memory |> createTokenizeWord textBuffer parseBuffer dictionaryAddress flag
+        let tokenizeWord = memory |> createTokenizeWord textBuffer parseBuffer dictionaryAddress ignoreUnrecognizedWords
 
         // Set number of parse tokens to zero.
         memory.WriteByte(parseBuffer + 1, 0uy)

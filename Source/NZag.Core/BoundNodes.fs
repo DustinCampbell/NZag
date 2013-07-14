@@ -243,6 +243,10 @@ type Statement =
     /// Moves the cursor in the active window to the given line and column
     | SetCursorStmt of Expression * Expression
 
+    /// Tokenizes the text at the given text buffer and writes it into the parse buffer
+    /// using the specified dictionary.
+    | TokenizeStmt of Expression * Expression * Expression * Expression
+
     /// Updates the status bar
     | ShowStatusStmt
 
@@ -446,6 +450,8 @@ module BoundNodeVisitors =
             fstmt (SplitWindowStmt(rewriteExpr e))
         | SetCursorStmt(e1,e2) ->
             fstmt (SetCursorStmt(rewriteExpr e1, rewriteExpr e2))
+        | TokenizeStmt(e1,e2,e3,e4) ->
+            fstmt (TokenizeStmt(rewriteExpr e1, rewriteExpr e2, rewriteExpr e3, rewriteExpr e4))
         | ShowStatusStmt ->
             fstmt (ShowStatusStmt)
         | DebugOutputStmt(e, elist) ->
@@ -541,6 +547,11 @@ module BoundNodeVisitors =
             | SetCursorStmt(e1,e2) ->
                 visitExpr e1
                 visitExpr e2
+            | TokenizeStmt(e1,e2,e3,e4) ->
+                visitExpr e1
+                visitExpr e2
+                visitExpr e3
+                visitExpr e4
             | DebugOutputStmt(e, elist) ->
                 visitExpr e
                 elist |> List.iter visitExpr
@@ -1065,6 +1076,16 @@ type BoundNodeDumper (builder : StringBuilder) =
                 dumpExpression line
                 append ", "
                 dumpExpression column)
+        | TokenizeStmt(textBuffer,parseBuffer,dictionaryAddress,ignoreUnrecognizedWords) ->
+            append "tokenize"
+            parenthesize (fun () ->
+                dumpExpression textBuffer
+                append ", "
+                dumpExpression parseBuffer
+                append ", "
+                dumpExpression dictionaryAddress
+                append ", "
+                dumpExpression ignoreUnrecognizedWords)
         | ShowStatusStmt ->
             append "show-status"
         | RuntimeExceptionStmt(s) ->

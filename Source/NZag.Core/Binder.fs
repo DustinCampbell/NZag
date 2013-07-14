@@ -1291,6 +1291,15 @@ type InstructionBinder(routine: Routine, memory, builder, debugging) as this =
 
             branchIf (attributeValue .=. one)
 
+        | "tokenize", AtLeast 5, Op2(textBuffer, parseBuffer) ->
+            TokenizeStmt(textBuffer, parseBuffer, zero, zero) |> addStatement
+
+        | "tokenize", AtLeast 5, Op3(textBuffer, parseBuffer, dictionaryAddress) ->
+            TokenizeStmt(textBuffer, parseBuffer, dictionaryAddress, zero) |> addStatement
+
+        | "tokenize", AtLeast 5, Op4(textBuffer, parseBuffer, dictionaryAddress, ignoreUnrecognizedWords) ->
+            TokenizeStmt(textBuffer, parseBuffer, dictionaryAddress, ignoreUnrecognizedWords) |> addStatement
+
         | "verify", AtLeast 3, NoOps ->
             branchIf VerifyExpr
 

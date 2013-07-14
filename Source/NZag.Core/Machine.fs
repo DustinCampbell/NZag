@@ -261,7 +261,7 @@ type Machine (memory: Memory, debugging: bool) as this =
 
             memory.WriteByte(textAddress + text.Length, 0uy)
 
-            memory |> Dictionary.tokenizeLine textBuffer parseBuffer dictionaryAddress true
+            memory |> Dictionary.tokenize textBuffer parseBuffer dictionaryAddress true
 
             0
 
@@ -322,6 +322,8 @@ type Machine (memory: Memory, debugging: bool) as this =
         member y.GetCursorLine() =
             screen.GetCursorLineAsync().Result
 
+        member y.Tokenize(textBuffer, parseBuffer, dictionaryAddress, ignoreUnrecognizedWords) =
+            memory |> Dictionary.tokenize textBuffer parseBuffer dictionaryAddress ignoreUnrecognizedWords
         member y.ShowStatus() =
             screen.ShowStatusAsync().Wait()
 
