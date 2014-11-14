@@ -42,23 +42,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
-    <StartAction>Program</StartAction>
-    <StartProgram>$(NZagToolsPath)\xUnit\xunit.gui.clr4.x86.exe</StartProgram>
-    <StartArguments>$(AssemblyName).dll</StartArguments>
-    <StartWorkingDirectory>$(OutDir)</StartWorkingDirectory>
-  </PropertyGroup>
-
-  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
-    <Reference Include="xunit">
-      <HintPath>$(NZagToolsPath)\xUnit\xunit.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(IsTestProject)' == 'true' And '$(ProjectLanguage)' == 'VB'">
-    <Import Include="Xunit" />
-  </ItemGroup>
-
   <PropertyGroup Condition="'$(ProjectLanguage)' == 'VB'">
     <OptionExplicit>On</OptionExplicit>
     <OptionCompare>Binary</OptionCompare>
