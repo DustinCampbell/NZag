@@ -1,4 +1,6 @@
-﻿Public Module MemoryTests
+﻿Imports Xunit
+
+Public Class MemoryTests
 
     <Fact>
     Sub ReadByte()
@@ -218,4 +220,4 @@
         Next
     End Sub
 
-End Module
+End Class

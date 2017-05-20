@@ -1,7 +1,8 @@
 ﻿Imports NZag.Core.Tests.Mocks
 Imports NZag.Utilities
+Imports Xunit
 
-Public Module GameTests
+Public Class GameTests
 
     <Fact()>
     Async Function RunCZech() As Task
@@ -1846,4 +1847,4 @@ W
         Assert.Equal(expectedText, screen.Output.Trim())
     End Function
 
-End Module
+End Class

@@ -1,6 +1,7 @@
 ﻿Imports NZag.Utilities
+Imports Xunit
 
-Public Module BitSetTests
+Public Class BitSetTests
 
     Private Function CreateBitSet(length As Integer) As IBitSet
         Dim bs = BitSet.Create(length)
@@ -238,4 +239,4 @@ Public Module BitSetTests
         EqualsTests(CreateBitSet(256), CreateBitSet(256))
     End Sub
 
-End Module
+End Class

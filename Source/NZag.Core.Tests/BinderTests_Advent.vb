@@ -1,4 +1,6 @@
-﻿Public Module BinderTests_Advent
+﻿Imports Xunit
+
+Public Class BinderTests_Advent
 
 #Region "Advent_9524"
 
@@ -783,7 +785,7 @@
     <Fact>
     Sub Advent_9524()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 313
 
 LABEL 00
@@ -2424,4 +2426,4 @@ LABEL 1a4
 
 #End Region
 
-End Module
+End Class

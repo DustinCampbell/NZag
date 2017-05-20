@@ -1,4 +1,6 @@
-﻿Public Module BinderTests_Count
+﻿Imports Xunit
+
+Public Class BinderTests_Count
 
 #Region "Count_24AC (debugging)"
 
@@ -21,7 +23,7 @@
     <Fact>
     Sub Count_24AC()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 12
 
 LABEL 00
@@ -73,4 +75,4 @@ LABEL 03
 
 #End Region
 
-End Module
+End Class
