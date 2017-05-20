@@ -6,7 +6,7 @@ Public Module GameTests
     <Fact()>
     Async Function RunCZech() As Task
         Dim expected =
-<![CDATA[
+        <![CDATA[
 CZECH: the Comprehensive Z-machine Emulation CHecker, version 0.8
 Test numbers appear in [brackets].
 
@@ -72,7 +72,7 @@ Last test: quit!
     <Fact()>
     Async Function RunZork1() As Task
         Dim expected =
-<![CDATA[
+        <![CDATA[
 ZORK I: The Great Underground Empire
 Copyright (c) 1981, 1982, 1983 Infocom, Inc. All rights reserved.
 ZORK is a registered trademark of Infocom, Inc.
@@ -1459,7 +1459,7 @@ This gives you the rank of Master Adventurer.
 ]]>
 
         Dim script =
-<![CDATA[
+        <![CDATA[
 N
 N
 U
