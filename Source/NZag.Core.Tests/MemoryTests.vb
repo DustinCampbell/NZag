@@ -1,4 +1,6 @@
-﻿Public Module MemoryTests
+﻿Imports Xunit
+
+Public Class MemoryTests
 
     <Fact>
     Sub ReadByte()
@@ -178,10 +180,8 @@
 
         For i As Byte = 1 To 8
             Dim v = i
-            Assert.DoesNotThrow(
-                Sub()
-                    CreateMemory(v, {})
-                End Sub)
+            Dim m = CreateMemory(v, {})
+            Assert.NotNull(m)
         Next
 
         Assert.Throws(Of Exception)(
@@ -220,4 +220,4 @@
         Next
     End Sub
 
-End Module
+End Class

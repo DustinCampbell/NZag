@@ -15,6 +15,7 @@ local.properties
 .classpath
 .settings/
 .loadpath
+.vs
 
 # External tool builders
 .externalToolBuilders/
@@ -41,6 +42,7 @@ local.properties
 *.user
 *.sln.docstates
 *.ide/
+*.vs/
 
 # Build results
 [Dd]ebug/

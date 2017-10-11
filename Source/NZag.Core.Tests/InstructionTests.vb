@@ -1,4 +1,6 @@
-﻿Public Module InstructionTests
+﻿Imports Xunit
+
+Public Class InstructionTests
 
     <Fact>
     Sub Zork1_4E3B()
@@ -68,4 +70,4 @@
         ValidateInstruction(i, address, validators)
     End Sub
 
-End Module
+End Class

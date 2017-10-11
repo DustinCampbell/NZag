@@ -2,8 +2,9 @@
 Imports ControlFlowBlock = NZag.Core.Graphs.Block(Of NZag.Core.Graphs.ControlFlowData)
 Imports DataFlowBlock = NZag.Core.Graphs.Block(Of NZag.Core.Graphs.DataFlowBlockInfo)
 Imports DataFlowAnalysis = NZag.Core.Graphs.DataFlowAnalysis
+Imports Xunit
 
-Public Module AnalysisTests
+Public Class AnalysisTests
 
     <Fact>
     Sub CZech_1AC8_ReachingDefinitions()
@@ -289,4 +290,4 @@ Public Module AnalysisTests
         expected(dfa)
     End Sub
 
-End Module
+End Class

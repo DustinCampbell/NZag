@@ -1,4 +1,6 @@
-﻿Public Module BinderTests_Zork1
+﻿Imports Xunit
+
+Public Class BinderTests_Zork1
 
 #Region "Zork1_4E3B"
 
@@ -11,7 +13,7 @@
     <Fact>
     Sub Zork1_4E3B()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 2
 
 LABEL 00
@@ -42,7 +44,7 @@ LABEL 00
     Sub Zork1_4E42()
 
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 4
 
 LABEL 00
@@ -98,7 +100,7 @@ LABEL 0a
     <Fact>
     Sub Zork1_4E5C()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 3
 
 LABEL 00
@@ -146,7 +148,7 @@ LABEL 03
     <Fact>
     Sub Zork1_4E6C()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 9
 
 LABEL 00
@@ -196,7 +198,7 @@ LABEL 05
     <Fact>
     Sub Zork1_4EBA()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 1
 
 LABEL 00
@@ -230,7 +232,7 @@ LABEL 01
     <Fact>
     Sub Zork1_4EC6()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 1
 
 LABEL 00
@@ -270,7 +272,7 @@ LABEL 04
     <Fact>
     Sub Zork1_4EEE()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 3
 
 LABEL 00
@@ -337,7 +339,7 @@ LABEL 03
     <Fact>
     Sub Zork1_4F04()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 33
 
 LABEL 00
@@ -507,7 +509,7 @@ LABEL 1a
     <Fact>
     Sub Zork1_4FA2()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 8
 
 LABEL 00
@@ -705,7 +707,7 @@ LABEL 08
     <Fact>
     Sub Zork1_552A()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 74
 
 LABEL 00
@@ -1146,7 +1148,7 @@ LABEL 60
     <Fact>
     Sub Zork1_577C()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 59
 
 LABEL 00
@@ -1530,7 +1532,7 @@ LABEL 68
     <Fact>
     Sub Zork1_6A52()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 14
 
 LABEL 00
@@ -1675,7 +1677,7 @@ LABEL 18
     <Fact>
     Sub Zork1_8C9A()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 49
 
 LABEL 00
@@ -2002,7 +2004,7 @@ LABEL 49
     <Fact>
     Sub Zork1_101E0()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 18
 
 LABEL 00
@@ -2194,4 +2196,4 @@ LABEL 38
 
 #End Region
 
-End Module
+End Class

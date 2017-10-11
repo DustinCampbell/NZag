@@ -1,4 +1,6 @@
-﻿Public Module BinderTests_CZech
+﻿Imports Xunit
+
+Public Class BinderTests_CZech
 
 #Region "CZech_7DC"
 
@@ -10,7 +12,7 @@
     <Fact>
     Sub CZech_7DC()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 0
 
 LABEL 00
@@ -47,7 +49,7 @@ LABEL 00
     <Fact>
     Sub CZech_7E4()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 4
 
 LABEL 00
@@ -175,7 +177,7 @@ LABEL 05
     <Fact>
     Sub CZech_8F4()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 4
 
 LABEL 00
@@ -360,7 +362,7 @@ LABEL 03
     <Fact>
     Sub CZech_AA4()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 19
 
 LABEL 00
@@ -562,7 +564,7 @@ LABEL 05
     <Fact>
     Sub CZech_1150()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 13
 
 LABEL 00
@@ -757,7 +759,7 @@ LABEL 02
     <Fact>
     Sub CZech_13A4()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 13
 
 LABEL 00
@@ -871,7 +873,7 @@ LABEL 05
     <Fact>
     Sub CZech_1640()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 0
 
 LABEL 00
@@ -896,7 +898,7 @@ LABEL 00
     <Fact>
     Sub CZech_1AC8()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 9
 
 LABEL 00
@@ -1302,7 +1304,7 @@ LABEL 07
     <Fact>
     Sub CZech_1B34()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 144
 
 LABEL 00
@@ -2656,7 +2658,7 @@ LABEL 15e
     <Fact>
     Sub CZech_2448()
         Dim expected =
-<![CDATA[
+        <![CDATA[
 # temps: 10
 
 LABEL 00
@@ -2727,4 +2729,4 @@ LABEL 02
 
 #End Region
 
-End Module
+End Class

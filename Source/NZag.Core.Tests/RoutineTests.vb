@@ -1,4 +1,6 @@
-﻿Public Module RoutineTests
+﻿Imports Xunit
+
+Public Class RoutineTests
 
     <Fact>
     Sub Zork1_4E3B()
@@ -51,4 +53,4 @@
         Next
     End Sub
 
-End Module
+End Class
